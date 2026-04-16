@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lua Turtle — Learn to Code with Turtle Graphics</title>
+<meta name="description" content="Write Lua code and watch a turtle draw. A free, browser-based tool for learning programming through turtle graphics.">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><polygon points='24,16 10,24 10,8' fill='%234ec9b0'/></svg>">
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/tomorrow-night-eighties.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/lua/lua.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #1a1a1a;
+    --surface: #232323;
+    --border: #333;
+    --text: #d4d4d4;
+    --text-muted: #808080;
+    --accent: #4ec9b0;
+    --accent-dim: #2a7a68;
+    --error: #f44747;
+    --canvas-bg: #121212;
+  }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100vh;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  header h1 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+  }
+
+  #header-status {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  #header-status.error { color: var(--error); }
+
+  .header-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  button {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  button:hover { border-color: var(--accent-dim); color: var(--accent); }
+
+  button.primary {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  button.primary:hover { background: var(--accent); color: var(--bg); }
+
+  #main {
+    display: grid;
+    grid-template-columns: 1fr 6px 1fr;
+    overflow: hidden;
+  }
+
+  #editor-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 100px;
+  }
+
+  #splitter {
+    background: var(--border);
+    cursor: col-resize;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #splitter:hover, #splitter.dragging { background: var(--accent-dim); }
+
+  #splitter-grip {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+  }
+
+  #splitter:hover #splitter-grip, #splitter.dragging #splitter-grip { opacity: 1; }
+
+  #splitter-grip span {
+    display: block;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--text-muted);
+  }
+
+  #splitter:hover #splitter-grip span,
+  #splitter.dragging #splitter-grip span { background: var(--accent); }
+
+  .CodeMirror {
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace !important;
+    font-size: 14px;
+    line-height: 1.6;
+    height: auto !important;
+  }
+
+  .cm-s-tomorrow-night-eighties .cm-turtle-cmd { color: #ffcc66; }
+
+  #terminal-panel {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+  }
+
+  #terminal-panel.collapsed #terminal-content { display: none; }
+
+  #terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    cursor: row-resize;
+    user-select: none;
+    min-height: 26px;
+    position: relative;
+    z-index: 10;
+  }
+
+  #terminal-panel.collapsed #terminal-header { cursor: default; border-bottom: none; }
+
+  [data-tooltip] { position: relative; }
+
+  [data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    white-space: nowrap;
+    padding: 3px 7px;
+    border-radius: 3px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    z-index: 100;
+  }
+
+  [data-tooltip]:hover::after { opacity: 1; }
+  #terminal-caret[data-tooltip]::after { left: 0; }
+  #terminal-clear[data-tooltip]::after { right: 0; }
+
+  #terminal-caret {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-size: 9px;
+    line-height: 1;
+    padding: 2px 4px;
+    cursor: pointer;
+    min-width: unset;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  #terminal-caret:hover { border-color: var(--text-muted); color: var(--text); }
+
+  #terminal-caret-icon {
+    display: inline-block;
+    transition: transform 0.15s ease;
+  }
+
+  #terminal-panel.collapsed #terminal-caret-icon { transform: rotate(-90deg); }
+
+  #terminal-label { color: var(--text-muted); font-size: 11px; flex: 1; }
+
+  #terminal-clear {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+    min-width: unset;
+    font-family: inherit;
+  }
+
+  #terminal-clear:hover { border-color: var(--text-muted); color: var(--text); }
+  #terminal-panel.collapsed #terminal-clear { display: none; }
+
+  #terminal-content {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 8px;
+    line-height: 1.6;
+  }
+
+  .terminal-line { white-space: pre-wrap; word-break: break-all; color: var(--text); }
+  .terminal-line.error { color: var(--error); }
+  .terminal-line.info { color: var(--text-muted); font-style: italic; }
+
+  #canvas-panel {
+    position: relative;
+    background: var(--canvas-bg);
+    overflow: hidden;
+    min-width: 100px;
+  }
+
+  #canvas-toolbar {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+    opacity: 0.08;
+    transition: opacity 0.2s ease;
+  }
+
+  #canvas-toolbar:hover { opacity: 1; }
+
+  #canvas-toolbar button {
+    padding: 4px 8px;
+    font-size: 11px;
+    background: rgba(35, 35, 35, 0.85);
+    border-color: rgba(51, 51, 51, 0.8);
+    min-width: 28px;
+  }
+
+  #btn-grid.active { border-color: var(--accent-dim); color: var(--accent); }
+
+  #zoom-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    padding: 4px 6px;
+    line-height: 1.6;
+    user-select: none;
+  }
+
+  #turtle-canvas { display: block; width: 100%; height: 100%; }
+
+  @media (max-width: 768px) {
+    #main { grid-template-columns: 1fr; grid-template-rows: 1fr 6px 1fr; }
+    #splitter { cursor: row-resize; }
+    #splitter-grip { flex-direction: row; }
+    #editor-panel { border-bottom: none; min-width: unset; min-height: 80px; }
+    #canvas-panel { min-width: unset; min-height: 80px; }
+    .CodeMirror { font-size: 13px; }
+    button { padding: 8px 16px; }
+  }
+
+  #api-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(18, 18, 18, 0.95);
+    z-index: 20;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: none;
+  }
+
+  #api-overlay.visible { display: block; }
+
+  #api-overlay h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 18px 0 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  #api-overlay h2:first-child { margin-top: 0; }
+
+  #api-overlay table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+
+  #api-overlay td {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 3px 0;
+    vertical-align: top;
+  }
+
+  #api-overlay td:first-child { color: var(--accent); white-space: nowrap; padding-right: 16px; width: 1%; }
+  #api-overlay td:last-child { color: var(--text-muted); }
+
+  #api-close {
+    position: sticky;
+    top: 0;
+    float: right;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+  }
+
+  #api-close:hover { color: var(--text); }
+
+  /* SharedArrayBuffer not available warning */
+  #sab-warning {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: #7a2020;
+    color: #ffd;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    padding: 8px 16px;
+    text-align: center;
+    z-index: 999;
+  }
+</style>
+</head>
+<body>
+
+<div id="sab-warning">
+  ⚠ SharedArrayBuffer is not available. Animation requires the COOP/COEP headers to be set.
+  Check the <code>_headers</code> file and your server configuration.
+</div>
+
+<div id="app">
+  <header>
+    <h1>LUA TURTLE</h1>
+    <div class="header-controls">
+      <span id="header-status"></span>
+      <button id="btn-export">Export</button>
+      <button id="btn-api">Commands</button>
+      <button id="btn-stop">Stop</button>
+      <button id="btn-run" class="primary">Run &#9654;</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <div id="editor-panel">
+      <textarea id="editor-textarea"></textarea>
+      <div id="terminal-panel">
+        <div id="terminal-header">
+          <button id="terminal-caret" data-tooltip="close"><span id="terminal-caret-icon">&#9660;</span></button>
+          <span id="terminal-label">Terminal</span>
+          <button id="terminal-clear">clear</button>
+        </div>
+        <div id="terminal-content"></div>
+      </div>
+    </div>
+    <div id="splitter" title="Drag to resize">
+      <div id="splitter-grip"><span></span><span></span><span></span></div>
+    </div>
+    <div id="canvas-panel">
+      <div id="canvas-toolbar">
+        <button id="btn-zoom-in">+</button>
+        <button id="btn-zoom-out">&minus;</button>
+        <button id="btn-zoom-reset">Reset</button>
+        <span id="zoom-label">100%</span>
+        <button id="btn-grid">Grid</button>
+      </div>
+      <canvas id="turtle-canvas"></canvas>
+      <div id="api-overlay">
+        <button id="api-close">&times;</button>
+        <h2>Movement</h2>
+        <table>
+          <tr><td>forward(n)</td><td>Move forward n pixels. Alias: fd</td></tr>
+          <tr><td>back(n)</td><td>Move backward n pixels. Alias: bk</td></tr>
+          <tr><td>left(degrees)</td><td>Turn left. Alias: lt</td></tr>
+          <tr><td>right(degrees)</td><td>Turn right. Alias: rt</td></tr>
+          <tr><td>setpos(x, y)</td><td>Move to coordinates (x, y)</td></tr>
+          <tr><td>setheading(angle)</td><td>Face a direction (0=east, 90=north). Alias: seth</td></tr>
+          <tr><td>home()</td><td>Return to center, face east</td></tr>
+          <tr><td>setx(x)</td><td>Set x coordinate, keep y</td></tr>
+          <tr><td>sety(y)</td><td>Set y coordinate, keep x</td></tr>
+          <tr><td>teleport(x, y)</td><td>Jump to position instantly, no drawing</td></tr>
+        </table>
+        <h2>Pen</h2>
+        <table>
+          <tr><td>penup()</td><td>Stop drawing. Alias: pu</td></tr>
+          <tr><td>pendown()</td><td>Start drawing. Alias: pd</td></tr>
+          <tr><td>pensize(n)</td><td>Set line width</td></tr>
+          <tr><td>pencolor(r, g, b)</td><td>Set color with RGB (0–1 or 0–255)</td></tr>
+          <tr><td>pencolor("name")</td><td>Set color by name: "red", "blue", "gold", etc.</td></tr>
+          <tr><td>color("red")</td><td>Set both pen and fill color</td></tr>
+          <tr><td>color("red", "blue")</td><td>Set pen and fill color independently</td></tr>
+        </table>
+        <h2>Shapes</h2>
+        <table>
+          <tr><td>circle(radius)</td><td>Draw a full circle</td></tr>
+          <tr><td>circle(radius, extent)</td><td>Arc: extent in degrees</td></tr>
+        </table>
+        <h2>Fill</h2>
+        <table>
+          <tr><td>begin_fill()</td><td>Start recording a filled shape</td></tr>
+          <tr><td>end_fill()</td><td>Fill the shape drawn since begin_fill</td></tr>
+          <tr><td>fillcolor(r, g, b)</td><td>Set fill color</td></tr>
+          <tr><td>dot(size)</td><td>Draw a filled circle at turtle's position</td></tr>
+          <tr><td>dot(size, "red")</td><td>Draw a dot with a specific color</td></tr>
+        </table>
+        <h2>Text</h2>
+        <table>
+          <tr><td>write(text)</td><td>Write text at turtle's position</td></tr>
+          <tr><td>write(text, move, align, font)</td><td>align: "left", "center", "right"; font: {family, size}</td></tr>
+        </table>
+        <h2>Canvas</h2>
+        <table>
+          <tr><td>bgcolor(r, g, b)</td><td>Set background color</td></tr>
+          <tr><td>bgcolor("name")</td><td>Set background color by name</td></tr>
+          <tr><td>clear()</td><td>Erase drawing, keep turtle position</td></tr>
+          <tr><td>reset()</td><td>Erase drawing and reset turtle to start</td></tr>
+          <tr><td>undo()</td><td>Undo the last command</td></tr>
+          <tr><td>speed(n)</td><td>0=instant, 1=slowest, 10=fastest</td></tr>
+        </table>
+        <h2>Turtle</h2>
+        <table>
+          <tr><td>hideturtle()</td><td>Hide the turtle. Alias: ht</td></tr>
+          <tr><td>showturtle()</td><td>Show the turtle. Alias: st</td></tr>
+          <tr><td>stamp()</td><td>Stamp turtle shape; returns id</td></tr>
+          <tr><td>clearstamp(id)</td><td>Remove a stamp</td></tr>
+          <tr><td>Turtle()</td><td>Create a second turtle with all the same methods</td></tr>
+        </table>
+        <h2>State Queries</h2>
+        <table>
+          <tr><td>position()</td><td>Returns x, y coordinates</td></tr>
+          <tr><td>xcor() / ycor()</td><td>Returns x or y coordinate</td></tr>
+          <tr><td>heading()</td><td>Returns current angle in degrees</td></tr>
+          <tr><td>isdown()</td><td>Returns true if pen is down</td></tr>
+          <tr><td>isvisible()</td><td>Returns true if turtle is visible</td></tr>
+          <tr><td>distance(x, y)</td><td>Returns distance to point</td></tr>
+          <tr><td>towards(x, y)</td><td>Returns angle towards point</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { Renderer } from './renderer.js';
+
+(async function main() {
+
+  // ---- SharedArrayBuffer check ----
+  if (typeof SharedArrayBuffer === 'undefined') {
+    document.getElementById('sab-warning').style.display = 'block';
+    document.getElementById('header-status').textContent = 'Error: missing COOP/COEP headers';
+    document.getElementById('header-status').className = 'error';
+    return;
+  }
+
+  // Shared control buffer: [FRAME_ACK, STOP_FLAG]
+  const sab   = new SharedArrayBuffer(8);
+  const sabI32 = new Int32Array(sab);
+
+  // ---- CodeMirror setup ----
+
+  const textarea = document.getElementById('editor-textarea');
+  textarea.value = [
+    '-- Welcome to Lua Turtle!',
+    '-- Write code on the left, click Run to see it draw.',
+    '-- Keyboard shortcut: Ctrl+Enter (or Cmd+Enter on Mac)',
+    '',
+    '-- Try completing the square:',
+    '',
+    'forward(100)',
+    'right(90)',
+    'forward(100)',
+    '',
+    '-- More commands:',
+    '-- back(n)  left(n)  penup()  pendown()',
+    '-- pencolor(r, g, b)  pensize(n)  speed(n)',
+    '-- bgcolor(r, g, b)  clear()  reset()',
+    '-- use fd(100), bk(100), rt(90), and lt(90) when you get tired of typing.'
+  ].join('\n');
+
+  const TURTLE_COMMANDS = /^(forward|back|left|right|fd|bk|lt|rt|penup|pendown|pu|pd|pensize|pencolor|fillcolor|color|bgcolor|clear|reset|undo|speed|position|heading|isdown|filling|isvisible|hideturtle|showturtle|xcor|ycor|distance|towards|setheading|seth|home|setpos|setx|sety|teleport|circle|begin_fill|end_fill|dot|write|stamp|clearstamp|clearstamps|Turtle|tracer|update|done)\b/;
+
+  const turtleOverlay = {
+    token(stream) {
+      if (stream.match(TURTLE_COMMANDS)) return 'turtle-cmd';
+      stream.next();
+      return null;
+    }
+  };
+
+  const editor = CodeMirror.fromTextArea(textarea, {
+    mode: 'lua',
+    theme: 'tomorrow-night-eighties',
+    lineNumbers: true,
+    indentUnit: 4,
+    tabSize: 4,
+    indentWithTabs: false,
+    lineWrapping: false,
+    smartIndent: false,
+  });
+
+  editor.addOverlay(turtleOverlay);
+
+  // ---- Status / terminal ----
+
+  const headerStatus = document.getElementById('header-status');
+
+  function setStatus(msg, isError) {
+    headerStatus.textContent = msg;
+    headerStatus.className = isError ? 'error' : '';
+  }
+
+  const terminalPanel   = document.getElementById('terminal-panel');
+  const terminalContent = document.getElementById('terminal-content');
+  const terminalCaret   = document.getElementById('terminal-caret');
+  const LINE_HEIGHT     = 20;
+  const HEADER_HEIGHT   = 26;
+  const DEFAULT_LINES   = 3;
+  const STORAGE_KEY     = 'luaturtle-terminal-height';
+
+  let terminalOpen   = true;
+  let terminalHeight = null;
+
+  function getOpenHeight() {
+    if (terminalHeight !== null) return terminalHeight;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? parseInt(stored, 10) : HEADER_HEIGHT + LINE_HEIGHT * DEFAULT_LINES + 8;
+  }
+
+  function applyTerminalHeight(h) {
+    terminalPanel.style.height = h + 'px';
+    terminalContent.style.height = (h - HEADER_HEIGHT - 4) + 'px';
+  }
+
+  function openTerminal() {
+    terminalOpen = true;
+    terminalPanel.classList.remove('collapsed');
+    applyTerminalHeight(getOpenHeight());
+    terminalCaret.dataset.tooltip = 'close';
+    editor.refresh();
+  }
+
+  function closeTerminal() {
+    terminalOpen = false;
+    terminalPanel.classList.add('collapsed');
+    terminalPanel.style.height = HEADER_HEIGHT + 'px';
+    terminalCaret.dataset.tooltip = 'open';
+    editor.refresh();
+  }
+
+  let terminalDragDidMove = false;
+
+  document.getElementById('terminal-caret').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (terminalDragDidMove) { terminalDragDidMove = false; return; }
+    if (terminalOpen) closeTerminal(); else openTerminal();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') { e.preventDefault(); if (terminalOpen) closeTerminal(); else openTerminal(); }
+  });
+
+  document.getElementById('terminal-clear').addEventListener('click', (e) => {
+    e.stopPropagation();
+    terminalContent.innerHTML = '';
+  });
+
+  {
+    const terminalHeader = document.getElementById('terminal-header');
+    let dragging = false, startY, startH;
+
+    terminalHeader.addEventListener('pointerdown', (e) => {
+      if (!terminalOpen || e.target.closest('button')) return;
+      dragging = true; terminalDragDidMove = false;
+      startY = e.clientY;
+      startH = terminalPanel.getBoundingClientRect().height;
+      terminalHeader.setPointerCapture(e.pointerId);
+    });
+
+    terminalHeader.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const delta = startY - e.clientY;
+      if (Math.abs(delta) < 3) return;
+      terminalDragDidMove = true;
+      const maxH = document.getElementById('editor-panel').getBoundingClientRect().height - 60;
+      const minH = HEADER_HEIGHT + LINE_HEIGHT + 8;
+      const newH = Math.max(minH, Math.min(maxH, startH + delta));
+      terminalHeight = newH;
+      localStorage.setItem(STORAGE_KEY, newH);
+      applyTerminalHeight(newH);
+      editor.refresh();
+    });
+
+    terminalHeader.addEventListener('pointerup',     () => { dragging = false; });
+    terminalHeader.addEventListener('pointercancel', () => { dragging = false; });
+  }
+
+  function terminalAppend(text, cls) {
+    const line = document.createElement('div');
+    line.className = 'terminal-line' + (cls ? ' ' + cls : '');
+    line.textContent = text;
+    terminalContent.appendChild(line);
+    terminalContent.scrollTop = terminalContent.scrollHeight;
+  }
+
+  terminalAppend('Print output and errors appear here.  ctrl+i to toggle • drag border to resize.', 'info');
+  openTerminal();
+
+  // ---- Renderer ----
+
+  const renderer = new Renderer(document.getElementById('turtle-canvas'));
+
+  let splitterDragging = false;
+
+  new ResizeObserver(() => {
+    if (!splitterDragging) { renderer.resize(); }
+  }).observe(document.getElementById('canvas-panel'));
+  renderer.resize();
+
+  document.getElementById('btn-zoom-in').addEventListener('click',    () => { renderer.zoomCenter(renderer.ZOOM_STEP);       updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
+  document.getElementById('btn-zoom-out').addEventListener('click',   () => { renderer.zoomCenter(1 / renderer.ZOOM_STEP);   updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
+  document.getElementById('btn-zoom-reset').addEventListener('click', () => { renderer.resetView(); updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
+
+  function updateZoomLabel() {
+    document.getElementById('zoom-label').textContent = renderer.zoomLabel();
+  }
+
+  // Grid toggle
+  document.getElementById('btn-grid').classList.toggle('active', renderer.gridVisible);
+  document.getElementById('btn-grid').addEventListener('click', () => {
+    renderer.gridVisible = !renderer.gridVisible;
+    localStorage.setItem('luaturtle-grid', renderer.gridVisible);
+    document.getElementById('btn-grid').classList.toggle('active', renderer.gridVisible);
+    renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles);
+  });
+
+  // ---- Splitter ----
+
+  {
+    const mainEl   = document.getElementById('main');
+    const splitter = document.getElementById('splitter');
+
+    splitter.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      splitterDragging = true;
+      splitter.classList.add('dragging');
+      splitter.setPointerCapture(e.pointerId);
+    });
+
+    splitter.addEventListener('pointermove', (e) => {
+      if (!splitterDragging) return;
+      const rect    = mainEl.getBoundingClientRect();
+      const isMobile = window.matchMedia('(max-width: 768px)').matches;
+      if (isMobile) {
+        const pct = Math.max(10, Math.min(90, ((e.clientY - rect.top) / rect.height) * 100));
+        mainEl.style.gridTemplateRows = `${pct}% 6px 1fr`;
+      } else {
+        const pct = Math.max(10, Math.min(90, ((e.clientX - rect.left) / rect.width) * 100));
+        mainEl.style.gridTemplateColumns = `${pct}% 6px 1fr`;
+      }
+      editor.refresh();
+    });
+
+    const stopDrag = () => {
+      if (splitterDragging) {
+        splitterDragging = false;
+        splitter.classList.remove('dragging');
+        renderer.resize();
+      }
+    };
+    splitter.addEventListener('pointerup',     stopDrag);
+    splitter.addEventListener('pointercancel', stopDrag);
+    splitter.addEventListener('dblclick', () => {
+      mainEl.style.gridTemplateColumns = '';
+      mainEl.style.gridTemplateRows = '';
+      editor.refresh();
+    });
+  }
+
+  // ---- Web Worker ----
+
+  setStatus('Loading Lua VM...');
+
+  const worker = new Worker('worker.js');
+  let workerReady = false;
+
+  worker.onmessage = (e) => {
+    const msg = e.data;
+
+    if (msg.type === 'ready') {
+      workerReady = true;
+      setStatus('Ready — click Run or press Ctrl+Enter');
+
+    } else if (msg.type === 'frame') {
+      // Render the frame the worker just posted.
+      renderer.applyFrame(msg.segments, msg.turtles, msg.bgcolor);
+      // Ack: wake the worker.
+      Atomics.store(sabI32, 0, 1);
+      Atomics.notify(sabI32, 0);
+
+    } else if (msg.type === 'print') {
+      for (const line of msg.lines) terminalAppend(String(line));
+
+    } else if (msg.type === 'done') {
+      setStatus('Done');
+
+    } else if (msg.type === 'error') {
+      terminalAppend(msg.message, 'error');
+      if (!terminalOpen) openTerminal();
+      setStatus('Error — check terminal', true);
+    }
+  };
+
+  worker.postMessage({ type: 'init' });
+
+  // ---- Run / Stop ----
+
+  function runCode() {
+    if (!workerReady) return;
+    const code = editor.getValue();
+    // Reset stop flag
+    Atomics.store(sabI32, 1, 0);
+    setStatus('Running');
+    worker.postMessage({ type: 'run', code, sab });
+  }
+
+  function stopCode() {
+    Atomics.store(sabI32, 1, 1);
+    Atomics.notify(sabI32, 0);   // wake the worker so it can check the flag
+    setStatus('Stopped');
+  }
+
+  document.getElementById('btn-run').addEventListener('click', runCode);
+  document.getElementById('btn-stop').addEventListener('click', stopCode);
+
+  editor.setOption('extraKeys', {
+    'Ctrl-Enter': runCode,
+    'Cmd-Enter':  runCode,
+    'Tab':        (cm) => cm.execCommand('insertSoftTab'),
+    'Shift-Tab':  (cm) => cm.execCommand('indentLess'),
+  });
+
+  // ---- Export ----
+
+  document.getElementById('btn-export').addEventListener('click', () => renderer.exportPNG());
+
+  // ---- API overlay ----
+
+  document.getElementById('btn-api').addEventListener('click',   () => document.getElementById('api-overlay').classList.toggle('visible'));
+  document.getElementById('api-close').addEventListener('click', () => document.getElementById('api-overlay').classList.remove('visible'));
+
+  // ---- URL hash sharing ----
+
+  if (location.hash && location.hash.length > 1) {
+    try {
+      editor.setValue(decodeURIComponent(location.hash.slice(1)));
+      // Auto-run after worker is ready
+      const waitAndRun = setInterval(() => {
+        if (workerReady) { clearInterval(waitAndRun); runCode(); }
+      }, 100);
+    } catch (e) { console.warn('Could not load code from URL:', e); }
+  }
+
+})();
+</script>
+
+</body>
+</html>
