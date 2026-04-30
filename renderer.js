@@ -23,10 +23,22 @@ export class Renderer {
 
         this.gridVisible = localStorage.getItem('luaturtle-grid') === 'true';
 
-        // Latest data from worker (used for export)
+        // Latest data from worker (used for export and zoom-triggered full redraws)
         this._lastBgColor  = [0.07, 0.07, 0.07, 1];
         this._lastTurtles  = [];
         this._lastSegments = [];
+
+        // Incremental rendering state.
+        // After each frame, _lastRenderedCount tracks how many segments are already
+        // painted on the commit canvas. _lastBoundaryLogIndex is the _log_index of
+        // the last rendered segment — if it still matches next frame, the prefix is
+        // intact and we can append-only (O(1) per frame). Any structural change
+        // (clear/undo/clearstamp) shifts the visible list and the check fails,
+        // falling back to a full redraw.
+        // _needsViewRedraw is set by zoom/pan so the next frame redraws at new scale.
+        this._lastRenderedCount    = 0;
+        this._lastBoundaryLogIndex = -1;
+        this._needsViewRedraw      = false;
 
         this._initCommitCanvas();
     }
@@ -76,21 +88,60 @@ export class Renderer {
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         this._initCommitCanvas();
-        // Redraw committed content at new size
         this._redrawAllSegments(this._lastSegments);
+        this._syncIncrementalState();
     }
 
     // ---- Apply a frame from the worker ----
-    // Redraws the full commit canvas from the visible segment list,
-    // then composites with turtle heads.
+    // Normally draws only segments added since the last frame (O(1) per frame).
+    // Falls back to a full clear+redraw when the visible segment list has shrunk
+    // or shifted — which only happens on clear/undo/clearstamp — or when the
+    // viewport changed (zoom/pan).
 
     applyFrame(segments, turtles, bgcolor) {
         this._lastBgColor  = bgcolor  || this._lastBgColor;
         this._lastTurtles  = turtles  || [];
         this._lastSegments = segments || [];
 
-        this._redrawAllSegments(this._lastSegments);
+        const segs = this._lastSegments;
+        const n    = segs.length;
+        const prev = this._lastRenderedCount;
+
+        // The boundary check: if the segment at position [prev-1] still has the
+        // same _log_index we recorded, the prefix on the canvas is still valid.
+        const prefixIntact = prev > 0 && n >= prev
+            && segs[prev - 1]?._log_index === this._lastBoundaryLogIndex;
+
+        if (!prefixIntact || this._needsViewRedraw) {
+            this._redrawAllSegments(segs);
+        } else if (n > prev) {
+            this._drawSegmentRange(segs, prev, n);
+        }
+
+        this._syncIncrementalState();
+        this._needsViewRedraw = false;
         this._renderOverlay(this._lastBgColor, this._lastTurtles);
+    }
+
+    // Append segments[from..to) onto the commit canvas without clearing it.
+    _drawSegmentRange(segments, from, to) {
+        for (let i = from; i < to; i++) {
+            const seg = segments[i];
+            if (seg && seg.type === 'fill') this._drawFill(seg);
+        }
+        for (let i = from; i < to; i++) {
+            const seg = segments[i];
+            if (!seg || seg.type === 'fill' || seg.type === 'clear') continue;
+            this._drawSegment(seg);
+        }
+    }
+
+    // Record the current segment count and boundary index after any draw.
+    _syncIncrementalState() {
+        const segs = this._lastSegments;
+        const n    = segs.length;
+        this._lastRenderedCount    = n;
+        this._lastBoundaryLogIndex = n > 0 ? segs[n - 1]._log_index : -1;
     }
 
     _redrawAllSegments(segments) {
@@ -310,6 +361,7 @@ export class Renderer {
         this.viewScale = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, this.viewScale * factor));
         this.viewCenterX = txB - (sx - cssW / 2) / this.viewScale;
         this.viewCenterY = tyB + (sy - cssH / 2) / this.viewScale;
+        this._needsViewRedraw = true;
     }
 
     zoomCenter(factor) {
@@ -323,6 +375,16 @@ export class Renderer {
         this.viewScale   = 1;
         this.viewCenterX = 0;
         this.viewCenterY = 0;
+        this._needsViewRedraw = true;
+    }
+
+    // Force an immediate redraw of the commit canvas and overlay.
+    // Call after zoom/pan when no animation is running.
+    redraw() {
+        this._redrawAllSegments(this._lastSegments);
+        this._syncIncrementalState();
+        this._needsViewRedraw = false;
+        this._renderOverlay(this._lastBgColor, this._lastTurtles);
     }
 
     zoomLabel() {
