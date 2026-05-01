@@ -673,9 +673,9 @@ import { Renderer } from './renderer.js';
   }).observe(document.getElementById('canvas-panel'));
   renderer.resize();
 
-  document.getElementById('btn-zoom-in').addEventListener('click',    () => { renderer.zoomCenter(renderer.ZOOM_STEP);     updateZoomLabel(); renderer.redraw(); });
-  document.getElementById('btn-zoom-out').addEventListener('click',   () => { renderer.zoomCenter(1/renderer.ZOOM_STEP);   updateZoomLabel(); renderer.redraw(); });
-  document.getElementById('btn-zoom-reset').addEventListener('click', () => { renderer.resetView();                        updateZoomLabel(); renderer.redraw(); });
+  document.getElementById('btn-zoom-in').addEventListener('click',    () => { renderer.zoomCenter(renderer.ZOOM_STEP);       updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
+  document.getElementById('btn-zoom-out').addEventListener('click',   () => { renderer.zoomCenter(1 / renderer.ZOOM_STEP);   updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
+  document.getElementById('btn-zoom-reset').addEventListener('click', () => { renderer.resetView(); updateZoomLabel(); renderer._renderOverlay(renderer._lastBgColor, renderer._lastTurtles); });
 
   function updateZoomLabel() {
     document.getElementById('zoom-label').textContent = renderer.zoomLabel();
