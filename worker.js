@@ -181,6 +181,8 @@ self.onmessage = async (e) => {
         Atomics.store(sabI32, 0, 0);
         Atomics.store(sabI32, 1, 0);
         lua.global.set('user_code', msg.code);
+        lua.global.set('_canvas_width',  msg.canvasWidth  || 0);
+        lua.global.set('_canvas_height', msg.canvasHeight || 0);
         await runCode(msg.code);
 
     } else if (msg.type === 'stop') {

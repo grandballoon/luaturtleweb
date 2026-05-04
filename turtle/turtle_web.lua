@@ -350,6 +350,9 @@ local function make_turtle_methods(c)
     m.setundobuffer     = function(_, n) c:setundobuffer(n) end
     m.undobufferentries = function(_)    return c:undobufferentries() end
 
+    m.screen_width  = function(_) return turtle.screen_width() end
+    m.screen_height = function(_) return turtle.screen_height() end
+
     return m
 end
 
@@ -442,6 +445,9 @@ end
 turtle.undo              = function()    _undo(core) end
 turtle.setundobuffer     = function(n)   core:setundobuffer(n) end
 turtle.undobufferentries = function()    return core:undobufferentries() end
+
+turtle.screen_width  = function() return type(_canvas_width)  == "number" and _canvas_width  or 0 end
+turtle.screen_height = function() return type(_canvas_height) == "number" and _canvas_height or 0 end
 
 -- done() is a no-op on web (program ends, window stays open)
 turtle.done     = function() end
@@ -537,6 +543,9 @@ function _turtle_make_env()
 
         done         = turtle.done,
         mainloop     = turtle.mainloop,
+
+        screen_width  = turtle.screen_width,
+        screen_height = turtle.screen_height,
 
         -- Multi-turtle
         Turtle       = turtle.Turtle,
