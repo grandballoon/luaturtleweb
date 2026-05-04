@@ -777,7 +777,10 @@ import { Renderer } from './renderer.js';
     // Reset stop flag
     Atomics.store(sabI32, 1, 0);
     setStatus('Running');
-    worker.postMessage({ type: 'run', code, sab });
+    const dpr = window.devicePixelRatio || 1;
+    const canvasWidth  = Math.round(renderer.canvas.width  / dpr);
+    const canvasHeight = Math.round(renderer.canvas.height / dpr);
+    worker.postMessage({ type: 'run', code, sab, canvasWidth, canvasHeight });
   }
 
   function stopCode() {
