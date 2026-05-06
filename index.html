@@ -455,6 +455,7 @@
         <table>
           <tr><td>begin_fill()</td><td>Start recording a filled shape</td></tr>
           <tr><td>end_fill()</td><td>Fill the shape drawn since begin_fill</td></tr>
+          <tr><td>filling()</td><td>Returns true if currently filling</td></tr>
           <tr><td>fillcolor(r, g, b)</td><td>Set fill color</td></tr>
           <tr><td>dot(size)</td><td>Draw a filled circle at turtle's position</td></tr>
           <tr><td>dot(size, "red")</td><td>Draw a dot with a specific color</td></tr>
@@ -468,9 +469,12 @@
         <table>
           <tr><td>bgcolor(r, g, b)</td><td>Set background color</td></tr>
           <tr><td>bgcolor("name")</td><td>Set background color by name</td></tr>
+          <tr><td>screen_width()</td><td>Returns canvas width in pixels</td></tr>
+          <tr><td>screen_height()</td><td>Returns canvas height in pixels</td></tr>
           <tr><td>clear()</td><td>Erase drawing, keep turtle position</td></tr>
           <tr><td>reset()</td><td>Erase drawing and reset turtle to start</td></tr>
           <tr><td>undo()</td><td>Undo the last command</td></tr>
+          <tr><td>setundobuffer(n)</td><td>Set max undo history length</td></tr>
           <tr><td>speed(n)</td><td>0=instant, 1=slowest, 10=fastest</td></tr>
         </table>
         <h2>Turtle</h2>
@@ -479,6 +483,7 @@
           <tr><td>showturtle()</td><td>Show the turtle. Alias: st</td></tr>
           <tr><td>stamp()</td><td>Stamp turtle shape; returns id</td></tr>
           <tr><td>clearstamp(id)</td><td>Remove a stamp</td></tr>
+          <tr><td>clearstamps(n)</td><td>Remove last n stamps; omit n to clear all</td></tr>
           <tr><td>Turtle()</td><td>Create a second turtle with all the same methods</td></tr>
         </table>
         <h2>State Queries</h2>
