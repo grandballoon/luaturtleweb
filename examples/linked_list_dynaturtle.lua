@@ -20,9 +20,9 @@
 local function LinkedListTurtle()
     local head, cursor, n = nil, nil, 0
 
-    local NW, NH = 56, 28   -- node box: width, height (pixels)
-    local GAP    = 88       -- center-to-center horizontal spacing
-    local ROW_Y  = 20       -- y coordinate of the node row
+    local DOT_R = 16    -- node dot radius (pixels)
+    local GAP   = 80    -- center-to-center horizontal spacing
+    local ROW_Y = 20    -- y coordinate of the node row
 
     local t = Turtle()
     t:hideturtle()
@@ -39,24 +39,7 @@ local function LinkedListTurtle()
         end
     end
 
-    -- Draw a filled, outlined rectangle centered at (cx, cy).
-    local function filled_rect(cx, cy, w, h, r, g, b)
-        t:penup()
-        t:teleport(cx - w/2, cy - h/2)
-        t:setheading(0)
-        t:fillcolor(r, g, b)
-        t:pencolor(0.4, 0.4, 0.4)
-        t:pensize(1)
-        t:pendown()
-        t:begin_fill()
-        t:forward(w); t:left(90)
-        t:forward(h); t:left(90)
-        t:forward(w); t:left(90)
-        t:forward(h); t:left(90)
-        t:end_fill()
-    end
-
-    -- Draw an arrow from (ax, ay) to the left edge of the node centered at (bx, by).
+    -- Draw an arrow from (ax, ay) toward (bx, by), stopping DOT_R before it.
     local function arrow_to(ax, ay, bx, by)
         t:penup()
         t:teleport(ax, ay)
@@ -64,9 +47,7 @@ local function LinkedListTurtle()
         t:pencolor(0.45, 0.75, 1.0)
         t:pensize(1.5)
         t:pendown()
-        -- Stop just before the target node's left edge.
-        t:forward(t:distance(bx, by) - NW/2 - 2)
-        -- Arrowhead: two short arms at ±150° from the direction of travel.
+        t:forward(t:distance(bx, by) - DOT_R - 2)
         local hx, hy = t:xcor(), t:ycor()
         t:right(150); t:forward(8)
         t:penup(); t:teleport(hx, hy)
@@ -78,17 +59,15 @@ local function LinkedListTurtle()
         if not head then return end
         layout()
 
-        -- Arrows first (drawn under the node boxes).
+        -- Arrows between nodes.
         local node = head
         while node do
             if node.next then
-                -- Arrow from the pointer cell of this node to the next node.
-                arrow_to(node._x + NW * 3/8 + 2, node._y,
-                         node.next._x,            node.next._y)
+                arrow_to(node._x, node._y, node.next._x, node.next._y)
             else
                 -- Null terminator marker.
                 t:penup()
-                t:teleport(node._x + NW * 3/8 + 8, node._y - 6)
+                t:teleport(node._x + DOT_R + 6, node._y - 6)
                 t:pencolor(0.7, 0.3, 0.3)
                 t:pendown()
                 t:write("nil")
@@ -96,35 +75,29 @@ local function LinkedListTurtle()
             node = node.next
         end
 
-        -- Node boxes on top of the arrows.
+        -- Dots and labels on top of the arrows.
         node = head
         while node do
             local cur = (node == cursor)
-
-            -- Each node is two cells: [  value  |ptr]
-            -- Value cell (left 3/4):
-            filled_rect(node._x - NW/8, node._y, NW * 3/4, NH,
-                        0.10, 0.22, 0.32)
-            -- Pointer cell (right 1/4) — highlighted gold when cursor is here:
+            t:penup()
+            t:teleport(node._x, node._y)
             if cur then
-                filled_rect(node._x + NW * 3/8, node._y, NW/4, NH,
-                            0.55, 0.40, 0.05)
+                t:dot(DOT_R * 2, 0.95, 0.75, 0.10)
             else
-                filled_rect(node._x + NW * 3/8, node._y, NW/4, NH,
-                            0.18, 0.30, 0.40)
+                t:dot(DOT_R * 2, 0.20, 0.45, 0.65)
             end
 
-            -- Value label centered in the value cell.
+            -- Value label centered on the dot.
             t:penup()
-            t:teleport(node._x - NW/8, node._y - 6)
-            t:pencolor(0.9, 0.9, 0.9)
+            t:teleport(node._x, node._y - 6)
+            t:pencolor(0.05, 0.05, 0.05)
             t:pendown()
             t:write(tostring(node.value), false, "center")
 
             -- Cursor indicator below the active node.
             if cur then
                 t:penup()
-                t:teleport(node._x - NW/8, node._y - NH/2 - 15)
+                t:teleport(node._x, node._y - DOT_R - 14)
                 t:pencolor(0.95, 0.80, 0.15)
                 t:pendown()
                 t:write("^ here", false, "center")
