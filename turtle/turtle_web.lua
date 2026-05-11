@@ -599,6 +599,11 @@ function _bridge_get_turtle_states()
     return result
 end
 
+-- Returns current tracer n so worker.js can decide whether to post the final frame.
+function _bridge_get_tracer_n()
+    return _tracer_n
+end
+
 -- Returns background color as {r, g, b, a}.
 function _bridge_get_bgcolor()
     return { screen.bg_color[1], screen.bg_color[2],

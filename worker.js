@@ -151,8 +151,9 @@ async function runCode(code) {
             end
         `);
 
-        // Post final frame so the last state is rendered.
-        postFrameAndWait();
+        // Post final frame unless tracer(0) is active — in that case the user
+        // must call update() explicitly, matching Python turtle behavior.
+        if (lua.global.get('_bridge_get_tracer_n')() !== 0) postFrameAndWait();
         postMessage({ type: 'done' });
 
     } catch (err) {
