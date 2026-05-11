@@ -33,6 +33,9 @@ local core   = Core.new(screen)
 turtle._screen = screen
 turtle._core   = core
 
+local _tracer_n         = 1  -- 0=batch, 1=default, n>1=every-nth
+local _tracer_cmd_count = 0
+
 ----------------------------------------------------------------
 -- Bridge: post frame to main thread and wait for ack.
 -- In JS, _bridge_post_frame() posts a message with the current
@@ -48,11 +51,18 @@ local function frame_delay_ms(speed)
     return math.floor(0.023 * (0.65 ^ (speed - 1)) * 1000)
 end
 
-local function post_frame()
+local function _raw_post_frame()
     if type(_bridge_post_frame) == "function" then
         local spd = core and core.speed_setting or 5
         _bridge_post_frame(frame_delay_ms(spd))
     end
+end
+
+local function _maybe_post_frame()
+    if _tracer_n == 0 then return end
+    if _tracer_n == 1 then _raw_post_frame(); return end
+    _tracer_cmd_count = _tracer_cmd_count + 1
+    if _tracer_cmd_count % _tracer_n == 0 then _raw_post_frame() end
 end
 
 ----------------------------------------------------------------
@@ -88,9 +98,9 @@ local function _forward(c, distance)
     distance = distance or 0
     with_undo(c, function()
         if distance == 0 then c:forward(0); return end
-        if c.speed_setting == 0 then
+        if c.speed_setting == 0 or _tracer_n ~= 1 then
             c:forward(distance)
-            post_frame()
+            _maybe_post_frame()
             return
         end
         local step_size = step_size_for_speed(c.speed_setting)
@@ -98,7 +108,7 @@ local function _forward(c, distance)
         local step_dist = distance / steps
         for _ = 1, steps do
             c:forward(step_dist)
-            post_frame()
+            _raw_post_frame()
         end
     end)
 end
@@ -106,9 +116,9 @@ end
 local function _right(c, angle)
     angle = angle or 0
     with_undo(c, function()
-        if angle == 0 or c.speed_setting == 0 then
+        if angle == 0 or c.speed_setting == 0 or _tracer_n ~= 1 then
             c:right(angle)
-            post_frame()
+            _maybe_post_frame()
             return
         end
         local step_angle = step_size_for_speed(c.speed_setting)
@@ -116,7 +126,7 @@ local function _right(c, angle)
         local step       = angle / steps
         for _ = 1, steps do
             c:right(step)
-            post_frame()
+            _raw_post_frame()
         end
     end)
 end
@@ -138,11 +148,16 @@ local function _circle(c, radius, extent, steps)
             c:left(step_angle / 2)
             c:forward(step_len)
             c:left(step_angle / 2)
-            if c.speed_setting ~= 0 and (i % render_every == 0 or i == steps) then
-                post_frame()
+            if _tracer_n == 1 and c.speed_setting ~= 0 and (i % render_every == 0 or i == steps) then
+                _raw_post_frame()
             end
         end
-        if c.speed_setting == 0 then post_frame() end
+        if _tracer_n == 1 then
+            if c.speed_setting == 0 then _raw_post_frame() end
+            -- animated case: loop already posted on final substep
+        else
+            _maybe_post_frame()
+        end
     end)
 end
 
@@ -152,39 +167,39 @@ local function _draw(c, method_name, ...)
     local result = {}
     with_undo(c, function()
         result = {c[method_name](c, table.unpack(args))}
-        post_frame()
+        _maybe_post_frame()
     end)
     return table.unpack(result)
 end
 
 local function _do_clear(c)
     c:clear()
-    post_frame()
+    _maybe_post_frame()
 end
 
 local function _do_reset(c)
     c:reset()
-    post_frame()
+    _maybe_post_frame()
 end
 
 local function _do_end_fill(c)
     with_undo(c, function()
         c:end_fill()
-        post_frame()
+        _maybe_post_frame()
     end)
 end
 
 local function _do_clearstamp(c, id)
     with_undo(c, function()
         c:clearstamp(id)
-        post_frame()
+        _maybe_post_frame()
     end)
 end
 
 local function _do_clearstamps(c, n)
     with_undo(c, function()
         c:clearstamps(n)
-        post_frame()
+        _maybe_post_frame()
     end)
 end
 
@@ -238,14 +253,14 @@ end
 local function _dot(c, size, r, g, b, a)
     with_undo(c, function()
         c:dot(size, r, g, b, a)
-        post_frame()
+        _maybe_post_frame()
     end)
 end
 
 local function _write(c, text, move, align, font)
     with_undo(c, function()
         c:write(text, move, align, font)
-        post_frame()
+        _maybe_post_frame()
     end)
 end
 
@@ -253,23 +268,23 @@ local function _stamp(c)
     local id
     with_undo(c, function()
         id = c:stamp()
-        post_frame()
+        _maybe_post_frame()
     end)
     return id
 end
 
 local function _showturtle(c)
-    with_undo(c, function() c:showturtle(); post_frame() end)
+    with_undo(c, function() c:showturtle(); _maybe_post_frame() end)
 end
 
 local function _hideturtle(c)
-    with_undo(c, function() c:hideturtle(); post_frame() end)
+    with_undo(c, function() c:hideturtle(); _maybe_post_frame() end)
 end
 
 local function _undo(c)
     -- Animated undo is desktop-only for now; web does instant undo.
     local desc = c:undo()
-    if desc then post_frame() end
+    if desc then _maybe_post_frame() end
 end
 
 ----------------------------------------------------------------
@@ -411,7 +426,7 @@ turtle.bgcolor = function(r, g, b, a)
     core:_push_undo()
     screen:bgcolor(r, g, b, a)
     core:_commit_undo_segments()
-    post_frame()
+    _maybe_post_frame()
 end
 
 turtle.position  = function()          return core:position() end
@@ -434,12 +449,13 @@ turtle.speed = function(n)
     core:speed(n)
 end
 
--- tracer(0)/update() for batch drawing (multi-turtle simultaneous movement)
 turtle.tracer = function(n, _)
-    if n == 0 then core:speed(0) end
+    if n == nil then return _tracer_n end
+    _tracer_n         = math.max(0, math.floor(n))
+    _tracer_cmd_count = 0
 end
 turtle.update = function()
-    post_frame()
+    _raw_post_frame()
 end
 
 turtle.undo              = function()    _undo(core) end
@@ -583,6 +599,11 @@ function _bridge_get_turtle_states()
     return result
 end
 
+-- Returns current tracer n so worker.js can decide whether to post the final frame.
+function _bridge_get_tracer_n()
+    return _tracer_n
+end
+
 -- Returns background color as {r, g, b, a}.
 function _bridge_get_bgcolor()
     return { screen.bg_color[1], screen.bg_color[2],
@@ -593,10 +614,12 @@ end
 -- Called by worker.js before running new user code.
 function _bridge_hard_reset()
     -- Rebuild from scratch — cleanest approach, no state leakage.
-    screen   = Screen.new()
-    core     = Core.new(screen)
-    turtle._screen = screen
-    turtle._core   = core
+    screen            = Screen.new()
+    core              = Core.new(screen)
+    turtle._screen    = screen
+    turtle._core      = core
+    _tracer_n         = 1
+    _tracer_cmd_count = 0
 end
 
 return turtle

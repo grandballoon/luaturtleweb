@@ -1,12 +1,12 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "luaturtleweb",
-  "compatibility_date": "2026-05-04",
-  "observability": {
-    "enabled": true
-  },
+  "compatibility_date": "2026-05-11",
   "assets": {
     "directory": "."
+  },
+  "observability": {
+    "enabled": true
   },
   "compatibility_flags": [
     "nodejs_compat"
