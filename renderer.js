@@ -76,8 +76,7 @@ export class Renderer {
         this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
         this._initCommitCanvas();
-        // Redraw committed content at new size
-        this._redrawAllSegments(this._lastSegments);
+        this.redraw();
     }
 
     // ---- Apply a frame from the worker ----
@@ -89,6 +88,10 @@ export class Renderer {
         this._lastTurtles  = turtles  || [];
         this._lastSegments = segments || [];
 
+        this.redraw();
+    }
+
+    redraw() {
         this._redrawAllSegments(this._lastSegments);
         this._renderOverlay(this._lastBgColor, this._lastTurtles);
     }
