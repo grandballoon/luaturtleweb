@@ -2,72 +2,14 @@
 
 :root {
   --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
-  --canvas-bg: #fff;   /* the drawing's default paper; same in both themes */
+  --canvas-bg: #fff;   /* the drawing's default paper */
 }
 
-/* ---- Theme palettes ----
-   theme.js sets data-theme on <html>. Every color in this file comes from
-   these tokens, so a palette is the only thing a theme needs to define.
-   The canvas controls pin data-theme="day": they float over the drawing,
-   whose paper is white by default in both themes. */
-
-:root,
-[data-theme="night"] {
-  --bg: #1a1a1a;
-  --surface: #232323;
-  --border: #333;
-  --text: #d4d4d4;
-  --text-muted: #808080;
-  --accent: #4ec9b0;
-  --accent-dim: #2a7a68;
-  --accent-wash: rgba(78, 201, 176, 0.14);
-  --selection: rgba(78, 201, 176, 0.28);
-  --error: #f44747;
-  --error-bg: rgba(244, 71, 71, 0.13);
-  --error-bg-hover: rgba(244, 71, 71, 0.24);
-  --primary-bg: var(--accent-dim);
-  --primary-border: var(--accent);
-  --primary-fg: #fff;
-  --primary-hover-bg: var(--accent);
-  --primary-hover-fg: var(--bg);
-  --kbd-bg: rgba(255, 255, 255, 0.14);
-  --kbd-hover-bg: rgba(0, 0, 0, 0.14);
-  --kbd-secondary-bg: rgba(255, 255, 255, 0.08);
-  --hover-wash: rgba(255, 255, 255, 0.07);
-  --hairline: rgba(255, 255, 255, 0.04);
-  --scrollbar: rgba(255, 255, 255, 0.14);
-  --shadow: rgba(0, 0, 0, 0.35);
-  --hint-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-  --glass-bg: rgba(35, 35, 35, 0.72);
-  --glass-border: rgba(255, 255, 255, 0.06);
-  --overlay-bg: rgba(18, 18, 18, 0.86);
-  --close-bg: rgba(255, 255, 255, 0.06);
-  --close-hover-bg: rgba(255, 255, 255, 0.12);
-  --toggle-track: #1a1a1a;
-  --toggle-thumb: #3a3a3a;
-  --toggle-icon-active: #c8d3f5;
-
-  --editor-bg: #000;
-  --editor-fg: #ccc;
-  --editor-cursor: #6a6a6a;
-  --editor-selection: #2d2d2d;
-  --editor-linenumber: #515151;
-  --syn-comment: #d27b53;
-  --syn-keyword: #f2777a;
-  --syn-atom: #a16a94;
-  --syn-variable: #9c9;
-  --syn-variable-2: #69c;
-  --syn-def: #f99157;
-  --syn-string: #fc6;
-  --syn-turtle: #fc6;
-  --syn-bracket-match: #fff;
-  color-scheme: dark;
-}
-
-/* Day is soft and warm: parchment neutrals instead of pure white and gray,
-   and the Tomorrow syntax colors (the light sibling of the night editor
-   palette), muted and warmed to match. */
-[data-theme="day"] {
+/* ---- Palette ----
+   Every color in this file comes from these tokens. Soft and warm:
+   parchment neutrals instead of pure white and gray, and the Tomorrow
+   syntax colors, muted and warmed to match. */
+:root {
   --bg: #ece6dc;
   --surface: #f6f2eb;
   --border: #dbd2c4;
@@ -98,15 +40,16 @@
   --overlay-bg: rgba(246, 242, 235, 0.92);
   --close-bg: rgba(70, 50, 20, 0.06);
   --close-hover-bg: rgba(70, 50, 20, 0.11);
-  --toggle-track: #ebe5da;
-  --toggle-thumb: #fcfaf6;
-  --toggle-icon-active: #c9761a;
 
   --editor-bg: #faf7f1;
   --editor-fg: #4a4339;
   --editor-cursor: #4a4339;
   --editor-selection: #e9dfcc;
   --editor-linenumber: #aaa193;
+  /* The underline carries the cue; the tint stays light enough that syntax
+     colors remain readable over it. */
+  --editor-error-bg: #f5d3cb;
+  --editor-error-line: var(--error);
   --syn-comment: #958c7e;
   --syn-keyword: #bb4a42;
   --syn-atom: #88609e;
@@ -119,13 +62,7 @@
   color-scheme: light;
 }
 
-/* Declared per theme scope so it resolves against that scope's --bg. */
-:root, [data-theme] { --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-dim); }
-
-/* theme.js sets this for two frames while switching so every color flips at once. */
-.theme-switching *:not(.theme-thumb),
-.theme-switching *::before,
-.theme-switching *::after { transition: none !important; }
+:root { --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-dim); }
 
 ::selection { background: var(--selection); }
 
@@ -298,43 +235,6 @@ button.primary {
 button.primary:hover { background: var(--primary-hover-bg); color: var(--primary-hover-fg); }
 button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
-/* Day/night switch: a sliding thumb sits under the active icon. */
-#theme-toggle {
-  position: relative;
-  gap: 0;
-  padding: 3px;
-  background: var(--toggle-track);
-  border-color: var(--border);
-  color: var(--text-muted);
-}
-
-#theme-toggle:hover { border-color: var(--accent-dim); color: var(--text); }
-#theme-toggle:active { transform: none; }
-
-.theme-thumb {
-  position: absolute;
-  top: 3px;
-  bottom: 3px;
-  left: 3px;
-  width: 26px;
-  border-radius: 4px;
-  background: var(--toggle-thumb);
-  box-shadow: 0 1px 2px var(--shadow);
-  transition: transform 0.2s var(--ease);
-}
-
-[data-theme="night"] .theme-thumb { transform: translateX(26px); }
-
-.theme-icon {
-  position: relative;   /* above the thumb */
-  width: 26px;
-  height: 14px;
-  transition: color 0.15s var(--ease);
-}
-
-[data-theme="day"] .theme-icon-day,
-[data-theme="night"] .theme-icon-night { color: var(--toggle-icon-active); }
-
 /* --split-x / --split-y are set by splitter.js; unset means an even split. */
 #main {
   display: grid;
@@ -404,7 +304,7 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 .CodeMirror-lines { padding: 8px 0; }
 .CodeMirror-linenumber { opacity: 0.7; }
 
-/* Editor theme ("turtle"), driven entirely by the theme tokens. */
+/* Editor theme ("turtle"), driven entirely by the palette tokens. */
 .cm-s-turtle.CodeMirror { background: var(--editor-bg); color: var(--editor-fg); }
 .cm-s-turtle .CodeMirror-gutters { background: var(--editor-bg); border-right: 1px solid var(--hairline); }
 .cm-s-turtle .CodeMirror-linenumber { color: var(--editor-linenumber); }
@@ -442,9 +342,108 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 .cm-s-turtle .CodeMirror-matchingbracket { text-decoration: underline; color: var(--syn-bracket-match) !important; }
 .cm-s-turtle .cm-turtle-cmd { color: var(--syn-turtle); }
 
-/* Line the last error points at; cleared on the next edit or run. */
-.cm-error-line { background: var(--error-bg); }
-.cm-error-gutter .CodeMirror-linenumber { color: var(--error); opacity: 1; }
+/* Code on the line the last error points at (not the whole editor row);
+   cleared on the next edit or run. The underline is an inset shadow so it
+   never changes the line's height. */
+.cm-error-code {
+  background: var(--editor-error-bg);
+  box-shadow: inset 0 -2px 0 var(--editor-error-line);
+}
+
+/* A turtle command under the pointer while Cmd/Ctrl is held: click it for
+   its examples (command-lookup.js). */
+.cm-command-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+/* Example calls of a turtle command, under a line whose call to it was
+   rejected or a Cmd/Ctrl+clicked command name (usage-popup.js). CodeMirror positions it; this only sizes and paints it.
+   The error-colored left edge ties it to the highlighted code. */
+.usage-popup {
+  z-index: 5;
+  min-width: 180px;
+  max-width: min(420px, calc(100% - 16px));
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--editor-error-line);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 14px var(--shadow);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  cursor: default;
+}
+
+.usage-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 2px 10px;
+}
+
+.usage-popup-title {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.usage-popup-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.usage-popup-hint {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.usage-popup-hint .kbd {
+  margin: 0 3px 0 0;
+  background: var(--kbd-secondary-bg);
+  opacity: 1;
+}
+
+.usage-popup-close {
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.usage-popup-close:hover { background: var(--close-hover-bg); color: var(--text); }
+.usage-popup-close:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.usage-popup-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 10px 8px;
+}
+
+.usage-popup-example {
+  margin: 0;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--editor-bg);
+  color: var(--editor-fg);
+  font: inherit;
+  white-space: pre;
+  overflow-x: auto;
+}
 
 #terminal-panel {
   display: flex;
@@ -456,7 +455,8 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   font-size: 12px;
 }
 
-#terminal-panel.collapsed #terminal-content { display: none; }
+/* Collapsed, only the header shows, whichever tab is selected. */
+#terminal-panel.collapsed > :not(#terminal-header) { display: none; }
 
 #terminal-header {
   display: flex;
@@ -527,10 +527,42 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 #terminal-panel.collapsed #terminal-caret-icon { transform: rotate(-90deg); }
 
-#terminal-label { color: var(--text-muted); font-size: 11px; flex: 1; }
+/* The tab strip fills the header between the caret and clear, and its empty
+   space is part of the header's drag handle. A lone tab reads as the
+   panel's label; once there are two, the selected one is marked. */
+#terminal-tabs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
 
-/* Output arrived while the terminal was collapsed. */
-#terminal-panel.has-unread #terminal-label::after {
+.terminal-tab {
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+#terminal-panel:not(.tabbed) .terminal-tab { cursor: inherit; padding-left: 2px; }
+#terminal-panel:not(.tabbed) .terminal-tab:hover { color: var(--text-muted); }
+#terminal-panel:not(.tabbed) .terminal-tab:active { transform: none; }
+#terminal-panel.tabbed .terminal-tab:hover { background: var(--hover-wash); color: var(--text); }
+#terminal-panel.tabbed:not(.collapsed) .terminal-tab[aria-selected="true"] {
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* Output arrived while the output tab was out of view. */
+#terminal-panel.has-unread #terminal-tab-output::after {
   content: '';
   display: inline-block;
   width: 6px;
@@ -555,7 +587,8 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 #terminal-clear:hover { border-color: var(--text-muted); color: var(--text); }
-#terminal-panel.collapsed #terminal-clear { display: none; }
+#terminal-panel.collapsed #terminal-clear,
+#terminal-panel:not([data-tab="output"]) #terminal-clear { display: none; }
 
 #terminal-content {
   overflow-y: auto;
@@ -723,9 +756,18 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 /* The overlay is a column: a fixed header (search bar and keyboard hint) above
-   a scrolling list, so both stay in reach however far down the list the
-   learner has scrolled. */
+   the body, a scrolling list of signatures beside the selected command's
+   detail pane, so the search bar and the detail stay in reach however far
+   down the list the learner has scrolled. A narrow overlay stacks the detail
+   pane under the list (see the container queries below).
+   Where it is (data-placement) decides its frame: an overlay over the
+   canvas, the terminal panel's Commands tab, or a floating window. Its
+   size comes from that frame, never from its content, so it can be a size
+   container. */
 #api-overlay {
+  container: api-overlay / size;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 16px;
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
   background: var(--overlay-bg);
@@ -742,6 +784,69 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   display: flex;
   animation: overlay-in 0.2s var(--ease);
 }
+
+#api-overlay[data-placement="terminal"] {
+  position: static;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--surface);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  z-index: auto;
+}
+
+#api-overlay[data-placement="terminal"][hidden] { display: none; }
+
+/* The tab strip closes it there. */
+#api-overlay[data-placement="terminal"] #api-close { display: none; }
+
+/* floating-frame.js sets left, top, width, and height. Dragged by its
+   header, which the bar at the top marks, and resized from the grip in the
+   bottom-right corner. */
+#api-overlay[data-placement="float"] {
+  position: fixed;
+  right: auto;
+  bottom: auto;
+  z-index: 50;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px var(--shadow), 0 2px 8px var(--shadow);
+}
+
+#api-overlay[data-placement="float"] #api-header { padding-top: 8px; cursor: grab; touch-action: none; }
+#api-overlay[data-placement="float"].dragging { user-select: none; }
+#api-overlay[data-placement="float"].dragging #api-header { cursor: grabbing; }
+
+#api-drag-bar,
+#api-resize { display: none; }
+
+#api-overlay[data-placement="float"] #api-drag-bar {
+  display: block;
+  width: 36px;
+  height: 4px;
+  margin: 0 auto 8px;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+#api-overlay[data-placement="float"] #api-resize {
+  display: block;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  touch-action: none;
+  background:
+    linear-gradient(135deg, transparent 55%, var(--text-muted) 55%, var(--text-muted) 62%, transparent 62%,
+                            transparent 72%, var(--text-muted) 72%, var(--text-muted) 79%, transparent 79%);
+  opacity: 0.5;
+}
+
+#api-overlay[data-placement="float"] #api-resize:hover { opacity: 0.9; }
 
 @keyframes overlay-in {
   from { opacity: 0; transform: translateY(4px); }
@@ -801,11 +906,18 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   #api-search { font-size: 16px; }
 }
 
+#api-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: fit-content(50%) minmax(0, 1fr);
+}
+
 /* A gap rather than heading margins, so the first visible section sits flush
    at the top whichever sections the search has hidden. */
 #api-list {
-  flex: 1;
   min-height: 0;
+  min-width: 200px;
   overflow-y: auto;
   padding: 16px 24px 20px;
   display: flex;
@@ -828,10 +940,10 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 .api-section[hidden],
-#api-overlay tr[hidden],
+.api-rows li[hidden],
 #api-empty[hidden] { display: none; }
 
-#api-overlay h2 {
+.api-section h2 {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 13px;
   font-weight: 600;
@@ -841,70 +953,93 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   letter-spacing: 0.5px;
 }
 
-#api-overlay table { width: 100%; border-collapse: collapse; }
+/* Rows show only the signature; the description is data for the search and
+   the detail pane. */
+.api-rows { list-style: none; }
 
-#api-overlay td {
+.api-rows li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--hairline);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
-  padding: 5px 0;
-  vertical-align: top;
-  border-bottom: 1px solid var(--hairline);
+  line-height: 1.5;
+  color: var(--accent);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
+.api-rows code { font: inherit; }
+.api-about { display: none; }
+
 /* The last visible row, not the last row: search may hide the rows below it. */
-#api-overlay tr:not(:has(~ tr:not([hidden]))) td { border-bottom: none; }
+.api-rows li:not(:has(~ li:not([hidden]))) { border-bottom: none; }
 
-#api-overlay td:first-child { position: relative; color: var(--accent); white-space: nowrap; padding-right: 16px; width: 1%; }
-#api-overlay td:last-child { color: var(--text-muted); }
+/* Hovered and selected rows. The side shadows extend the wash 8px past the text on
+   each end (into #api-list's padding) so the text isn't flush. The scroll
+   margin keeps the tooltip above the row in view when the selection
+   scrolls the list. */
+.api-rows li:hover {
+  background: var(--hover-wash);
+  box-shadow: -8px 0 0 var(--hover-wash), 8px 0 0 var(--hover-wash);
+}
 
-/* The arrow-key selection. The side shadows extend the wash 8px past the
-   text on each end (into #api-list's padding) so the text isn't flush. */
-/* The scroll margin keeps the tooltip above the row in view when the
-   selection scrolls the list. */
-#api-overlay tr.selected { scroll-margin-top: 32px; }
-#api-overlay tr.selected td { background: var(--accent-wash); }
-#api-overlay tr.selected td:first-child { box-shadow: -8px 0 0 var(--accent-wash); }
-#api-overlay tr.selected td:last-child  { box-shadow: 8px 0 0 var(--accent-wash); }
+.api-rows li.selected {
+  scroll-margin-top: 32px;
+  background: var(--accent-wash);
+  box-shadow: -8px 0 0 var(--accent-wash), 8px 0 0 var(--accent-wash);
+}
 
-/* Copy button beside each signature. Its space is always reserved, so rows
-   never shift; it shows on row hover or keyboard focus (always on touch).
-   The negative vertical margins keep it from making the row taller. */
-.api-copy {
+/* Icon buttons: copy (beside each signature, and on the demo) and insert
+   (on the demo). After acting, the icon turns to a checkmark for a moment. */
+.api-action {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
-  margin: -3px 0 -3px 6px;
+  flex: none;
   padding: 0;
   vertical-align: middle;
   border: none;
   border-radius: 4px;
   background: none;
   color: var(--text-muted);
-  opacity: 0;
   transition: opacity 0.15s var(--ease), background-color 0.15s var(--ease), color 0.15s var(--ease);
 }
 
-.api-copy .icon { width: 13px; height: 13px; }
-#api-overlay tr:hover .api-copy,
-#api-overlay tr.selected .api-copy,
-.api-copy:focus-visible,
-.api-copy.copied { opacity: 1; }
-.api-copy:hover { background: var(--hover-wash); color: var(--accent); }
-.api-copy.copied { color: var(--accent); }
+.api-action .icon { width: 13px; height: 13px; }
+.api-action:hover { background: var(--hover-wash); color: var(--accent); }
+.api-action.done { color: var(--accent); }
 
-.api-copy .icon-done { display: none; }
-.api-copy.copied .icon-idle { display: none; }
-.api-copy.copied .icon-done { display: inline; }
+.api-action .icon-done { display: none; }
+.api-action.done .icon-idle { display: none; }
+.api-action.done .icon-done { display: inline; }
 
-@media (hover: none) {
-  .api-copy { opacity: 1; }
+/* An insert-and-copy pair. Tooltips name what each unlabeled icon does, so
+   they show at once, centered over their buttons. */
+.api-actions { display: flex; gap: 2px; }
+
+.api-actions [data-tooltip]::after {
+  left: 50%;
+  transform: translate(-50%, 2px);
+  transition-duration: 0.06s;
 }
+.api-actions [data-tooltip]:hover::after { transform: translateX(-50%); transition-delay: 0s; }
 
-/* Tooltip above the selected row, so it covers the row above rather than this
-   row's description. Left-aligned with the signature: centered on the copy
-   button it would overhang #api-list's left edge on short signatures. */
+/* A row's pair sits at its right edge, out of the signature's way. It shows
+   only on the row the learner picked (clicked or arrowed to): hidden, not
+   transparent, so it can't be clicked or tabbed to before then. Its space
+   is always reserved, so rows never shift, and the negative vertical margins
+   keep it from making the row taller. */
+.api-rows .api-actions { margin: -3px 0 -3px auto; padding-left: 16px; visibility: hidden; }
+.api-rows li.picked .api-actions { visibility: visible; }
+
+/* Tooltip above the selected row, so it covers the row above rather than the
+   row itself. Left-aligned with the signature: centered on the copy button it
+   would overhang #api-list's left edge on short signatures. */
 .api-copy-hint {
   position: absolute;
   bottom: calc(100% + 4px);
@@ -927,6 +1062,156 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 .api-copy-hint .kbd { margin: 0; background: var(--kbd-secondary-bg); color: var(--text); }
 
+/* Its shortcuts need a keyboard, and .kbd hides them on touch screens. */
+@media (max-width: 960px), (hover: none) {
+  .api-copy-hint { display: none; }
+}
+
+/* ---- Detail pane: the selected command, its demo, and the demo running ---- */
+
+#api-detail {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px 20px;
+  border-left: 1px solid var(--hairline);
+  overflow-y: auto;   /* a short canvas panel: the canvas stops shrinking at its minimum */
+}
+
+/* No match: the pane keeps its space, so the list doesn't reflow. */
+#api-detail.empty > * { visibility: hidden; }
+
+#api-detail-call {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--accent);
+  overflow-wrap: anywhere;
+}
+
+#api-detail-about {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+#api-detail-code,
+#api-preview-output {
+  flex: none;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  tab-size: 4;
+  white-space: pre;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* The demo's buttons sit in the code's top-right corner, always shown; the
+   code keeps clear of them with its right padding. */
+#api-detail-demo {
+  position: relative;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#api-detail-code {
+  min-height: 0;
+  padding: 8px 58px 8px 12px;
+  background: var(--editor-bg);
+  color: var(--editor-fg);
+}
+
+/* Opaque, since the code runs under them; the hover wash is layered on. */
+.api-demo-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+}
+
+.api-demo-actions .api-action { background: var(--editor-bg); }
+.api-demo-actions .api-action:hover { background: linear-gradient(var(--hover-wash), var(--hover-wash)), var(--editor-bg); }
+
+#api-detail-demo[hidden],
+#api-preview-output[hidden] { display: none; }
+
+/* The canvas takes whatever height is left. Absolutely positioned, so the
+   box's size never depends on the canvas the renderer sizes from it. */
+#api-preview {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--canvas-bg);
+}
+
+#api-preview-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+/* Printed lines are laid out from the start and revealed as the demo
+   reaches them, so the canvas above keeps its size. */
+#api-preview-output {
+  margin-top: -4px;
+  padding: 6px 12px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.preview-line { min-height: 1.6em; }
+.preview-line.pending { visibility: hidden; }
+.preview-line.error { color: var(--error); white-space: pre-wrap; }
+
+/* Too narrow for two columns: the list above, the detail pane below it as a
+   strip, with the demo's code on the left and the canvas on the right. */
+@container api-overlay (max-width: 560px) {
+  #api-header { padding: 12px 16px 10px; }
+  #api-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  #api-list { min-width: 0; padding: 12px 16px 16px; }
+  #api-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 45%);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 6px 12px;
+    height: 200px;
+    padding: 12px 16px 14px;
+    border-left: none;
+    border-top: 1px solid var(--hairline);
+    overflow: hidden;
+  }
+  #api-detail > * { grid-column: 1; }
+  #api-detail-about { font-size: 12px; }
+  #api-detail-demo { align-self: start; max-height: 100%; }
+  #api-detail-code { flex: 0 1 auto; overflow: auto; }
+  #api-preview { grid-column: 2; grid-row: 1 / -1; min-height: 0; }
+  #api-preview-output { margin-top: 0; }
+}
+
+/* Short, as in the terminal panel: tighter padding, and no keyboard hint.
+   Narrow and short, the detail strip gives the list half the height. */
+@container api-overlay (max-height: 420px) {
+  #api-header { padding: 10px 16px 8px; }
+  #api-scroll-hint { display: none; }
+  #api-list { padding: 10px 16px 14px; gap: 14px; }
+  #api-detail { padding: 10px 16px 14px; }
+}
+
+@container api-overlay (max-width: 560px) and (max-height: 420px) {
+  #api-detail { height: min(200px, 50cqh); }
+}
+
 #api-empty {
   font-family: 'IBM Plex Mono', monospace;
   font-size: 12px;
@@ -938,7 +1223,8 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 #api-empty q { color: var(--text); }
 
-#api-close {
+/* Move and close, at the search bar's end. */
+.api-header-button {
   flex: none;
   width: 26px;
   height: 26px;
@@ -955,7 +1241,16 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   line-height: 1;
 }
 
-#api-close:hover { background: var(--close-hover-bg); color: var(--text); }
+.api-header-button:hover { background: var(--close-hover-bg); color: var(--text); }
+
+/* Moving is the rarer action, so it stays quiet until hovered. There's a
+   button for each other place it can go; not for where it is. */
+.api-move { background: none; }
+.api-move .icon { width: 15px; height: 15px; }
+#api-searchbar .api-move { margin-right: -6px; }   /* pairs them with close */
+#api-overlay[data-placement="canvas"] .api-move[data-placement="canvas"],
+#api-overlay[data-placement="terminal"] .api-move[data-placement="terminal"],
+#api-overlay[data-placement="float"] .api-move[data-placement="float"] { display: none; }
 
 /* SharedArrayBuffer not available warning */
 #sab-warning[hidden] { display: none; }

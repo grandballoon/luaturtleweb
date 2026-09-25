@@ -17,6 +17,9 @@
 
 local Core   = require("turtle.core")
 local Screen = require("turtle.screen")
+local args     = require("turtle.args")
+local examples = require("turtle.examples")
+local demos    = require("turtle.demos")
 
 ----------------------------------------------------------------
 -- Module table (mirrors desktop turtle module structure)
@@ -119,7 +122,6 @@ end
 ----------------------------------------------------------------
 
 local function _forward(c, distance)
-    distance = distance or 0
     with_undo(c, function()
         if distance == 0 then c:forward(0); return end
         if c.speed_setting == 0 or _tracer_n ~= 1 then
@@ -130,15 +132,19 @@ local function _forward(c, distance)
         local step_size = step_size_for_speed(c.speed_setting)
         local steps     = math.max(1, math.floor(math.abs(distance) / step_size))
         local step_dist = distance / steps
+        local dx, dy    = c:_dx_dy(distance)
+        local x1, y1    = c.x + dx, c.y + dy
         for _ = 1, steps do
             c:forward(step_dist)
             _raw_post_frame()
         end
+        -- The substeps' rounding errors add up (forward(50) would end at
+        -- x = 49.999999999999993); land where one unanimated step would.
+        c.x, c.y = x1, y1
     end)
 end
 
 local function _right(c, angle)
-    angle = angle or 0
     with_undo(c, function()
         if angle == 0 or c.speed_setting == 0 or _tracer_n ~= 1 then
             c:right(angle)
@@ -148,15 +154,16 @@ local function _right(c, angle)
         local step_angle = step_size_for_speed(c.speed_setting)
         local steps      = math.max(1, math.floor(math.abs(angle) / step_angle))
         local step       = angle / steps
+        local heading    = c.angle - angle
         for _ = 1, steps do
             c:right(step)
             _raw_post_frame()
         end
+        c.angle = heading   -- exact, as in _forward
     end)
 end
 
 local function _circle(c, radius, extent, steps)
-    radius = radius or 0
     extent = extent or 360
     with_undo(c, function()
         if radius == 0 then return end
@@ -313,196 +320,213 @@ local function _undo(c)
 end
 
 ----------------------------------------------------------------
--- Build method table for a turtle core.
--- Methods use colon syntax: t:forward(100).
--- (Mirrors desktop make_turtle_methods.)
+-- Public commands.
+--
+-- Every command the learner can call is defined once here:
+--   check(a)     validates the call's arguments (see args.lua); omitted
+--                for commands that take no arguments
+--   run(c, ...)  the implementation, on turtle core c (screen commands
+--                take no core)
+-- The module-level globals and each Turtle()'s methods are both built from
+-- these tables, so they always accept, reject, and do the same things.
 ----------------------------------------------------------------
 
-local function make_turtle_methods(c)
-    local m = {}
+local NUMBER, WHOLE, COUNT = args.NUMBER, args.WHOLE, args.COUNT
+local ALIGN = args.one_of("left", "center", "right")
 
-    m.forward   = function(_, d)          _forward(c, d) end
-    m.fd        = m.forward
-    m.back      = function(_, d)          _forward(c, -(d or 0)) end
-    m.bk        = m.back
-    m.backward  = m.back
-    m.right     = function(_, a)          _right(c, a) end
-    m.rt        = m.right
-    m.left      = function(_, a)          _right(c, -(a or 0)) end
-    m.lt        = m.left
-    m.circle    = function(_, r, e, s)    _circle(c, r, e, s) end
+local function distance(a) a:req("distance", NUMBER) end
+local function angle(a)    a:req("angle", NUMBER) end
+local function point(a)    a:point() end
+local function color(a)    a:opt_color() end
 
-    m.setpos      = function(_, x, y)    _draw(c, "setpos", x, y) end
-    m.setposition = m.setpos
-    m.setx        = function(_, x)       _draw(c, "setx", x) end
-    m.sety        = function(_, y)       _draw(c, "sety", y) end
-    m.setheading  = function(_, a)       _draw(c, "setheading", a) end
-    m.seth        = m.setheading
-    m.home        = function(_)          _draw(c, "home") end
-    m.teleport    = function(_, x, y)    _teleport(c, x, y) end
+-- worker.js sets _canvas_width/_canvas_height before each run.
+local function canvas_size(v) return type(v) == "number" and v or 0 end
 
-    m.penup    = function(_)             _penup(c) end
-    m.pu       = m.penup
-    m.up       = m.penup
-    m.pendown  = function(_)             _pendown(c) end
-    m.pd       = m.pendown
-    m.down     = m.pendown
-    m.pensize  = function(_, w)          return _pensize(c, w) end
-    m.width    = m.pensize
-    m.pencolor = function(_, r, g, b, a) return _pencolor(c, r, g, b, a) end
-    m.fillcolor= function(_, r, g, b, a) return _fillcolor(c, r, g, b, a) end
-    m.color    = function(_, p, f)       return _color(c, p, f) end
+-- Defined below; Turtle() needs it.
+local make_turtle_methods
 
-    m.begin_fill = function(_)           _begin_fill(c) end
-    m.end_fill   = function(_)           _do_end_fill(c) end
-    m.filling    = function(_)           return c:is_filling() end
+-- Commands that act on one turtle: globals use the default turtle,
+-- methods use their own.
+local TURTLE_COMMANDS = {
+    forward    = { check = distance, run = _forward },
+    back       = { check = distance, run = function(c, d) _forward(c, -d) end },
+    right      = { check = angle,    run = _right },
+    left       = { check = angle,    run = function(c, a) _right(c, -a) end },
+    circle     = {
+        check = function(a)
+            a:req("radius", NUMBER)
+            a:opt("extent", NUMBER)
+            a:opt("steps", COUNT)
+        end,
+        run = _circle,
+    },
 
-    m.dot        = function(_, s, r, g, b, a) _dot(c, s, r, g, b, a) end
-    m.write      = function(_, t, mv, al, f)  _write(c, t, mv, al, f) end
-    m.stamp      = function(_)           return _stamp(c) end
-    m.clearstamp = function(_, id)       _do_clearstamp(c, id) end
-    m.clearstamps= function(_, n)        _do_clearstamps(c, n) end
+    setpos     = { check = point, run = function(c, x, y) _draw(c, "setpos", x, y) end },
+    setx       = { check = function(a) a:req("x", NUMBER) end,
+                   run = function(c, x) _draw(c, "setx", x) end },
+    sety       = { check = function(a) a:req("y", NUMBER) end,
+                   run = function(c, y) _draw(c, "sety", y) end },
+    setheading = { check = angle, run = function(c, a) _draw(c, "setheading", a) end },
+    home       = { run = function(c) _draw(c, "home") end },
+    teleport   = { check = point, run = _teleport },
 
-    m.clear = function(_)                _do_clear(c) end
-    m.reset = function(_)                _do_reset(c) end
+    penup      = { run = _penup },
+    pendown    = { run = _pendown },
+    pensize    = { check = function(a) a:opt("width", NUMBER) end, run = _pensize },
+    pencolor   = { check = color, run = _pencolor },
+    fillcolor  = { check = color, run = _fillcolor },
+    color      = {
+        check = function(a)
+            a:opt("pen color", args.COLOR_VALUE)
+            a:opt("fill color", args.COLOR_VALUE)
+        end,
+        run = _color,
+    },
 
-    m.position  = function(_)            return c:position() end
-    m.pos       = m.position
-    m.xcor      = function(_)            return c:xcor() end
-    m.ycor      = function(_)            return c:ycor() end
-    m.heading   = function(_)            return c:heading() end
-    m.isdown    = function(_)            return c:isdown() end
-    m.isvisible = function(_)            return c:isvisible() end
-    m.towards   = function(_, x, y)     return c:towards(x, y) end
-    m.distance  = function(_, x, y)     return c:distance(x, y) end
+    begin_fill = { run = _begin_fill },
+    end_fill   = { run = _do_end_fill },
+    filling    = { run = function(c) return c:is_filling() end },
 
-    m.showturtle = function(_)           _showturtle(c) end
-    m.st         = m.showturtle
-    m.hideturtle = function(_)           _hideturtle(c) end
-    m.ht         = m.hideturtle
+    dot        = {
+        check = function(a)
+            a:opt("size", NUMBER)
+            a:opt_color()
+        end,
+        run = _dot,
+    },
+    write      = {
+        check = function(a)
+            a:req("text", args.VALUE)
+            a:opt("move", args.BOOLEAN)
+            a:opt("align", ALIGN)
+            a:opt("font", args.FONT)
+        end,
+        run = _write,
+    },
+    stamp       = { run = _stamp },
+    clearstamp  = { check = function(a) a:req("id", WHOLE) end, run = _do_clearstamp },
+    clearstamps = { check = function(a) a:opt("n", WHOLE) end, run = _do_clearstamps },
 
-    m.speed = function(_, n)
-        if n == nil then return c:speed() end
-        c:speed(n)
+    clear      = { run = _do_clear },
+    reset      = { run = _do_reset },
+
+    position   = { run = function(c) return c:position() end },
+    xcor       = { run = function(c) return c:xcor() end },
+    ycor       = { run = function(c) return c:ycor() end },
+    heading    = { run = function(c) return c:heading() end },
+    isdown     = { run = function(c) return c:isdown() end },
+    isvisible  = { run = function(c) return c:isvisible() end },
+    towards    = { check = point, run = function(c, x, y) return c:towards(x, y) end },
+    distance   = { check = point, run = function(c, x, y) return c:distance(x, y) end },
+
+    showturtle = { run = _showturtle },
+    hideturtle = { run = _hideturtle },
+
+    speed      = {
+        check = function(a) a:opt("speed", NUMBER) end,
+        run = function(c, n)
+            if n == nil then return c:speed() end
+            c:speed(n)
+        end,
+    },
+
+    undo              = { run = _undo },
+    setundobuffer     = { check = function(a) a:opt("size", WHOLE) end,
+                          run = function(c, n) c:setundobuffer(n) end },
+    undobufferentries = { run = function(c) return c:undobufferentries() end },
+
+    screen_width  = { run = function() return canvas_size(_canvas_width) end },
+    screen_height = { run = function() return canvas_size(_canvas_height) end },
+}
+
+-- Commands that act on the screen as a whole: globals only.
+local SCREEN_COMMANDS = {
+    bgcolor = {
+        check = color,
+        run = function(r, g, b, a)
+            if r == nil then return screen:bgcolor() end
+            core:_push_undo()
+            screen:bgcolor(r, g, b, a)
+            core:_commit_undo_segments()
+            _maybe_post_frame()
+        end,
+    },
+
+    tracer = {
+        check = function(a)
+            a:opt("n", NUMBER)
+            a:opt("delay", NUMBER)
+        end,
+        run = function(n)
+            if n == nil then return _tracer_n end
+            _tracer_n         = math.max(0, math.floor(n))
+            _tracer_cmd_count = 0
+        end,
+    },
+    update = { run = function() _raw_post_frame() end },
+
+    -- done() is a no-op on web (program ends, window stays open)
+    done = { run = function() end },
+    bye  = { run = function() end },
+
+    -- Create an additional turtle on the same screen.
+    Turtle = { run = function() return make_turtle_methods(new_core()) end },
+}
+
+-- Other names for commands, as in Python turtle. Errors name whichever
+-- one the learner typed.
+local ALIASES = {
+    fd = "forward", bk = "back", backward = "back", rt = "right", lt = "left",
+    setposition = "setpos", seth = "setheading",
+    pu = "penup", up = "penup", pd = "pendown", down = "pendown", width = "pensize",
+    pos = "position", st = "showturtle", ht = "hideturtle",
+    mainloop = "done",
+}
+
+-- Calls fn(name, command) for every command in `commands`, and for every
+-- alias of one.
+local function each_name(commands, fn)
+    for name, command in pairs(commands) do fn(name, command) end
+    for alias, name in pairs(ALIASES) do
+        if commands[name] then fn(alias, commands[name]) end
     end
+end
 
-    m.undo              = function(_)    _undo(c) end
-    m.setundobuffer     = function(_, n) c:setundobuffer(n) end
-    m.undobufferentries = function(_)    return c:undobufferentries() end
+----------------------------------------------------------------
+-- Method table for a turtle core: t:forward(100).
+----------------------------------------------------------------
 
-    m.screen_width  = function(_) return turtle.screen_width() end
-    m.screen_height = function(_) return turtle.screen_height() end
-
+function make_turtle_methods(c)
+    local m = {}
+    each_name(TURTLE_COMMANDS, function(name, command)
+        m[name] = function(self, ...)
+            if self ~= m then args.fail_method_call(name) end
+            args.check(name, command.check, ...)
+            return command.run(c, ...)
+        end
+    end)
     return m
 end
 
 ----------------------------------------------------------------
--- Module-level (global) API — plain functions, no self.
--- Built from the default core. Mirrors desktop turtle.lua.
+-- Module-level (global) API — plain functions, no self, on the
+-- default core. `core` is read at call time, so the functions keep
+-- working after _bridge_hard_reset() replaces it.
 ----------------------------------------------------------------
 
-turtle.forward   = function(d)          _forward(core, d) end
-turtle.fd        = turtle.forward
-turtle.back      = function(d)          _forward(core, -(d or 0)) end
-turtle.bk        = turtle.back
-turtle.backward  = turtle.back
-turtle.right     = function(a)          _right(core, a) end
-turtle.rt        = turtle.right
-turtle.left      = function(a)          _right(core, -(a or 0)) end
-turtle.lt        = turtle.left
-turtle.circle    = function(r, e, s)    _circle(core, r, e, s) end
+each_name(TURTLE_COMMANDS, function(name, command)
+    turtle[name] = function(...)
+        args.check(name, command.check, ...)
+        return command.run(core, ...)
+    end
+end)
 
-turtle.setpos      = function(x, y)    _draw(core, "setpos", x, y) end
-turtle.setposition = turtle.setpos
-turtle.setx        = function(x)       _draw(core, "setx", x) end
-turtle.sety        = function(y)       _draw(core, "sety", y) end
-turtle.setheading  = function(a)       _draw(core, "setheading", a) end
-turtle.seth        = turtle.setheading
-turtle.home        = function()        _draw(core, "home") end
-turtle.teleport    = function(x, y)    _teleport(core, x, y) end
-
-turtle.penup    = function()           _penup(core) end
-turtle.pu       = turtle.penup
-turtle.up       = turtle.penup
-turtle.pendown  = function()           _pendown(core) end
-turtle.pd       = turtle.pendown
-turtle.down     = turtle.pendown
-turtle.pensize  = function(w)          return _pensize(core, w) end
-turtle.width    = turtle.pensize
-turtle.pencolor = function(r, g, b, a) return _pencolor(core, r, g, b, a) end
-turtle.fillcolor= function(r, g, b, a) return _fillcolor(core, r, g, b, a) end
-turtle.color    = function(p, f)       return _color(core, p, f) end
-
-turtle.begin_fill = function()         _begin_fill(core) end
-turtle.end_fill   = function()         _do_end_fill(core) end
-turtle.filling    = function()         return core:is_filling() end
-
-turtle.dot        = function(s, r, g, b, a) _dot(core, s, r, g, b, a) end
-turtle.write      = function(t, mv, al, f)  _write(core, t, mv, al, f) end
-turtle.stamp      = function()         return _stamp(core) end
-turtle.clearstamp = function(id)       _do_clearstamp(core, id) end
-turtle.clearstamps= function(n)        _do_clearstamps(core, n) end
-
-turtle.clear   = function()            _do_clear(core) end
-turtle.reset   = function()            _do_reset(core) end
-
-turtle.bgcolor = function(r, g, b, a)
-    if r == nil then return screen:bgcolor() end
-    core:_push_undo()
-    screen:bgcolor(r, g, b, a)
-    core:_commit_undo_segments()
-    _maybe_post_frame()
-end
-
-turtle.position  = function()          return core:position() end
-turtle.pos       = turtle.position
-turtle.xcor      = function()          return core:xcor() end
-turtle.ycor      = function()          return core:ycor() end
-turtle.heading   = function()          return core:heading() end
-turtle.isdown    = function()          return core:isdown() end
-turtle.isvisible = function()          return core:isvisible() end
-turtle.towards   = function(x, y)     return core:towards(x, y) end
-turtle.distance  = function(x, y)     return core:distance(x, y) end
-
-turtle.showturtle = function()         _showturtle(core) end
-turtle.st         = turtle.showturtle
-turtle.hideturtle = function()         _hideturtle(core) end
-turtle.ht         = turtle.hideturtle
-
-turtle.speed = function(n)
-    if n == nil then return core:speed() end
-    core:speed(n)
-end
-
-turtle.tracer = function(n, _)
-    if n == nil then return _tracer_n end
-    _tracer_n         = math.max(0, math.floor(n))
-    _tracer_cmd_count = 0
-end
-turtle.update = function()
-    _raw_post_frame()
-end
-
-turtle.undo              = function()    _undo(core) end
-turtle.setundobuffer     = function(n)   core:setundobuffer(n) end
-turtle.undobufferentries = function()    return core:undobufferentries() end
-
-turtle.screen_width  = function() return type(_canvas_width)  == "number" and _canvas_width  or 0 end
-turtle.screen_height = function() return type(_canvas_height) == "number" and _canvas_height or 0 end
-
--- done() is a no-op on web (program ends, window stays open)
-turtle.done     = function() end
-turtle.mainloop = turtle.done
-turtle.bye      = function() end
-
-----------------------------------------------------------------
--- turtle.Turtle() — create an additional turtle on the same screen
-----------------------------------------------------------------
-
-function turtle.Turtle()
-    local t_core = new_core()
-    return make_turtle_methods(t_core)
-end
+each_name(SCREEN_COMMANDS, function(name, command)
+    turtle[name] = function(...)
+        args.check(name, command.check, ...)
+        return command.run(...)
+    end
+end)
 
 ----------------------------------------------------------------
 -- Build the sandbox env table for user code.
@@ -527,70 +551,11 @@ function _turtle_make_env()
         error    = error,
         select   = select,
         unpack   = table.unpack,
-
-        -- Turtle API — all module-level functions
-        forward      = turtle.forward,      fd          = turtle.fd,
-        back         = turtle.back,         bk          = turtle.bk,
-        backward     = turtle.backward,
-        right        = turtle.right,        rt          = turtle.rt,
-        left         = turtle.left,         lt          = turtle.lt,
-        circle       = turtle.circle,
-
-        setpos       = turtle.setpos,       setposition = turtle.setposition,
-        setx         = turtle.setx,         sety        = turtle.sety,
-        setheading   = turtle.setheading,   seth        = turtle.seth,
-        home         = turtle.home,         teleport    = turtle.teleport,
-
-        penup        = turtle.penup,        pu          = turtle.pu,
-        up           = turtle.up,
-        pendown      = turtle.pendown,      pd          = turtle.pd,
-        down         = turtle.down,
-        pensize      = turtle.pensize,      width       = turtle.width,
-        pencolor     = turtle.pencolor,
-        fillcolor    = turtle.fillcolor,
-        color        = turtle.color,
-
-        begin_fill   = turtle.begin_fill,
-        end_fill     = turtle.end_fill,
-        filling      = turtle.filling,
-
-        dot          = turtle.dot,
-        write        = turtle.write,
-        stamp        = turtle.stamp,
-        clearstamp   = turtle.clearstamp,
-        clearstamps  = turtle.clearstamps,
-
-        clear        = turtle.clear,
-        reset        = turtle.reset,
-        bgcolor      = turtle.bgcolor,
-
-        position     = turtle.position,    pos         = turtle.pos,
-        xcor         = turtle.xcor,        ycor        = turtle.ycor,
-        heading      = turtle.heading,
-        isdown       = turtle.isdown,
-        isvisible    = turtle.isvisible,
-        towards      = turtle.towards,
-        distance     = turtle.distance,
-
-        showturtle   = turtle.showturtle,   st          = turtle.st,
-        hideturtle   = turtle.hideturtle,   ht          = turtle.ht,
-
-        speed        = turtle.speed,
-        tracer       = turtle.tracer,
-        update       = turtle.update,
-        undo         = turtle.undo,
-        setundobuffer     = turtle.setundobuffer,
-        undobufferentries = turtle.undobufferentries,
-
-        done         = turtle.done,
-        mainloop     = turtle.mainloop,
-
-        screen_width  = turtle.screen_width,
-        screen_height = turtle.screen_height,
-
-        -- Multi-turtle
-        Turtle       = turtle.Turtle,
     }
+    -- Turtle API: every command and alias, as a global.
+    local function export(name) env[name] = turtle[name] end
+    each_name(TURTLE_COMMANDS, export)
+    each_name(SCREEN_COMMANDS, export)
     return env
 end
 
@@ -635,6 +600,41 @@ function _bridge_get_bgcolor()
              screen.bg_color[3], screen.bg_color[4] }
 end
 
+-- If `err` is the error a rejected call to a turtle command raised, returns
+-- { command = its own name (never an alias), examples = its example calls };
+-- otherwise nil. worker.js calls this from its error handler so the editor
+-- can show the learner how the command is called.
+function _bridge_command_usage(err)
+    local typed = args.failed_command(err)
+    if not typed then return nil end
+    local command = ALIASES[typed] or typed
+    return { command = command, examples = examples[command] }
+end
+
+-- The usage of every command and alias, by the name a learner would type:
+-- { fd = { command = "forward", examples = {...} }, ... }. worker.js sends
+-- it to the main thread once, so the editor can show any command's usage on
+-- request (a Cmd/Ctrl+click on its name), not just after a rejected call.
+function _bridge_get_usage_catalog()
+    local catalog = {}
+    local function add(name)
+        local command = ALIASES[name] or name
+        if examples[command] then
+            catalog[name] = { command = command, examples = examples[command] }
+        end
+    end
+    each_name(TURTLE_COMMANDS, add)
+    each_name(SCREEN_COMMANDS, add)
+    return catalog
+end
+
+-- The command reference's demo programs, keyed by the entry they show:
+-- { ["forward(n)"] = "forward(100)", ... }. worker.js sends them to the main
+-- thread once, with the usage catalog.
+function _bridge_get_demos()
+    return demos
+end
+
 -- Hard reset: wipe all state, rebuild default screen+core.
 -- Called by worker.js before running new user code.
 function _bridge_hard_reset()
@@ -645,6 +645,7 @@ function _bridge_hard_reset()
     turtle._core      = core
     _tracer_n         = 1
     _tracer_cmd_count = 0
+    args.last_failure = nil
 end
 
 return turtle
