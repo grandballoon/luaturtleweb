@@ -8,6 +8,12 @@
   "assets": {
     "directory": "./public"
   },
+  // Both hostnames are served by this Worker; Cloudflare creates their DNS
+  // records on deploy. www is redirected to the apex by a zone Redirect Rule.
+  "routes": [
+    { "pattern": "luaturtle.com", "custom_domain": true },
+    { "pattern": "www.luaturtle.com", "custom_domain": true }
+  ],
   "observability": {
     "enabled": true
   },

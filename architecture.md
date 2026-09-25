@@ -365,6 +365,8 @@ Static files served by a Cloudflare Worker (`wrangler.jsonc`, assets = `./public
 published lives under `public/`; repo docs, `wrangler.jsonc`, `.git` and `.wrangler` sit outside
 it and so cannot be served by accident.
 Pointing `assets.directory` back at the repo root would publish all of them — it previously did.
+The Worker serves `luaturtle.com` and `www.luaturtle.com` as custom domains declared in `wrangler.jsonc`, so deploying creates their DNS records.
+A zone Redirect Rule in the Cloudflare dashboard (not in the repo) sends `www` to the apex with a 301.
 `public/_headers` sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy:
 require-corp` so the page is cross-origin isolated — a hard requirement for
 `SharedArrayBuffer`, and therefore for the whole animation model. No build step: plain ES
