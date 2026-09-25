@@ -15,25 +15,33 @@
 //
 // Messages sent TO main thread:
 //   {type: "ready"}                        — Wasmoon loaded, VM ready
-//   {type: "frame", segments, turtles, bgcolor, segmentCount}
-//   {type: "done"}                         — user code completed normally
-//   {type: "error", message}               — user code threw an error
-//   {type: "print", lines}                 — buffered print() output
+//   {type: "init-error", message}          — the VM failed to load
+//   {type: "frame", segments, turtles, bgcolor}
+//   {type: "print", runId, lines}          — buffered print() output
+//   {type: "done", runId}                  — user code finished or was stopped
+//   {type: "error", runId, message, line}  — user code threw; line is the 1-based
+//                                            user_code line, or null if unknown
+//
+// runId echoes the id of the run message, so the main thread can ignore
+// stragglers from a run it has already replaced (Run pressed while running).
 //
 // Messages received FROM main thread:
-//   {type: "run", code, sab}              — run user code; sab is the SharedArrayBuffer
+//   {type: "run", runId, code, sab, canvasWidth, canvasHeight}
 //   {type: "stop"}                        — redundant (sab[1] is the primary stop mechanism)
 
 importScripts('./wasmoon.js');
 
 let lua        = null;
 let sabI32     = null;   // Int32Array view of the SharedArrayBuffer
-let printLines = [];     // buffered print() output, flushed with each frame
+let runId      = 0;      // id of the run in progress, echoed in replies
 
 // ---- Wasmoon init ----
 
 async function initLua() {
-    const factory = new wasmoon.LuaFactory();
+    // glue.wasm is vendored alongside wasmoon.js (both wasmoon 1.16.0). Passing the
+    // local URL explicitly is what keeps it local: with no argument, LuaFactory falls
+    // back to fetching the WASM from unpkg.com at runtime.
+    const factory = new wasmoon.LuaFactory(new URL('./glue.wasm', self.location.href).href);
     lua = await factory.createEngine();
 
     // Mount all Lua source files.
@@ -57,8 +65,7 @@ async function initLua() {
         _print_buffer = {}
         print = function(...)
             local parts = {}
-            local args = {...}
-            for i = 1, #args do parts[i] = tostring(args[i]) end
+            for i = 1, select("#", ...) do parts[i] = tostring((select(i, ...))) end
             table.insert(_print_buffer, table.concat(parts, "\\t"))
         end
     `);
@@ -72,7 +79,38 @@ async function initLua() {
         postFrameAndWait(delayMs);
     });
 
+    // Polled by the instruction hook so Stop also interrupts code that never
+    // posts a frame (e.g. a tight loop with no drawing).
+    lua.global.set('_bridge_stop_requested', () => Atomics.load(sabI32, 1) === 1);
+
     postMessage({ type: 'ready' });
+}
+
+// ---- Print buffer ----
+
+// Posts any buffered print() output. Called with every frame and on every
+// exit path, so output printed just before an error or stop still appears.
+function flushPrints() {
+    const buf = lua.global.get('_print_buffer');
+    lua.global.set('_print_buffer', []);
+    if (!buf) return;
+    const lines = (Array.isArray(buf) ? buf : Object.values(buf))
+        .filter(v => v != null)
+        .map(String);
+    if (lines.length > 0) postMessage({ type: 'print', runId, lines });
+}
+
+// ---- Error messages ----
+
+// Turns a raw Wasmoon/Lua error into what a learner should read: no stack
+// traceback, no chunk names, no locations inside the turtle library.
+function cleanErrorMessage(raw) {
+    return raw
+        .replace(/^.*Lua Error\([^)]*\):\s*/, '')
+        .replace(/\s*stack traceback:[\s\S]*$/, '')
+        .replace(/\[string "user_code"\]:\d+:\s*/g, '')
+        .replace(/(^|\s)(\.\/)?turtle\/[\w.]+\.lua:\d+:\s*/g, '$1')
+        .trim();
 }
 
 // ---- Frame protocol ----
@@ -90,19 +128,7 @@ function postFrameAndWait(delayMs) {
     const turtles  = lua.global.get('_bridge_get_turtle_states')();
     const bgcolor  = lua.global.get('_bridge_get_bgcolor')();
 
-    const printBuf = lua.global.get('_print_buffer');
-    const lines    = [];
-    if (printBuf) {
-        const n = typeof printBuf.length === 'number'
-            ? printBuf.length : Object.keys(printBuf).length;
-        for (let i = 0; i < n; i++) {
-            const v = printBuf[i] ?? printBuf[i + 1];
-            if (v != null) lines.push(String(v));
-        }
-    }
-    lua.global.set('_print_buffer', []);
-    if (lines.length > 0) postMessage({ type: 'print', lines });
-
+    flushPrints();
     postMessage({ type: 'frame', segments, turtles, bgcolor });
 
     Atomics.wait(sabI32, 0, 0);
@@ -122,9 +148,11 @@ async function runCode(code) {
     try {
         // Hard reset: rebuild screen + core, clear all state.
         lua.global.get('_bridge_hard_reset')();
+        lua.global.set('_print_buffer', []);
 
         // Build sandbox env and load user code.
         await lua.doString(`
+            _user_error_line = nil
             local env = _turtle_make_env()
 
             local chunk, err = load(user_code, "user_code", "t", env)
@@ -136,13 +164,32 @@ async function runCode(code) {
             local LIMIT = 50000000
             debug.sethook(function()
                 instruction_count = instruction_count + 1000
+                if instruction_count % 10000 == 0 and _bridge_stop_requested() then
+                    debug.sethook()
+                    error("__STOPPED__", 0)
+                end
                 if instruction_count >= LIMIT then
                     debug.sethook()
                     error("Possible infinite loop (exceeded " .. LIMIT .. " instructions)", 2)
                 end
             end, "", 1000)
 
-            local ok, run_err = pcall(chunk)
+            -- Record the innermost user_code line on the stack when the error
+            -- is raised, so errors thrown inside the turtle library (bad
+            -- arguments, say) still point at the learner's own line.
+            local function locate(e)
+                for level = 2, 200 do
+                    local info = debug.getinfo(level, "Sl")
+                    if not info then break end
+                    if info.source == "user_code" and info.currentline > 0 then
+                        _user_error_line = info.currentline
+                        break
+                    end
+                end
+                return e
+            end
+
+            local ok, run_err = xpcall(chunk, locate)
             debug.sethook()
 
             if not ok then
@@ -154,18 +201,23 @@ async function runCode(code) {
         // Post final frame unless tracer(0) is active — in that case the user
         // must call update() explicitly, matching Python turtle behavior.
         if (lua.global.get('_bridge_get_tracer_n')() !== 0) postFrameAndWait();
-        postMessage({ type: 'done' });
+        flushPrints();
+        postMessage({ type: 'done', runId });
 
     } catch (err) {
-        const msg = (err.message || String(err))
-            .replace(/^.*Lua Error\([^)]*\):\s*/, '')
-            .replace(/\[string "user_code"\]:\d+:\s*/, '');
+        const raw = err.message || String(err);
+        flushPrints();
 
-        if (msg.includes('__STOPPED__')) {
-            postMessage({ type: 'done' });  // clean stop, not an error
-        } else {
-            postMessage({ type: 'error', message: msg });
+        if (raw.includes('__STOPPED__')) {
+            postMessage({ type: 'done', runId });  // clean stop, not an error
+            return;
         }
+        // Runtime errors are located by the xpcall handler; syntax errors
+        // never ran, so their line comes from the message itself.
+        const syntaxLine = raw.match(/\[string "user_code"\]:(\d+):/);
+        const line = lua.global.get('_user_error_line')
+            ?? (syntaxLine ? parseInt(syntaxLine[1], 10) : null);
+        postMessage({ type: 'error', runId, message: cleanErrorMessage(raw), line });
     }
 }
 
@@ -175,10 +227,15 @@ self.onmessage = async (e) => {
     const msg = e.data;
 
     if (msg.type === 'init') {
-        await initLua();
+        try {
+            await initLua();
+        } catch (err) {
+            postMessage({ type: 'init-error', message: err.message || String(err) });
+        }
 
     } else if (msg.type === 'run') {
         sabI32 = new Int32Array(msg.sab);
+        runId  = msg.runId;
         Atomics.store(sabI32, 0, 0);
         Atomics.store(sabI32, 1, 0);
         lua.global.set('user_code', msg.code);

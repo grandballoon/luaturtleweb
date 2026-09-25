@@ -3,8 +3,18 @@
 // Owns: canvas element, offscreen commit canvas, coordinate transform,
 //       viewport (zoom/pan), grid, turtle head drawing.
 //
-// Used by index.html. Call Renderer.init(canvasEl) once, then
-// renderer.applyFrame(frameMsg) on each worker "frame" message.
+// Used by app.js: construct once with the canvas element, then call
+// renderer.applyFrame(segments, turtles, bgcolor) on each worker "frame"
+// message. canvas-view.js drives the viewport (zoom/pan/grid).
+//
+// Lua sequences arrive from Wasmoon as 0-based JS arrays, except that an
+// empty Lua table arrives as {} — hence the items() helper below.
+
+// Accept either a JS array or a key-ordered object (Wasmoon's empty table).
+function items(seq) {
+    if (!seq) return [];
+    return Array.isArray(seq) ? seq : Object.values(seq);
+}
 
 export class Renderer {
     constructor(canvasEl) {
@@ -21,10 +31,12 @@ export class Renderer {
         this.ZOOM_MAX    = 20;
         this.ZOOM_STEP   = 1.15;
 
-        this.gridVisible = localStorage.getItem('luaturtle-grid') === 'true';
+        this.gridVisible = false;
+        this._redrawRaf  = 0;
 
-        // Latest data from worker (used for export)
-        this._lastBgColor  = [0.07, 0.07, 0.07, 1];
+        // Latest data from worker (used for export). Before the first frame
+        // this is the default paper set in turtle_web.lua: white.
+        this._lastBgColor  = [1, 1, 1, 1];
         this._lastTurtles  = [];
         this._lastSegments = [];
 
@@ -49,12 +61,17 @@ export class Renderer {
         return `rgba(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)},${a})`;
     }
 
+    // Overlays (grid, turtle head) pick contrasting colors from the
+    // background, which the program can set to anything.
+    _bgIsLight() {
+        const [r, g, b] = this._lastBgColor;
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5;
+    }
+
     // ---- Commit canvas ----
 
     _initCommitCanvas() {
         const dpr = window.devicePixelRatio || 1;
-        const w   = this.canvas.width  / dpr;
-        const h   = this.canvas.height / dpr;
         this.commitCanvas = document.createElement('canvas');
         this.commitCanvas.width  = this.canvas.width;
         this.commitCanvas.height = this.canvas.height;
@@ -92,8 +109,19 @@ export class Renderer {
     }
 
     redraw() {
+        const dpr = window.devicePixelRatio || 1;
         this._redrawAllSegments(this._lastSegments);
-        this._renderOverlay(this._lastBgColor, this._lastTurtles);
+        this._composite(this.ctx, this.canvas.width / dpr, this.canvas.height / dpr,
+                        this.gridVisible);
+    }
+
+    // Coalesce viewport-driven redraws (wheel, drag, pinch) to one per frame.
+    requestRedraw() {
+        if (this._redrawRaf) return;
+        this._redrawRaf = requestAnimationFrame(() => {
+            this._redrawRaf = 0;
+            this.redraw();
+        });
     }
 
     _redrawAllSegments(segments) {
@@ -102,19 +130,14 @@ export class Renderer {
         const h   = this.commitCanvas.height / dpr;
         this.commitCtx.clearRect(0, 0, w, h);
 
-        if (!segments) return;
-
-        const n = Array.isArray(segments) ? segments.length
-                                          : Object.keys(segments).length;
+        const segs = items(segments);
 
         // Draw fills first (behind lines)
-        for (let i = 0; i < n; i++) {
-            const seg = segments[i] ?? segments[i + 1];
+        for (const seg of segs) {
             if (seg && seg.type === 'fill') this._drawFill(seg);
         }
         // Then lines, dots, text, stamps
-        for (let i = 0; i < n; i++) {
-            const seg = segments[i] ?? segments[i + 1];
+        for (const seg of segs) {
             if (!seg || seg.type === 'fill' || seg.type === 'clear') continue;
             this._drawSegment(seg);
         }
@@ -154,23 +177,15 @@ export class Renderer {
             cc.restore();
 
         } else if (seg.type === 'stamp') {
-            this._drawTurtleShape(
-                cc,
-                seg.pos[0], seg.pos[1], seg.heading,
-                seg.color, seg.fill_color, seg.size
-            );
+            this._drawStamp(cc, seg);
         }
     }
 
     _drawFill(seg) {
         const cc       = this.commitCtx;
-        const vertices = seg.vertices;
+        const vertices = items(seg.vertices);
         const c        = seg.color;
-        if (!vertices) return;
-
-        const n = Array.isArray(vertices) ? vertices.length
-                                        : Object.keys(vertices).length;
-        if (n < 3) return;
+        if (vertices.length < 3) return;
 
         cc.save();
         cc.fillStyle = Renderer.colorCSS(c[0], c[1], c[2], c[3]);
@@ -178,7 +193,7 @@ export class Renderer {
 
         const v0 = vertices[0];
         cc.moveTo(this.screenX(v0[0]), this.screenY(v0[1]));
-        for (let i = 1; i < n; i++) {
+        for (let i = 1; i < vertices.length; i++) {
             const v = vertices[i];
             if (v) cc.lineTo(this.screenX(v[0]), this.screenY(v[1]));
         }
@@ -187,103 +202,72 @@ export class Renderer {
         cc.restore();
     }
 
-    _renderOverlay(bgcolor, turtles) {
-        const ctx  = this.ctx;
-        const dpr  = window.devicePixelRatio || 1;
-        const w    = this.canvas.width  / dpr;
-        const h    = this.canvas.height / dpr;
-
-        // Background
-        ctx.fillStyle = Renderer.colorCSS(bgcolor[0], bgcolor[1], bgcolor[2], bgcolor[3]);
+    // Background, optional grid, committed drawing, then turtle heads.
+    // Shared by the live view and PNG export so the two cannot drift apart.
+    _composite(ctx, w, h, withGrid) {
+        const bg = this._lastBgColor;
+        ctx.fillStyle = Renderer.colorCSS(bg[0], bg[1], bg[2], bg[3]);
         ctx.fillRect(0, 0, w, h);
 
-        // Grid
-        if (this.gridVisible) this._drawGrid(w, h);
+        if (withGrid) this._drawGrid(ctx, w, h);
 
-        // Committed segments
         if (this.commitCanvas) ctx.drawImage(this.commitCanvas, 0, 0, w, h);
 
-        // Turtle heads
-        if (turtles) {
-            const n = Array.isArray(turtles) ? turtles.length
-                                             : Object.keys(turtles).length;
-            for (let i = 0; i < n; i++) {
-                const t = turtles[i] ?? turtles[i + 1];
-                if (t && t.visible) {
-                    this._drawTurtleHead(ctx, t.x, t.y, t.angle,
-                        [t.pen_r, t.pen_g, t.pen_b, t.pen_a]);
-                }
-            }
+        for (const t of items(this._lastTurtles)) {
+            if (t && t.visible) this._drawTurtleHead(ctx, t.x, t.y, t.angle);
         }
     }
 
-    _drawTurtleHead(ctx, tx, ty, angle, penColor) {
-        const sx = this.screenX(tx);
-        const sy = this.screenY(ty);
-        const screenAngle = -angle * Math.PI / 180;
-        ctx.save();
-        ctx.translate(sx, sy);
-        ctx.rotate(screenAngle);
+    // Traces the turtle arrowhead at a turtle-space position. Size is fixed
+    // in turtle units, so heads and stamps scale with zoom like the drawing.
+    _traceArrowhead(ctx, tx, ty, angle) {
         const s = 10 * this.viewScale;
+        ctx.save();
+        ctx.translate(this.screenX(tx), this.screenY(ty));
+        ctx.rotate(-angle * Math.PI / 180);
         ctx.beginPath();
         ctx.moveTo(s, 0);
         ctx.lineTo(-s * 0.6,  s * 0.6);
         ctx.lineTo(-s * 0.6, -s * 0.6);
         ctx.closePath();
-        ctx.fillStyle = Renderer.colorCSS(0.2, 0.9, 0.4, 1);
-        ctx.fill();
-        ctx.restore();
+        ctx.restore();   // the path keeps its transformed points
     }
 
-    _drawTurtleShape(cc, tx, ty, heading, penColor, fillColor, size) {
-        const rad    = heading * Math.PI / 180;
-        const len    = (size || 2) * 6 * this.viewScale;
-        const halfW  = len * 0.4;
-        const cosH   = Math.cos(rad), sinH = Math.sin(rad);
-        const cosP   = Math.cos(rad + Math.PI / 2), sinP = Math.sin(rad + Math.PI / 2);
+    _drawTurtleHead(ctx, tx, ty, angle) {
+        this._traceArrowhead(ctx, tx, ty, angle);
+        ctx.fillStyle = this._bgIsLight() ? 'rgb(20,150,75)' : 'rgb(51,230,102)';
+        ctx.fill();
+    }
 
-        const tipX  = tx + cosH * len;
-        const tipY  = ty + sinH * len;
-        const leftX = tx - cosH * len * 0.3 + cosP * halfW;
-        const leftY = ty - sinH * len * 0.3 + sinP * halfW;
-        const rightX= tx - cosH * len * 0.3 - cosP * halfW;
-        const rightY= ty - sinH * len * 0.3 - sinP * halfW;
-
-        const sx1 = this.screenX(tipX),   sy1 = this.screenY(tipY);
-        const sx2 = this.screenX(leftX),  sy2 = this.screenY(leftY);
-        const sx3 = this.screenX(rightX), sy3 = this.screenY(rightY);
-
-        if (fillColor) {
-            const c = fillColor;
-            cc.fillStyle = Renderer.colorCSS(c[1], c[2], c[3], c[4]);
-            cc.beginPath();
-            cc.moveTo(sx1, sy1); cc.lineTo(sx2, sy2); cc.lineTo(sx3, sy3);
-            cc.closePath(); cc.fill();
+    // A stamp is the turtle's shape left on the canvas, in its fill and pen colors.
+    _drawStamp(cc, seg) {
+        this._traceArrowhead(cc, seg.pos[0], seg.pos[1], seg.heading);
+        const f = seg.fill_color, p = seg.color;
+        if (f) {
+            cc.fillStyle = Renderer.colorCSS(f[0], f[1], f[2], f[3]);
+            cc.fill();
         }
-        if (penColor) {
-            const c = penColor;
-            cc.strokeStyle = Renderer.colorCSS(c[1], c[2], c[3], c[4]);
-            cc.lineWidth = (size || 2) * this.viewScale;
-            cc.beginPath();
-            cc.moveTo(sx1, sy1); cc.lineTo(sx2, sy2);
-            cc.moveTo(sx2, sy2); cc.lineTo(sx3, sy3);
-            cc.moveTo(sx3, sy3); cc.lineTo(sx1, sy1);
+        if (p) {
+            cc.strokeStyle = Renderer.colorCSS(p[0], p[1], p[2], p[3]);
+            cc.lineWidth   = Math.max(1, this.viewScale);
+            cc.lineJoin    = 'round';
             cc.stroke();
         }
     }
 
     // ---- Grid ----
 
-    _drawGrid(w, h) {
+    _drawGrid(ctx, w, h) {
         const pitch = 60;
         const cx    = this.screenX(0);
         const cy    = this.screenY(0);
-        const ctx   = this.ctx;
+
+        const ink   = this._bgIsLight() ? '0,0,0' : '255,255,255';
 
         ctx.save();
         ctx.lineWidth = 1;
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.09)';
+        ctx.strokeStyle = `rgba(${ink},0.09)`;
         ctx.beginPath();
         for (let x = ((cx % pitch) + pitch) % pitch; x <= w; x += pitch) {
             ctx.moveTo(x, 0); ctx.lineTo(x, h);
@@ -293,7 +277,7 @@ export class Renderer {
         }
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.strokeStyle = `rgba(${ink},0.2)`;
         ctx.beginPath();
         ctx.moveTo(cx, 0); ctx.lineTo(cx, h);
         ctx.moveTo(0, cy); ctx.lineTo(w, cy);
@@ -322,6 +306,12 @@ export class Renderer {
         this.zoomAt(factor, cssW / 2, cssH / 2);
     }
 
+    // Move the drawing by (dx, dy) screen pixels.
+    panBy(dx, dy) {
+        this.viewCenterX -= dx / this.viewScale;
+        this.viewCenterY += dy / this.viewScale;
+    }
+
     resetView() {
         this.viewScale   = 1;
         this.viewCenterX = 0;
@@ -344,25 +334,18 @@ export class Renderer {
         const tc   = tmp.getContext('2d');
         tc.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        const bg = this._lastBgColor;
-        tc.fillStyle = Renderer.colorCSS(bg[1], bg[2], bg[3], bg[4]);
-        tc.fillRect(0, 0, cssW, cssH);
-        tc.drawImage(this.commitCanvas, 0, 0, cssW, cssH);
-
-        for (const t of (this._lastTurtles || [])) {
-            if (t && t.visible) {
-                this._drawTurtleHead(tc, t.x, t.y, t.angle,
-                    [t.pen_r, t.pen_g, t.pen_b, t.pen_a]);
-            }
-        }
+        this._composite(tc, cssW, cssH, false);
 
         tmp.toBlob(blob => {
             const url = URL.createObjectURL(blob);
             const a   = document.createElement('a');
             a.href     = url;
             a.download = 'turtle.png';
+            document.body.appendChild(a);
             a.click();
-            URL.revokeObjectURL(url);
+            a.remove();
+            // Revoking synchronously can cancel the download in some browsers.
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
         }, 'image/png');
     }
 }
