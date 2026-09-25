@@ -1,0 +1,983 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --canvas-bg: #fff;   /* the drawing's default paper; same in both themes */
+}
+
+/* ---- Theme palettes ----
+   theme.js sets data-theme on <html>. Every color in this file comes from
+   these tokens, so a palette is the only thing a theme needs to define.
+   The canvas controls pin data-theme="day": they float over the drawing,
+   whose paper is white by default in both themes. */
+
+:root,
+[data-theme="night"] {
+  --bg: #1a1a1a;
+  --surface: #232323;
+  --border: #333;
+  --text: #d4d4d4;
+  --text-muted: #808080;
+  --accent: #4ec9b0;
+  --accent-dim: #2a7a68;
+  --accent-wash: rgba(78, 201, 176, 0.14);
+  --selection: rgba(78, 201, 176, 0.28);
+  --error: #f44747;
+  --error-bg: rgba(244, 71, 71, 0.13);
+  --error-bg-hover: rgba(244, 71, 71, 0.24);
+  --primary-bg: var(--accent-dim);
+  --primary-border: var(--accent);
+  --primary-fg: #fff;
+  --primary-hover-bg: var(--accent);
+  --primary-hover-fg: var(--bg);
+  --kbd-bg: rgba(255, 255, 255, 0.14);
+  --kbd-hover-bg: rgba(0, 0, 0, 0.14);
+  --kbd-secondary-bg: rgba(255, 255, 255, 0.08);
+  --hover-wash: rgba(255, 255, 255, 0.07);
+  --hairline: rgba(255, 255, 255, 0.04);
+  --scrollbar: rgba(255, 255, 255, 0.14);
+  --shadow: rgba(0, 0, 0, 0.35);
+  --hint-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  --glass-bg: rgba(35, 35, 35, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --overlay-bg: rgba(18, 18, 18, 0.86);
+  --close-bg: rgba(255, 255, 255, 0.06);
+  --close-hover-bg: rgba(255, 255, 255, 0.12);
+  --toggle-track: #1a1a1a;
+  --toggle-thumb: #3a3a3a;
+  --toggle-icon-active: #c8d3f5;
+
+  --editor-bg: #000;
+  --editor-fg: #ccc;
+  --editor-cursor: #6a6a6a;
+  --editor-selection: #2d2d2d;
+  --editor-linenumber: #515151;
+  --syn-comment: #d27b53;
+  --syn-keyword: #f2777a;
+  --syn-atom: #a16a94;
+  --syn-variable: #9c9;
+  --syn-variable-2: #69c;
+  --syn-def: #f99157;
+  --syn-string: #fc6;
+  --syn-turtle: #fc6;
+  --syn-bracket-match: #fff;
+  color-scheme: dark;
+}
+
+/* Day is soft and warm: parchment neutrals instead of pure white and gray,
+   and the Tomorrow syntax colors (the light sibling of the night editor
+   palette), muted and warmed to match. */
+[data-theme="day"] {
+  --bg: #ece6dc;
+  --surface: #f6f2eb;
+  --border: #dbd2c4;
+  --text: #3b342b;
+  --text-muted: #72695c;
+  --accent: #237a69;
+  --accent-dim: #8fbfb2;
+  --accent-wash: rgba(35, 122, 105, 0.1);
+  --selection: rgba(35, 122, 105, 0.18);
+  --error: #b5443b;
+  --error-bg: rgba(181, 68, 59, 0.09);
+  --error-bg-hover: rgba(181, 68, 59, 0.16);
+  --primary-bg: #2b7d6c;
+  --primary-border: #22685a;
+  --primary-fg: #fbf8f2;
+  --primary-hover-bg: #22685a;
+  --primary-hover-fg: #fbf8f2;
+  --kbd-bg: rgba(255, 250, 240, 0.2);
+  --kbd-hover-bg: rgba(255, 250, 240, 0.2);
+  --kbd-secondary-bg: rgba(70, 50, 20, 0.07);
+  --hover-wash: rgba(70, 50, 20, 0.05);
+  --hairline: rgba(70, 50, 20, 0.07);
+  --scrollbar: rgba(70, 50, 20, 0.2);
+  --shadow: rgba(70, 50, 20, 0.12);
+  --hint-shadow: 0 0 3px rgba(255, 255, 255, 0.9);
+  --glass-bg: rgba(246, 242, 235, 0.82);
+  --glass-border: rgba(70, 50, 20, 0.08);
+  --overlay-bg: rgba(246, 242, 235, 0.92);
+  --close-bg: rgba(70, 50, 20, 0.06);
+  --close-hover-bg: rgba(70, 50, 20, 0.11);
+  --toggle-track: #ebe5da;
+  --toggle-thumb: #fcfaf6;
+  --toggle-icon-active: #c9761a;
+
+  --editor-bg: #faf7f1;
+  --editor-fg: #4a4339;
+  --editor-cursor: #4a4339;
+  --editor-selection: #e9dfcc;
+  --editor-linenumber: #aaa193;
+  --syn-comment: #958c7e;
+  --syn-keyword: #bb4a42;
+  --syn-atom: #88609e;
+  --syn-variable: #637a2e;
+  --syn-variable-2: #4b6f9c;
+  --syn-def: #bf6a2c;
+  --syn-string: #92702a;
+  --syn-turtle: #92702a;
+  --syn-bracket-match: #1f1a14;
+  color-scheme: light;
+}
+
+/* Declared per theme scope so it resolves against that scope's --bg. */
+:root, [data-theme] { --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-dim); }
+
+/* theme.js sets this for two frames while switching so every color flips at once. */
+.theme-switching *:not(.theme-thumb),
+.theme-switching *::before,
+.theme-switching *::after { transition: none !important; }
+
+::selection { background: var(--selection); }
+
+/* Thin, unobtrusive scrollbars that only draw attention on hover. */
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar) transparent; }
+
+body {
+  font-family: 'IBM Plex Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+#app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  height: 100dvh;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px max(16px, env(safe-area-inset-right)) 8px max(16px, env(safe-area-inset-left));
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+header h1 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+header h1 .logo { width: 16px; height: 16px; flex-shrink: 0; }
+
+#header-status {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-right: 4px;
+  transition: color 0.2s var(--ease);
+}
+
+#header-status.error { color: var(--error); }
+
+/* A pulsing dot marks work in progress (loading, running, stopping). */
+#header-status.running::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: status-pulse 1.2s var(--ease) infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.25; }
+}
+
+.header-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+header button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.icon { width: 14px; height: 14px; flex-shrink: 0; }
+
+/* Share swaps its link icon for a check while "Copied" shows. */
+#btn-share .icon-done { display: none; }
+#btn-share.copied .icon-idle { display: none; }
+#btn-share.copied .icon-done { display: inline; }
+#btn-share.copied { color: var(--accent); border-color: var(--accent-dim); }
+
+.kbd {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 3px 5px;
+  margin-left: 2px;
+  border-radius: 4px;
+  background: var(--kbd-bg);
+  opacity: 0.85;
+}
+
+.kbd:empty { display: none; }
+.btn-secondary .kbd { background: var(--kbd-secondary-bg); }
+
+button {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease),
+    transform 0.1s var(--ease);
+}
+
+button:hover { border-color: var(--accent-dim); color: var(--accent); }
+button:active { transform: scale(0.97); }
+button:focus { outline: none; }
+button:focus-visible { box-shadow: var(--focus-ring); }
+
+button:disabled,
+button:disabled:hover {
+  border-color: var(--border);
+  color: var(--text-muted);
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+button.active { border-color: var(--accent-dim); color: var(--accent); }
+
+button.primary {
+  background: var(--primary-bg);
+  border-color: var(--primary-border);
+  color: var(--primary-fg);
+}
+
+button.primary:hover { background: var(--primary-hover-bg); color: var(--primary-hover-fg); }
+button.primary:hover .kbd { background: var(--kbd-hover-bg); }
+
+/* Day/night switch: a sliding thumb sits under the active icon. */
+#theme-toggle {
+  position: relative;
+  gap: 0;
+  padding: 3px;
+  background: var(--toggle-track);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+#theme-toggle:hover { border-color: var(--accent-dim); color: var(--text); }
+#theme-toggle:active { transform: none; }
+
+.theme-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: 26px;
+  border-radius: 4px;
+  background: var(--toggle-thumb);
+  box-shadow: 0 1px 2px var(--shadow);
+  transition: transform 0.2s var(--ease);
+}
+
+[data-theme="night"] .theme-thumb { transform: translateX(26px); }
+
+.theme-icon {
+  position: relative;   /* above the thumb */
+  width: 26px;
+  height: 14px;
+  transition: color 0.15s var(--ease);
+}
+
+[data-theme="day"] .theme-icon-day,
+[data-theme="night"] .theme-icon-night { color: var(--toggle-icon-active); }
+
+/* --split-x / --split-y are set by splitter.js; unset means an even split. */
+#main {
+  display: grid;
+  grid-template-columns: minmax(0, var(--split-x, 1fr)) 6px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  overflow: hidden;
+}
+
+#editor-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 100px;
+}
+
+#splitter {
+  background: var(--border);
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;
+  touch-action: none;
+  transition: background 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Widen the grab area beyond the 6px bar without changing its look. */
+#splitter::before { content: ''; position: absolute; inset: 0 -5px; }
+
+#splitter:focus { outline: none; }
+#splitter:hover, #splitter.dragging, #splitter:focus-visible { background: var(--accent-dim); }
+
+#splitter-grip {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  opacity: 0.4;
+  transition: opacity 0.15s ease;
+}
+
+#splitter:hover #splitter-grip,
+#splitter.dragging #splitter-grip,
+#splitter:focus-visible #splitter-grip { opacity: 1; }
+
+#splitter-grip span {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: background-color 0.15s var(--ease);
+}
+
+#splitter:hover #splitter-grip span,
+#splitter.dragging #splitter-grip span,
+#splitter:focus-visible #splitter-grip span { background: var(--accent); }
+
+.CodeMirror {
+  flex: 1;
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 14px;
+  line-height: 1.6;
+  height: auto !important;
+}
+
+.CodeMirror-lines { padding: 8px 0; }
+.CodeMirror-linenumber { opacity: 0.7; }
+
+/* Editor theme ("turtle"), driven entirely by the theme tokens. */
+.cm-s-turtle.CodeMirror { background: var(--editor-bg); color: var(--editor-fg); }
+.cm-s-turtle .CodeMirror-gutters { background: var(--editor-bg); border-right: 1px solid var(--hairline); }
+.cm-s-turtle .CodeMirror-linenumber { color: var(--editor-linenumber); }
+.cm-s-turtle .CodeMirror-cursor { border-left: 1px solid var(--editor-cursor); }
+
+/* While the command reference has focus, keep the editor's caret visible and
+   blinking so the learner can see where a paste will land. CodeMirror hides
+   blurred cursors (sometimes via an inline style), hence !important; the
+   blink matches CodeMirror's own 530ms rate. */
+.CodeMirror.cm-ghost-cursor:not(.CodeMirror-focused) div.CodeMirror-cursors { visibility: visible !important; }
+.CodeMirror.cm-ghost-cursor:not(.CodeMirror-focused) .CodeMirror-cursor { animation: cursor-blink 1.06s steps(1) infinite; }
+
+@keyframes cursor-blink {
+  50% { visibility: hidden; }
+}
+.cm-s-turtle div.CodeMirror-selected,
+.cm-s-turtle.CodeMirror-focused div.CodeMirror-selected { background: var(--editor-selection); }
+.cm-s-turtle .CodeMirror-line::selection,
+.cm-s-turtle .CodeMirror-line > span::selection,
+.cm-s-turtle .CodeMirror-line > span > span::selection { background: var(--editor-selection); }
+.cm-s-turtle span.cm-comment { color: var(--syn-comment); }
+.cm-s-turtle span.cm-keyword,
+.cm-s-turtle span.cm-tag { color: var(--syn-keyword); }
+.cm-s-turtle span.cm-atom,
+.cm-s-turtle span.cm-number,
+.cm-s-turtle span.cm-link { color: var(--syn-atom); }
+.cm-s-turtle span.cm-variable,
+.cm-s-turtle span.cm-property,
+.cm-s-turtle span.cm-attribute { color: var(--syn-variable); }
+.cm-s-turtle span.cm-variable-2 { color: var(--syn-variable-2); }
+.cm-s-turtle span.cm-def { color: var(--syn-def); }
+.cm-s-turtle span.cm-string { color: var(--syn-string); }
+.cm-s-turtle span.cm-bracket { color: var(--editor-fg); }
+.cm-s-turtle span.cm-error { background: var(--syn-keyword); color: var(--editor-bg); }
+.cm-s-turtle .CodeMirror-matchingbracket { text-decoration: underline; color: var(--syn-bracket-match) !important; }
+.cm-s-turtle .cm-turtle-cmd { color: var(--syn-turtle); }
+
+/* Line the last error points at; cleared on the next edit or run. */
+.cm-error-line { background: var(--error-bg); }
+.cm-error-gutter .CodeMirror-linenumber { color: var(--error); opacity: 1; }
+
+#terminal-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+#terminal-panel.collapsed #terminal-content { display: none; }
+
+#terminal-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  cursor: row-resize;
+  user-select: none;
+  min-height: 26px;
+  position: relative;
+  z-index: 10;
+}
+
+#terminal-panel.collapsed #terminal-header { cursor: default; border-bottom: none; }
+
+[data-tooltip] { position: relative; }
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  white-space: nowrap;
+  padding: 3px 7px;
+  border-radius: 5px;
+  box-shadow: 0 4px 12px var(--shadow);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.12s var(--ease), transform 0.12s var(--ease);
+  z-index: 100;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: none;
+  transition-delay: 0.4s;
+}
+#terminal-caret[data-tooltip]::after { left: 0; }
+#terminal-clear[data-tooltip]::after { right: 0; }
+
+#terminal-caret {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 9px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+  min-width: unset;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+#terminal-caret:hover { border-color: var(--text-muted); color: var(--text); }
+
+#terminal-caret-icon {
+  display: inline-block;
+  transition: transform 0.2s var(--ease);
+}
+
+#terminal-panel.collapsed #terminal-caret-icon { transform: rotate(-90deg); }
+
+#terminal-label { color: var(--text-muted); font-size: 11px; flex: 1; }
+
+/* Output arrived while the terminal was collapsed. */
+#terminal-panel.has-unread #terminal-label::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 7px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+#terminal-clear {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  min-width: unset;
+  font-family: inherit;
+}
+
+#terminal-clear:hover { border-color: var(--text-muted); color: var(--text); }
+#terminal-panel.collapsed #terminal-clear { display: none; }
+
+#terminal-content {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 8px;
+  line-height: 1.6;
+}
+
+.terminal-line { white-space: pre-wrap; overflow-wrap: anywhere; color: var(--text); }
+.terminal-line.error { color: var(--error); }
+.terminal-line.info { color: var(--text-muted); font-style: italic; }
+
+/* "Line N" prefix on errors; jumps the editor to that line. */
+.terminal-link {
+  font: inherit;
+  font-weight: 600;
+  line-height: inherit;
+  padding: 0 5px;
+  border: none;
+  border-radius: 4px;
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.terminal-link:hover { background: var(--error-bg-hover); color: var(--error); }
+
+#canvas-panel {
+  position: relative;
+  background: var(--canvas-bg);
+  overflow: hidden;
+  min-width: 100px;
+}
+
+/* Toolbar plus the gesture hint beneath it; they fade in and out together. */
+#canvas-controls {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  opacity: 0.6;
+  transition: opacity 0.25s var(--ease);
+}
+
+#canvas-toolbar {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--glass-border);
+  border-radius: 9px;
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  backdrop-filter: blur(16px) saturate(1.4);
+  box-shadow: 0 6px 20px var(--shadow);
+}
+
+/* Legible at rest, solid when used. */
+#canvas-controls:hover,
+#canvas-controls:focus-within { opacity: 1; }
+
+/* No hover on touch screens, so the controls must always be visible. */
+@media (hover: none) {
+  #canvas-controls { opacity: 1; }
+}
+
+/* Never intercepts the pointer, so drags that start on it still pan the canvas. */
+#canvas-hint {
+  padding-right: 4px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-muted);
+  text-align: right;
+  text-shadow: var(--hint-shadow);
+  pointer-events: none;
+  user-select: none;
+}
+
+#canvas-hint .hint-touch { display: none; }
+
+@media (hover: none) {
+  #canvas-hint .hint-pointer { display: none; }
+  #canvas-hint .hint-touch   { display: inline; }
+}
+
+#canvas-toolbar button {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: transparent;
+  border-color: transparent;
+  min-width: 28px;
+}
+
+#canvas-toolbar button:hover {
+  background: var(--hover-wash);
+  border-color: transparent;
+}
+
+#btn-grid.active { background: var(--accent-wash); color: var(--accent); }
+
+#zoom-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 4px 6px;
+  line-height: 1.6;
+  min-width: 5ch;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+#turtle-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+#turtle-canvas.panning { cursor: grabbing; }
+
+/* Key hints add ~70px to the header, so they go before the status line does. */
+@media (max-width: 960px), (hover: none) {
+  .kbd { display: none; }
+}
+
+@media (max-width: 768px) {
+  #main {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, var(--split-y, 1fr)) 6px minmax(0, 1fr);
+  }
+  #splitter { cursor: row-resize; }
+  #splitter::before { inset: -8px 0; }
+  #splitter-grip { flex-direction: row; }
+  #editor-panel { border-bottom: none; min-width: unset; min-height: 80px; }
+  #canvas-panel { min-width: unset; min-height: 80px; }
+  .CodeMirror { font-size: 13px; }
+}
+
+/* Breakpoints below follow the header's width budget: full labels need ~720px,
+   and the status line needs ~160px on top of that to say anything useful.
+   Without it, errors still surface via the terminal and the highlighted line. */
+@media (max-width: 880px) {
+  #header-status { display: none; }
+}
+
+/* Narrow screens: secondary actions collapse to icons. */
+@media (max-width: 760px) {
+  header { gap: 12px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+  .header-controls { gap: 6px; }
+  header button { height: 34px; }
+  header .btn-secondary { width: 34px; padding: 0; }
+  header .btn-secondary .btn-label { display: none; }
+}
+
+@media (max-width: 440px) {
+  .brand-text { display: none; }
+  .header-brand { gap: 10px; }
+}
+
+/* The overlay is a column: a fixed header (search bar and keyboard hint) above
+   a scrolling list, so both stay in reach however far down the list the
+   learner has scrolled. */
+#api-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--overlay-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  z-index: 20;
+  flex-direction: column;
+  display: none;
+}
+
+#api-overlay:focus { outline: none; }
+
+#api-overlay.visible {
+  display: flex;
+  animation: overlay-in 0.2s var(--ease);
+}
+
+@keyframes overlay-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+#api-header {
+  flex: none;
+  padding: 16px 24px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+#api-searchbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#api-search-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: text;
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+
+#api-search-field:focus-within { border-color: var(--accent-dim); box-shadow: var(--focus-ring); }
+
+#api-search {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: none;
+  outline: none;
+  color: var(--text);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+#api-search::placeholder { color: var(--text-muted); opacity: 1; }
+#api-search::-webkit-search-cancel-button,
+#api-search::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+
+/* iOS Safari zooms the page into any focused input under 16px. */
+@media (hover: none) {
+  #api-search { font-size: 16px; }
+}
+
+/* A gap rather than heading margins, so the first visible section sits flush
+   at the top whichever sections the search has hidden. */
+#api-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+#api-scroll-hint {
+  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+#api-scroll-hint .kbd { background: var(--kbd-secondary-bg); margin: 0; }
+
+/* No arrow keys to press on a touch screen. */
+@media (hover: none) {
+  #api-scroll-hint { display: none; }
+}
+
+.api-section[hidden],
+#api-overlay tr[hidden],
+#api-empty[hidden] { display: none; }
+
+#api-overlay h2 {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+#api-overlay table { width: 100%; border-collapse: collapse; }
+
+#api-overlay td {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 5px 0;
+  vertical-align: top;
+  border-bottom: 1px solid var(--hairline);
+}
+
+/* The last visible row, not the last row: search may hide the rows below it. */
+#api-overlay tr:not(:has(~ tr:not([hidden]))) td { border-bottom: none; }
+
+#api-overlay td:first-child { position: relative; color: var(--accent); white-space: nowrap; padding-right: 16px; width: 1%; }
+#api-overlay td:last-child { color: var(--text-muted); }
+
+/* The arrow-key selection. The side shadows extend the wash 8px past the
+   text on each end (into #api-list's padding) so the text isn't flush. */
+/* The scroll margin keeps the tooltip above the row in view when the
+   selection scrolls the list. */
+#api-overlay tr.selected { scroll-margin-top: 32px; }
+#api-overlay tr.selected td { background: var(--accent-wash); }
+#api-overlay tr.selected td:first-child { box-shadow: -8px 0 0 var(--accent-wash); }
+#api-overlay tr.selected td:last-child  { box-shadow: 8px 0 0 var(--accent-wash); }
+
+/* Copy button beside each signature. Its space is always reserved, so rows
+   never shift; it shows on row hover or keyboard focus (always on touch).
+   The negative vertical margins keep it from making the row taller. */
+.api-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: -3px 0 -3px 6px;
+  padding: 0;
+  vertical-align: middle;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  opacity: 0;
+  transition: opacity 0.15s var(--ease), background-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+
+.api-copy .icon { width: 13px; height: 13px; }
+#api-overlay tr:hover .api-copy,
+#api-overlay tr.selected .api-copy,
+.api-copy:focus-visible,
+.api-copy.copied { opacity: 1; }
+.api-copy:hover { background: var(--hover-wash); color: var(--accent); }
+.api-copy.copied { color: var(--accent); }
+
+.api-copy .icon-done { display: none; }
+.api-copy.copied .icon-idle { display: none; }
+.api-copy.copied .icon-done { display: inline; }
+
+@media (hover: none) {
+  .api-copy { opacity: 1; }
+}
+
+/* Tooltip above the selected row, so it covers the row above rather than this
+   row's description. Left-aligned with the signature: centered on the copy
+   button it would overhang #api-list's left edge on short signatures. */
+.api-copy-hint {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  box-shadow: 0 2px 6px var(--shadow);
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.api-copy-hint .kbd { margin: 0; background: var(--kbd-secondary-bg); color: var(--text); }
+
+#api-empty {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 24px 0;
+  overflow-wrap: anywhere;
+}
+
+#api-empty q { color: var(--text); }
+
+#api-close {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--close-bg);
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+#api-close:hover { background: var(--close-hover-bg); color: var(--text); }
+
+/* SharedArrayBuffer not available warning */
+#sab-warning[hidden] { display: none; }
+
+#sab-warning {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  background: #7a2020;
+  color: #ffd;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  padding: 8px 16px;
+  text-align: center;
+  z-index: 999;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+  button:active { transform: none; }
+  #header-status.running::before { animation: none; }
+  .CodeMirror.cm-ghost-cursor .CodeMirror-cursor { animation: none; }
+}

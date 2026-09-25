@@ -28,8 +28,32 @@ local turtle = {}
 -- Shared screen + default core
 ----------------------------------------------------------------
 
-local screen = Screen.new()
-local core   = Core.new(screen)
+-- Default ink (pen + fill) and paper (background), as color names.
+-- core.lua and screen.lua hard-code white on black; the web host overrides
+-- that with black on white, like Python turtle. Explicit
+-- pencolor()/fillcolor()/bgcolor() calls still win.
+local _ink   = "black"
+local _paper = "white"
+
+local function apply_ink(c)
+    c:pencolor(_ink)
+    c:fillcolor(_ink)
+end
+
+local function new_screen()
+    local s = Screen.new()
+    s:bgcolor(_paper)
+    return s
+end
+
+local screen = new_screen()
+local function new_core()
+    local c = Core.new(screen)
+    apply_ink(c)
+    return c
+end
+
+local core   = new_core()
 turtle._screen = screen
 turtle._core   = core
 
@@ -179,6 +203,7 @@ end
 
 local function _do_reset(c)
     c:reset()
+    apply_ink(c)
     _maybe_post_frame()
 end
 
@@ -475,7 +500,7 @@ turtle.bye      = function() end
 ----------------------------------------------------------------
 
 function turtle.Turtle()
-    local t_core = Core.new(screen)
+    local t_core = new_core()
     return make_turtle_methods(t_core)
 end
 
@@ -614,8 +639,8 @@ end
 -- Called by worker.js before running new user code.
 function _bridge_hard_reset()
     -- Rebuild from scratch — cleanest approach, no state leakage.
-    screen            = Screen.new()
-    core              = Core.new(screen)
+    screen            = new_screen()
+    core              = new_core()
     turtle._screen    = screen
     turtle._core      = core
     _tracer_n         = 1

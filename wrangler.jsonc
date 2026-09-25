@@ -2,8 +2,11 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "luaturtleweb",
   "compatibility_date": "2026-05-11",
+  // Only ./public is published. Repo docs, wrangler config, .git and .wrangler
+  // live outside it and are unpublishable by construction — do not point this
+  // back at the repo root.
   "assets": {
-    "directory": "."
+    "directory": "./public"
   },
   "observability": {
     "enabled": true

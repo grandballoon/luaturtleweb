@@ -5,3 +5,7 @@
 .env*
 !.env.example
 buglist.md
+plan.md
+
+# macOS
+.DS_Store
