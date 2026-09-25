@@ -22,12 +22,15 @@ Layer boundaries, top to bottom:
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
 | UI shell | `app.js` | Editor, draft autosave + share links, run state machine, worker lifecycle, frame ack, shortcuts |
-| UI panels | `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js` | Output panel; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command-reference overlay |
+| UI panels | `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-placement.js`, `floating-frame.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js` | Tabbed output panel; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference; where the reference shows (over the canvas, in a terminal tab, or floating); a draggable, resizable floating window; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them |
+| Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
-| Theme | `theme.js` | Day/night UI palette choice, header toggle; classic `<head>` script so it applies before first paint |
 | Worker bridge | `worker.js` | Wasmoon boot, frame protocol, sandbox run, error mapping |
 | Execution host | `turtle/turtle_web.lua` | Animation pacing, undo orchestration, tracer, API/globals |
+| Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
+| Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
+| Reference demos | `turtle/demos.lua` | A demo program per command-reference entry, played in the reference's detail pane |
 | Core | `turtle/core.lua`, `turtle/screen.lua` | Pure turtle state machine + shared segment log (verbatim from the desktop repo) |
 | Data | `turtle/colors.lua` | 140+ CSS/SVG named colors |
 
@@ -135,6 +138,12 @@ exposing a whitelisted Lua stdlib subset (`math`, `string`, `table`, `pairs`, `p
 the full turtle API — but not `require`, `io`, `os`, `debug`, or the module internals. Built
 fresh per Run, so nothing leaks between runs.
 
+### The command table (`TURTLE_COMMANDS`, `SCREEN_COMMANDS`)
+
+Every public command is declared once in `turtle_web.lua` as `{ check, run }`, plus an `ALIASES` map (`fd` → `forward`, …).
+The module-level globals, each `Turtle()`'s method table, and the sandbox env are all generated from these tables, so they cannot drift apart.
+`TURTLE_COMMANDS` act on one turtle (globals on the default core, methods on their own); `SCREEN_COMMANDS` (`bgcolor`, `tracer`, `update`, `Turtle`, …) are globals only.
+
 ---
 
 ## Main algorithms
@@ -190,6 +199,7 @@ undo (visual line reversal) is a desktop-host feature.
 - Step size grows exponentially with speed: `step = max(1, floor(2^(speed/2.5)))` pixels (or
   degrees for turns) — higher speed means fewer, larger substeps, so fewer frames.
 - Per-frame delay shrinks geometrically: `delay = 0.023 · 0.65^(speed−1)` seconds.
+- After the last substep, the turtle is set to the exact end position or heading, since the substeps' rounding errors add up (`forward(50)` would otherwise end at `x = 49.999999999999993`). `test/motion_test.lua` checks animated and instant moves end in the same place.
 - `speed(0)` means instant: the whole command runs as one step with one frame.
 
 `circle(radius, extent, steps)` uses Python turtle's polygon approximation: default
@@ -215,6 +225,92 @@ The same hook also polls the stop flag every 10,000 instructions, so Stop interr
 
 User code runs under `xpcall` with a handler that records the innermost `user_code` line on the stack.
 Errors raised inside the turtle library (a bad argument, say) therefore still point at the learner's line, which the UI highlights and links from the terminal.
+
+### Argument checking (`args.lua`)
+
+Lua would otherwise accept a malformed call silently: `circle(radius)` with `radius` never set passes `nil`, and the command did nothing while later lines kept running.
+Every call now goes through `args.check(name, check, ...)` before its implementation runs.
+A command's `check` function consumes the arguments in order through a cursor (`a:req`, `a:opt`, `a:point`, `a:opt_color`); anything left over is an error, so a command with no `check` takes no arguments.
+Counting with `select("#", ...)` is what tells "missing" (`circle()`) apart from "passed nil" (`circle(radius)`).
+Required parameters reject `nil`; optional ones accept it, as usual in Lua, so `circle(50, nil, 8)` skips `extent`.
+Checks run before `with_undo`, so a rejected call leaves no undo entry and draws nothing.
+Errors are raised at level 0 and name the command as the learner typed it, alias included:
+
+```
+circle: radius must be a number, got nil
+fd: distance is missing
+pencolor: color must be a known color name, got "rde"
+penup takes no arguments, but got 1
+forward: call a turtle's commands with a colon, like t:forward(...)
+```
+
+The checks live in the web host rather than `core.lua`, which stays verbatim with the desktop repo.
+`test/args_test.lua` covers them and runs with plain `lua` from the repo root: `lua test/args_test.lua`.
+The other suites in `test/` run the same way.
+
+### Usage examples
+
+A popup in the editor shows example calls of a turtle command in two cases.
+When a command rejects its arguments, it appears under the learner's line.
+When the learner Cmd+clicks (Ctrl+click off macOS) a command they have written, it appears under that name.
+The pieces, each with one job:
+
+- **`args.lua` says which command failed.** Every rejection records `{ command, message }` in `args.last_failure` before raising; `args.failed_command(err)` returns the command only if `err` is that exact message.
+  So a runtime error, a stop, the learner's own `error()`, or a rejection they caught with `pcall` never picks up examples.
+- **`examples.lua` holds the examples.** Pure data, keyed by the command's own name, with up to three calls each.
+  This is the file to edit when iterating on the examples; the tests run every example, and check that every command and alias has some.
+- **`turtle_web.lua` maps the command to its examples.** `_bridge_command_usage(err)` resolves an alias to its command (`fd` → `forward`) and returns `{ command, examples }`, or nil.
+  `_bridge_get_usage_catalog()` returns the same for every command and alias, keyed by the name typed.
+- **`worker.js` carries them.** Its `xpcall` handler records the usage alongside the error line, and the `error` message gains `usage`.
+  The `ready` message carries the whole catalog once, so lookups never need a round trip to the worker (or wait for a run to finish).
+- **`command-lookup.js` finds the clicked command.** It checks the catalog for the word under the pointer, and only where that word is called (`name(`, `t:name(`), outside comments and strings.
+  While the modifier is held, the command under the pointer is underlined.
+  A modifier+click anywhere else falls through to CodeMirror, which adds a cursor.
+- **`usage-popup.js` displays them.** It builds the popup and places it with CodeMirror's `addWidget`, so it scrolls with the code and floats over later lines without moving them.
+  `app.js` shows it from `markError` and from a lookup, and hides it on Run, or on Esc or its close button; the header says that Esc closes it.
+  An error's popup stays up while the learner clicks into the line and edits it, so the examples stay in view during the fix; a bookmark moves it with its line, and it closes only if that line is deleted.
+  An edit still clears the error highlight itself.
+  A lookup's popup is transient: it also closes on the next click in the editor outside it, and on any edit.
+
+### Command reference demos
+
+The command reference (`command-reference.js`) lists only signatures, each with buttons at the row's right edge to insert it into the editor or copy it, shown only once the learner clicks or arrows to that row.
+The selected entry (the first match, until the learner picks another) fills a detail pane: its description, a demo program (with buttons to copy it, or insert it into the editor below the caret's line), and a miniature canvas playing that program on a loop.
+The pieces, each with one job:
+
+- **`index.html` holds the entries.** Each is `<li><code>signature</code><span class="api-about">description</span></li>`; the description is hidden in the list and read by the search and the detail pane.
+- **`demos.lua` holds the demos.** Pure data, keyed by the entry's signature exactly as the list shows it.
+  `test/demos_test.lua` checks that the keys and the list match both ways, and that every demo runs.
+- **`worker.js` records a program.** A `record` message runs code through the same `execute()` path as a run, but `_bridge_post_frame` appends a snapshot to a list instead of posting it and blocking: `{segments, turtles, bgcolor, prints, work, delay}`, where `work` is the time spent computing since the previous frame and `delay` is the speed-based pause after it.
+  The list starts with the blank canvas and is posted back whole as `recording`.
+  The `ready` message carries the demos, as it carries the usage catalog.
+- **`command-preview.js` plays a recording.** It owns a second `worker.js` instance, so recording never waits behind (or disturbs) the learner's own run, and a second `Renderer` on the miniature canvas.
+  Playback spaces frames as a live run would (`work`, then the frame, then `delay` plus a small round-trip allowance), rendering at most one frame per display refresh, and reveals `print()` output under the canvas as the frames that printed it go up.
+  The view is centered on the drawing's bounds and scaled down (never up) to fit; a recording is cached per program and canvas size.
+  Demos run at the real canvas's size, so `screen_width()` reports what a run would.
+
+Because both the recording and the drawing go through the production code paths, a demo looks exactly like the same program run on the real canvas, zoomed out.
+Under `prefers-reduced-motion`, the preview shows only the finished drawing.
+
+### Command reference placement
+
+The reference shows over the canvas, as a Commands tab in the terminal panel, or in a floating window, so the drawing can stay in view while it's open.
+Buttons in its header, one for each place it isn't, move it, and the choice is saved in `localStorage`.
+The boundaries:
+
+- **`command-reference.js` owns what the reference is:** its query, selection, and whether it's open.
+  It never touches the page around it; it asks a host to attach, detach, show, and hide the one `#api-overlay` element, which is moved rather than duplicated, so listeners and state survive a move.
+- **`command-placement.js` owns where it is:** one host for the canvas (toggles `.visible`), one for the terminal (adds and selects a tab), one for the floating window, and the saved choice.
+  The reference writes the host's name to the overlay's `data-placement`, and the stylesheet draws each frame from that.
+  A host reports visibility changes the learner makes without the reference (clicking a tab, collapsing the panel), which the reference treats as opening or closing.
+- **`terminal.js` owns the panel:** tabs, collapse, and a height per tab (the Commands tab defaults taller than the output).
+  It knows nothing about the reference; any pane can be added as a tab.
+- **`floating-frame.js` owns the floating window's geometry:** dragging by the reference's header, resizing from a corner grip, keeping it on screen when the viewport shrinks, and the saved position and size.
+  It knows nothing about the reference either; it's attached to the overlay only while the float host holds it.
+
+Anywhere but over the canvas, a run doesn't close the reference, and Esc closes it only while focus is inside it, so Esc in the editor still stops a run.
+An error brings the output tab forward.
+The overlay is a size container, so its layout adapts to the terminal panel's short, wide shape and to any size the floating window is given by container queries alone.
 
 ### Zoom about a point (`zoomAt`)
 
@@ -248,8 +344,8 @@ raster resampling, just a full vector replay.
   `_bridge_get_tracer_n`, `_bridge_hard_reset`). Everything else crosses the boundary as
   plain data.
 - **Closure-based method tables instead of classes for the API.** `make_turtle_methods(core)`
-  builds a table of closures over a specific core; the module-level globals are the same
-  closures bound to the default core. Cores themselves use idiomatic Lua metatable OOP
+  builds a table of closures over a specific core; the module-level globals are generated
+  from the same command table, bound to the default core. Cores themselves use idiomatic Lua metatable OOP
   (`Core.__index = Core`).
 - **Sandbox via environment injection.** User code gets a fresh whitelist `env` per run —
   isolation without patching globals.
@@ -258,7 +354,7 @@ raster resampling, just a full vector replay.
   by construction.
 - **Web default colors.** `core.lua` and `screen.lua` hard-code white ink on black paper.
   The web host overrides both with black ink on white paper, like Python turtle, so the shared
-  files stay verbatim. The drawing ignores the page theme; only the program's own
+  files stay verbatim. The drawing ignores the page palette; only the program's own
   `pencolor`/`fillcolor`/`bgcolor` calls change it.
 - **Registry + ownership tags.** The Screen registers turtles and hands out `turtle_id`s;
   every log entry is tagged with its owner, which is what all per-turtle semantics hang off.

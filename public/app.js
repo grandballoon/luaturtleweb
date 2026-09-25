@@ -5,13 +5,22 @@
 //       keyboard shortcuts.
 // Delegates: drawing to renderer.js, canvas gestures to canvas-view.js,
 //            output to terminal.js, the divider to splitter.js, the
-//            command-reference overlay to command-reference.js.
+//            command reference to command-reference.js (its demo animations
+//            to command-preview.js, where it shows to command-placement.js,
+//            and its floating window to floating-frame.js), the examples under a
+//            misused command's line to usage-popup.js, Cmd/Ctrl+click on a
+//            command to command-lookup.js.
 
 import { Renderer }             from './renderer.js';
 import { Terminal }             from './terminal.js';
 import { initSplitter }         from './splitter.js';
 import { initCanvasView }       from './canvas-view.js';
 import { initCommandReference } from './command-reference.js';
+import { createCommandPlacement } from './command-placement.js';
+import { createUsagePopup }     from './usage-popup.js';
+import { initCommandLookup }    from './command-lookup.js';
+import { createCommandPreview } from './command-preview.js';
+import { TURTLE_COMMANDS }      from './lua-highlight.js';
 import * as storage             from './storage.js';
 
 const IS_MAC       = /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
@@ -36,8 +45,6 @@ const DEFAULT_CODE = [
     '',
 ].join('\n');
 const START_CURSOR_LINE = 9;  // the blank line after the example, zero-based
-
-const TURTLE_COMMANDS = /^(forward|back|left|right|fd|bk|lt|rt|penup|pendown|pu|pd|pensize|pencolor|fillcolor|color|bgcolor|clear|reset|undo|speed|position|heading|isdown|filling|isvisible|hideturtle|showturtle|xcor|ycor|distance|towards|setheading|seth|home|setpos|setx|sety|teleport|circle|begin_fill|end_fill|dot|write|stamp|clearstamp|clearstamps|Turtle|tracer|update|done)\b/;
 
 const $ = (id) => document.getElementById(id);
 
@@ -69,7 +76,7 @@ textarea.value = initial.code;
 
 const editor = CodeMirror.fromTextArea(textarea, {
     mode: 'lua',
-    theme: 'turtle',   // palette comes from the theme tokens in styles.css
+    theme: 'turtle',   // colors come from the palette tokens in styles.css
     lineNumbers: true,
     indentUnit: 4,
     tabSize: 4,
@@ -99,7 +106,7 @@ function saveDraft() {
     storage.save(CODE_KEY, editor.getValue());
 }
 editor.on('changes', () => {
-    clearErrorLine();
+    clearErrorMark();   // the usage popup stays up until dismissed
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveDraft, SAVE_DELAY);
@@ -111,26 +118,63 @@ addEventListener('pagehide', () => { if (saveTimer) saveDraft(); });
 editor.setCursor({ line: START_CURSOR_LINE, ch: 0 });
 editor.focus();
 
-// ---- Error line highlight ----
+// ---- Error highlight ----
 
-let errorLine = null;   // CodeMirror line handle
+let errorMark = null;   // CodeMirror TextMarker over the failing line's code
+const usagePopup = createUsagePopup(editor);
 
-function markErrorLine(line) {
-    clearErrorLine();
-    const handle = editor.getLineHandle(line - 1);
-    if (!handle) return;
-    errorLine = handle;
-    editor.addLineClass(handle, 'background', 'cm-error-line');
-    editor.addLineClass(handle, 'gutter', 'cm-error-gutter');
-    editor.scrollIntoView({ line: line - 1, ch: 0 }, 60);
+// The code on a line, as [startCh, endCh): from its first non-blank character
+// to the end of its last code token, leaving out indentation, a trailing
+// comment, and trailing whitespace. A line with no code (a comment inside a
+// multi-line construct, say) falls back to its non-blank text.
+function codeSpan(lineIndex) {
+    const code = editor.getLineTokens(lineIndex, true)
+        .filter((t) => t.string.trim() && !/\bcomment\b/.test(t.type || ''));
+    if (code.length) return [code[0].start, code[code.length - 1].end];
+    const text = editor.getLine(lineIndex);
+    const start = text.search(/\S/);
+    return start < 0 ? null : [start, text.trimEnd().length];
 }
 
-function clearErrorLine() {
-    if (!errorLine) return;
-    editor.removeLineClass(errorLine, 'background', 'cm-error-line');
-    editor.removeLineClass(errorLine, 'gutter', 'cm-error-gutter');
-    errorLine = null;
+// usage, if the error was a turtle command rejecting its arguments, is
+// {command, examples}: shown in a popup under the line.
+function markError(line, message, usage) {
+    clearError();
+    const lineIndex = line - 1;
+    if (lineIndex < 0 || lineIndex >= editor.lineCount()) return;
+    const span = codeSpan(lineIndex);
+    if (!span) return;
+    errorMark = editor.markText(
+        { line: lineIndex, ch: span[0] },
+        { line: lineIndex, ch: span[1] },
+        { className: 'cm-error-code', attributes: { title: message } },
+    );
+    editor.scrollIntoView({ line: lineIndex, ch: span[0] }, 60);
+    if (usage) usagePopup.show({ line: lineIndex, ch: span[0] }, usage);
 }
+
+function clearError() {
+    usagePopup.hide();
+    clearErrorMark();
+}
+
+function clearErrorMark() {
+    if (!errorMark) return;
+    errorMark.clear();
+    errorMark = null;
+}
+
+// ---- Command lookup ----
+
+// Every command's and alias's usage, {command, examples}, keyed by the name
+// typed. Sent by the worker when the VM is ready; empty until then.
+let usageCatalog = {};
+
+initCommandLookup(editor, {
+    isMac:    IS_MAC,
+    lookup:   (name) => (Object.hasOwn(usageCatalog, name) ? usageCatalog[name] : null),
+    onLookup: (pos, usage) => usagePopup.show(pos, usage, { transient: true }),
+});
 
 function goToLine(line) {
     const text = editor.getLine(line - 1) ?? '';
@@ -147,6 +191,8 @@ const terminal = new Terminal({
     caret:     $('terminal-caret'),
     clearBtn:  $('terminal-clear'),
     container: $('editor-panel'),
+    tabList:   $('terminal-tabs'),
+    outputTab: $('terminal-tab-output'),
 }, {
     onLayout:    () => editor.refresh(),
     onLineClick: goToLine,
@@ -170,6 +216,15 @@ initCanvasView(renderer, {
 });
 
 initSplitter($('main'), $('splitter'), { onResize: () => editor.refresh() });
+
+// The canvas's size in CSS pixels, which screen_width() and screen_height() report.
+function canvasSize() {
+    const dpr = window.devicePixelRatio || 1;
+    return {
+        width:  Math.round(renderer.canvas.width  / dpr),
+        height: Math.round(renderer.canvas.height / dpr),
+    };
+}
 
 // ---- Run lifecycle ----
 
@@ -208,15 +263,14 @@ function runCode() {
     stopRequested = false;
     runStartedAt  = performance.now();
     terminal.clear();
-    clearErrorLine();
+    clearError();
     setState('running');
     setStatus('Running', 'running');
 
-    const dpr = window.devicePixelRatio || 1;
+    const { width, height } = canvasSize();
     worker.postMessage({
         type: 'run', runId, code: editor.getValue(), sab,
-        canvasWidth:  Math.round(renderer.canvas.width  / dpr),
-        canvasHeight: Math.round(renderer.canvas.height / dpr),
+        canvasWidth: width, canvasHeight: height,
     });
 }
 
@@ -244,6 +298,8 @@ function onWorkerMessage(e) {
     }
 
     if (msg.type === 'ready') {
+        usageCatalog = msg.usage || {};
+        commandRef.setDemos(msg.demos);
         setState('idle');
         setStatus(`Ready · ${RUN_SHORTCUT} to run`);
         if (pendingRun) { pendingRun = false; runCode(); }
@@ -268,8 +324,8 @@ function onWorkerMessage(e) {
     } else if (msg.type === 'error') {
         setState('idle');
         terminal.error(msg.message, msg.line);
-        if (!terminal.isOpen) terminal.open();
-        if (msg.line) markErrorLine(msg.line);
+        terminal.selectTab('output');
+        if (msg.line) markError(msg.line, msg.message, msg.usage);
         setStatus(msg.line ? `Error on line ${msg.line}` : 'Error — see terminal', 'error');
     }
 }
@@ -278,7 +334,7 @@ function failToLoad(detail) {
     setState('failed');
     setStatus('Lua failed to load — try reloading', 'error');
     terminal.error(`Could not start the Lua VM: ${detail}`);
-    if (!terminal.isOpen) terminal.open();
+    terminal.selectTab('output');
 }
 
 function startWorker() {
@@ -323,21 +379,41 @@ $('btn-export').addEventListener('click', () => renderer.exportPNG());
 // ---- Command reference ----
 
 // Puts text on its own line below the caret's line, matching its indentation,
-// or on the caret's line if that is blank. The caret follows, so repeated
-// inserts build up a sequence of commands.
+// or on the caret's line if that is blank. Every line of a multi-line text
+// gets that indentation. The caret follows, so repeated inserts build up a
+// sequence of commands.
 function insertLine(text) {
     const { line } = editor.getCursor();
     const current = editor.getLine(line);
     const end = { line, ch: current.length };
-    const insert = current.trim() ? `\n${current.match(/^\s*/)[0]}${text}` : text;
+    const indent = current.match(/^\s*/)[0];
+    const body = text.split('\n').join(`\n${indent}`);
+    const insert = current.trim() ? `\n${indent}${body}` : body;
     editor.replaceRange(insert, end);
     editor.setCursor(editor.posFromIndex(editor.indexFromPos(end) + insert.length));
     editor.scrollIntoView(null, 40);
 }
 
+// Demos run at the real canvas's size, so screen_width() reports what a run
+// would. Over the canvas, the reference covers it without resizing it.
+const commandPreview = createCommandPreview({
+    canvas: $('api-preview-canvas'),
+    output: $('api-preview-output'),
+    canvasSize,
+});
+
+const commandPlacement = createCommandPlacement({
+    canvasPanel: $('canvas-panel'),
+    terminal,
+    floatHandle: $('api-header'),
+    floatGrip:   $('api-resize'),
+});
+
 const commandRef = initCommandReference({
     overlay: $('api-overlay'),
     button: $('btn-api'),
+    preview: commandPreview,
+    host: commandPlacement.current(),
     shortcut: API_SHORTCUT,
     copyShortcut: `${MOD_LABEL}C`,
     insertShortcut: `${MOD_LABEL}I`,
@@ -348,6 +424,7 @@ const commandRef = initCommandReference({
     onClose:  () => editor.focus(),
     onPaste:  (text) => editor.replaceSelection(text),
     onInsert: insertLine,
+    onMove:   (name) => commandRef.setHost(commandPlacement.set(name)),
 });
 $('api-shortcut').textContent = API_SHORTCUT;
 document.querySelectorAll('.api-section-key').forEach((kbd, i) => {
@@ -360,16 +437,26 @@ document.addEventListener('keydown', (e) => {
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key === 'Enter') {
         e.preventDefault();
+        // Over the canvas, the reference would hide the drawing, so get it
+        // out of the way first.
+        if (commandRef.isOpen() && commandPlacement.current().coversCanvas) commandRef.close();
         runCode();
     } else if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.code === 'Backquote') {
         e.preventDefault();
-        terminal.toggle();
+        terminal.toggleOutput();
     } else if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();   // Chrome and Firefox otherwise focus the search bar
-        commandRef.toggle();
+        // Open but focused elsewhere (the editor beside it), the shortcut
+        // goes back to the search bar rather than closing it.
+        if (commandRef.isOpen() && !commandRef.hasFocus()) commandRef.open();
+        else commandRef.toggle();
     } else if (e.key === 'Escape') {
-        if (commandRef.isOpen()) {
+        // Anywhere but over the canvas, the reference can stay open while
+        // the learner works in the editor, so Esc there still stops a run.
+        if (commandRef.isOpen() && (commandPlacement.current().coversCanvas || commandRef.hasFocus())) {
             commandRef.close();
+        } else if (usagePopup.isOpen()) {
+            usagePopup.hide();
         } else if (state === 'running') {
             stopCode();
         }
