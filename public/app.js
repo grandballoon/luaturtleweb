@@ -344,6 +344,8 @@ const commandRef = initCommandReference({
     // Keep the editor's caret visible while the overlay has focus, and send
     // pastes there, so a copied command can be pasted without leaving it.
     onToggle: (open) => editor.getWrapperElement().classList.toggle('cm-ghost-cursor', open),
+    // CodeMirror keeps its selection while blurred, so this restores the caret.
+    onClose:  () => editor.focus(),
     onPaste:  (text) => editor.replaceSelection(text),
     onInsert: insertLine,
 });

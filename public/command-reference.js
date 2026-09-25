@@ -4,7 +4,7 @@
 // Opening it focuses the search bar with an empty query, so a learner can
 // press the shortcut and start typing. The query filters rows by their
 // signature and description; sections with no matching rows hide entirely.
-// Closing it returns focus to wherever it was before (usually the editor).
+// Closing it always hands focus to onClose (the editor, at its last caret).
 // While focus is inside it, ↑ and ↓ select a row instead of moving the search
 // bar's caret, and Shift+↑/↓ jumps to the first row of the previous or next
 // section. The selected row shows a hint: the copy shortcut presses its copy
@@ -57,14 +57,13 @@ function hasTextSelection() {
     return !(window.getSelection()?.isCollapsed ?? true);
 }
 
-export function initCommandReference({ overlay, button, shortcut, copyShortcut, insertShortcut, onToggle, onPaste, onInsert }) {
+export function initCommandReference({ overlay, button, shortcut, copyShortcut, insertShortcut, onToggle, onClose, onPaste, onInsert }) {
     const search     = overlay.querySelector('#api-search');
     const sections   = [...overlay.querySelectorAll('.api-section')];
     const empty      = overlay.querySelector('#api-empty');
     const emptyQuery = overlay.querySelector('#api-empty-query');
     const list       = overlay.querySelector('#api-list');
 
-    let returnFocus = null;
     let selected = null;   // the <tr> the arrow keys have highlighted
     let copied = false;    // a command was copied since the query last changed
 
@@ -153,7 +152,6 @@ export function initCommandReference({ overlay, button, shortcut, copyShortcut, 
 
     function open() {
         if (isOpen()) return search.focus();
-        returnFocus = document.activeElement;
         search.value = '';
         filter('');
         copied = false;
@@ -165,8 +163,7 @@ export function initCommandReference({ overlay, button, shortcut, copyShortcut, 
     function close() {
         select(null);
         setVisible(false);
-        (returnFocus?.isConnected ? returnFocus : button).focus();
-        returnFocus = null;
+        onClose();
     }
 
     const toggle = () => (isOpen() ? close() : open());
