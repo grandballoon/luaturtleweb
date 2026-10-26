@@ -11,7 +11,9 @@
 // centered on the drawing, and scaled down if the drawing would not fit.
 //
 // Owns: its worker (separate, so a preview never waits on or disturbs the
-// learner's own run), the miniature Renderer, fitting the view, playback,
+// learner's own run, and started only when the first program is shown, so
+// a page that never shows one never loads a second Lua), the miniature
+// Renderer, fitting the view, playback,
 // and the program's print() output shown under the canvas. What to play is
 // up to the owner (command-reference.js): show(code) plays it, stop() stops.
 
@@ -78,22 +80,26 @@ export function createCommandPreview({ canvas, output, canvasSize }) {
 
     // ---- Recording ----
 
-    const worker = new Worker('worker.js');
-    worker.onmessage = (e) => {
-        const msg = e.data;
-        if (msg.type === 'ready') {
-            ready = true;
-            request();
-        } else if (msg.type === 'recording') {
-            const key = inFlight;
-            inFlight = null;
-            cache.set(key, prepare(msg.frames, msg.error));
-            request();
-        } else if (msg.type === 'init-error') {
-            console.warn('Command preview could not start Lua:', msg.message);
-        }
-    };
-    worker.postMessage({ type: 'init' });
+    let worker = null;
+
+    function startWorker() {
+        worker = new Worker('worker.js');
+        worker.onmessage = (e) => {
+            const msg = e.data;
+            if (msg.type === 'ready') {
+                ready = true;
+                request();
+            } else if (msg.type === 'recording') {
+                const key = inFlight;
+                inFlight = null;
+                cache.set(key, prepare(msg.frames, msg.error));
+                request();
+            } else if (msg.type === 'init-error') {
+                console.warn('Command preview could not start Lua:', msg.message);
+            }
+        };
+        worker.postMessage({ type: 'init' });
+    }
 
     function keyFor(code) {
         const { width, height } = canvasSize();
@@ -216,6 +222,7 @@ export function createCommandPreview({ canvas, output, canvasSize }) {
 
     function show(code) {
         wanted = code;
+        if (!worker) startWorker();
         request();
     }
 

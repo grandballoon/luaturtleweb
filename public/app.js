@@ -6,20 +6,24 @@
 // Delegates: drawing to renderer.js, canvas gestures to canvas-view.js,
 //            output to terminal.js, the divider to splitter.js, the
 //            command reference to command-reference.js (its demo animations
-//            to command-preview.js, where it shows to command-placement.js,
-//            and its floating window to floating-frame.js), the examples under a
+//            to command-preview.js, and the panel it sits in to dock.js),
+//            the examples under a
 //            misused command's line to usage-popup.js, Cmd/Ctrl+click on a
-//            command to command-lookup.js.
+//            command to command-lookup.js, and a game controller to
+//            gamepad-controller.js (given the reference's commands by
+//            command-catalog.js).
 
 import { Renderer }             from './renderer.js';
 import { Terminal }             from './terminal.js';
 import { initSplitter }         from './splitter.js';
 import { initCanvasView }       from './canvas-view.js';
 import { initCommandReference } from './command-reference.js';
-import { createCommandPlacement } from './command-placement.js';
+import { createDock }           from './dock.js';
 import { createUsagePopup }     from './usage-popup.js';
 import { initCommandLookup }    from './command-lookup.js';
 import { createCommandPreview } from './command-preview.js';
+import { readCommandCatalog }   from './command-catalog.js';
+import { initGamepad }          from './gamepad-controller.js';
 import { TURTLE_COMMANDS }      from './lua-highlight.js';
 import * as storage             from './storage.js';
 
@@ -28,6 +32,8 @@ const RUN_SHORTCUT = IS_MAC ? '⌘↵' : 'Ctrl+Enter';
 const MOD_LABEL    = IS_MAC ? '⌘' : 'Ctrl+';
 const SHIFT_LABEL  = IS_MAC ? '⇧' : 'Shift+';
 const API_SHORTCUT = `${MOD_LABEL}K`;
+const DEMO_SHORTCUT = `${MOD_LABEL}${SHIFT_LABEL}D`;
+const ARIA_MOD     = IS_MAC ? 'Meta' : 'Control';
 const TERMINAL_SHORTCUT = IS_MAC ? '⌃`' : 'Ctrl+`';   // Control on every platform: macOS keeps ⌘` for switching windows
 const CODE_KEY     = 'luaturtle-code';
 const SAVE_DELAY   = 300;
@@ -118,6 +124,15 @@ addEventListener('pagehide', () => { if (saveTimer) saveDraft(); });
 editor.setCursor({ line: START_CURSOR_LINE, ch: 0 });
 editor.focus();
 
+// The editor's caret stays visible and blinking while the editor is blurred,
+// for as long as anything that inserts there is open: each says so by name.
+const ghostCursorFor = new Set();
+function setGhostCursor(name, on) {
+    if (on) ghostCursorFor.add(name);
+    else ghostCursorFor.delete(name);
+    editor.getWrapperElement().classList.toggle('cm-ghost-cursor', ghostCursorFor.size > 0);
+}
+
 // ---- Error highlight ----
 
 let errorMark = null;   // CodeMirror TextMarker over the failing line's code
@@ -185,16 +200,13 @@ function goToLine(line) {
 // ---- Terminal ----
 
 const terminal = new Terminal({
-    panel:     $('terminal-panel'),
-    header:    $('terminal-header'),
-    content:   $('terminal-content'),
-    caret:     $('terminal-caret'),
-    clearBtn:  $('terminal-clear'),
-    container: $('editor-panel'),
-    tabList:   $('terminal-tabs'),
-    outputTab: $('terminal-tab-output'),
+    panel:    $('terminal-panel'),
+    header:   $('terminal-header'),
+    content:  $('terminal-content'),
+    caret:    $('terminal-caret'),
+    clearBtn: $('terminal-clear'),
+    column:   $('stage'),
 }, {
-    onLayout:    () => editor.refresh(),
     onLineClick: goToLine,
 });
 
@@ -299,7 +311,7 @@ function onWorkerMessage(e) {
 
     if (msg.type === 'ready') {
         usageCatalog = msg.usage || {};
-        commandRef.setDemos(msg.demos);
+        commandRef.setDemoPrograms(msg.demos);
         setState('idle');
         setStatus(`Ready · ${RUN_SHORTCUT} to run`);
         if (pendingRun) { pendingRun = false; runCode(); }
@@ -324,7 +336,7 @@ function onWorkerMessage(e) {
     } else if (msg.type === 'error') {
         setState('idle');
         terminal.error(msg.message, msg.line);
-        terminal.selectTab('output');
+        terminal.open();
         if (msg.line) markError(msg.line, msg.message, msg.usage);
         setStatus(msg.line ? `Error on line ${msg.line}` : 'Error — see terminal', 'error');
     }
@@ -334,7 +346,7 @@ function failToLoad(detail) {
     setState('failed');
     setStatus('Lua failed to load — try reloading', 'error');
     terminal.error(`Could not start the Lua VM: ${detail}`);
-    terminal.selectTab('output');
+    terminal.open();
 }
 
 function startWorker() {
@@ -395,40 +407,73 @@ function insertLine(text) {
 }
 
 // Demos run at the real canvas's size, so screen_width() reports what a run
-// would. Over the canvas, the reference covers it without resizing it.
+// would.
 const commandPreview = createCommandPreview({
     canvas: $('api-preview-canvas'),
     output: $('api-preview-output'),
     canvasSize,
 });
 
-const commandPlacement = createCommandPlacement({
-    canvasPanel: $('canvas-panel'),
-    terminal,
-    floatHandle: $('api-header'),
-    floatGrip:   $('api-resize'),
+// The panel under the editor the reference lives in: roomy enough for the
+// list beside a legible demo, until the learner resizes it, but never more
+// than 45% of the column to start, so the code keeps most of the room.
+const referenceDock = createDock({
+    panel:  $('reference-panel'),
+    header: $('reference-header'),
+    caret:  $('reference-caret'),
+    column: $('editor-panel'),
+    key:    'luaturtle-reference-height',
+    defaultHeight: 320,
+    defaultShare:  0.45,
+    minHeight:     180,
+    onToggle: (open) => commandRef.dockChanged(open),
+    onLayout: () => editor.refresh(),
 });
 
 const commandRef = initCommandReference({
     overlay: $('api-overlay'),
     button: $('btn-api'),
     preview: commandPreview,
-    host: commandPlacement.current(),
+    dock: referenceDock,
+    demoToggle: $('api-demo-toggle'),
     shortcut: API_SHORTCUT,
+    demoShortcut: DEMO_SHORTCUT,
+    keyShortcuts: { focus: `${ARIA_MOD}+K`, demos: `${ARIA_MOD}+Shift+D` },
     copyShortcut: `${MOD_LABEL}C`,
     insertShortcut: `${MOD_LABEL}I`,
     // Keep the editor's caret visible while the overlay has focus, and send
     // pastes there, so a copied command can be pasted without leaving it.
-    onToggle: (open) => editor.getWrapperElement().classList.toggle('cm-ghost-cursor', open),
+    onToggle: (open) => setGhostCursor('reference', open),
     // CodeMirror keeps its selection while blurred, so this restores the caret.
     onClose:  () => editor.focus(),
     onPaste:  (text) => editor.replaceSelection(text),
     onInsert: insertLine,
-    onMove:   (name) => commandRef.setHost(commandPlacement.set(name)),
 });
 $('api-shortcut').textContent = API_SHORTCUT;
+$('reference-focus-key').textContent = API_SHORTCUT;
+$('api-demo-key').textContent = DEMO_SHORTCUT;
+commandRef.show();   // open from the start, without taking focus from the editor
 document.querySelectorAll('.api-section-key').forEach((kbd, i) => {
     kbd.textContent = `${SHIFT_LABEL}${i ? '↓' : '↑'}`;
+});
+
+// ---- Game controller ----
+
+const gamepad = initGamepad({
+    els: {
+        menu:      $('gamepad-menu'),
+        chip:      $('gamepad-chip'),
+        chipGlyph: $('gamepad-chip-glyph'),
+        mapping:   $('gamepad-mapping'),
+    },
+    catalog:  readCommandCatalog($('api-list')),
+    onInsert: insertLine,
+    onRun:    () => { gamepad.closeMapping(); runCode(); },
+    onStop:   stopCode,
+    onUndo:   () => editor.undo(),
+    onRedo:   () => editor.redo(),
+    onMenuToggle: (open) => setGhostCursor('gamepad-menu', open),
+    onRefocus: () => editor.focus(),
 });
 
 // ---- Global shortcuts ----
@@ -437,23 +482,26 @@ document.addEventListener('keydown', (e) => {
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.key === 'Enter') {
         e.preventDefault();
-        // Over the canvas, the reference would hide the drawing, so get it
-        // out of the way first.
-        if (commandRef.isOpen() && commandPlacement.current().coversCanvas) commandRef.close();
+        gamepad.closeMapping();   // it covers the drawing
         runCode();
     } else if (e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.code === 'Backquote') {
         e.preventDefault();
-        terminal.toggleOutput();
+        terminal.toggle();
     } else if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault();   // Chrome and Firefox otherwise focus the search bar
-        // Open but focused elsewhere (the editor beside it), the shortcut
-        // goes back to the search bar rather than closing it.
-        if (commandRef.isOpen() && !commandRef.hasFocus()) commandRef.open();
-        else commandRef.toggle();
+        // Moves focus between the editor and the reference's search bar,
+        // opening the reference if it's collapsed; it never collapses it.
+        if (commandRef.hasFocus()) editor.focus();
+        else commandRef.open();
+    } else if (mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') {
+        e.preventDefault();   // browsers otherwise bookmark the open tabs
+        commandRef.toggleDemos();
     } else if (e.key === 'Escape') {
-        // Anywhere but over the canvas, the reference can stay open while
-        // the learner works in the editor, so Esc there still stops a run.
-        if (commandRef.isOpen() && (commandPlacement.current().coversCanvas || commandRef.hasFocus())) {
+        // The reference stays open while the learner works in the editor,
+        // so Esc closes it only from inside it, and elsewhere stops a run.
+        if (gamepad.isMappingOpen()) {
+            gamepad.closeMapping();
+        } else if (commandRef.isOpen() && commandRef.hasFocus()) {
             commandRef.close();
         } else if (usagePopup.isOpen()) {
             usagePopup.hide();
