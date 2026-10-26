@@ -2,23 +2,20 @@
 // The searchable command reference: a list of command signatures, and a
 // detail pane for the selected one.
 //
-// Where it shows is up to a host (command-placement.js): over the canvas,
-// in a tab of the terminal panel, or in a floating window. Buttons in its
-// header, one per other place, ask the owner to move it (onMove, with the
-// button's data-placement), and the owner hands over the new host with
-// setHost, whose name goes in the overlay's data-placement for the
-// stylesheet;
-// the reference keeps its query and selection through the move. A host can
-// also show or hide it on its own (the learner switching tabs), which
-// counts as opening or closing it, except that hiding it only takes focus
-// back to the editor if focus was inside it.
+// It lives in a panel docked under the editor (dock.js), shown when the
+// page loads. Opening and closing it open and collapse that panel. The
+// learner can also collapse or open the panel from its header, which counts
+// as closing or opening the reference, except that collapsing it only takes
+// focus back to the editor if focus was inside it.
 //
 // Opening it focuses the search bar with an empty query, so a learner can
-// press the shortcut and start typing. While it's open, typing anywhere but
-// an editable field (the editor, say) goes to the search bar too, so
-// clicking or arrowing through the rows never strands the learner's typing. The query filters rows by their
-// signature and description; sections with no matching rows hide entirely.
-// Closing it always hands focus to onClose (the editor, at its last caret).
+// press the shortcut and start typing; show() opens it without taking focus,
+// for the page load. Typing while focus is anywhere inside it but an
+// editable field goes to the search bar too, so clicking or arrowing through
+// the rows never strands the learner's typing. The query filters rows by
+// their signature and description; sections with no matching rows hide
+// entirely. Closing it always hands focus to onClose (the editor, at its
+// last caret).
 //
 // One row is always selected while any match: the first match, until the
 // learner picks another. ↑ and ↓ select a row instead of moving the search
@@ -26,7 +23,12 @@
 // section, and a click selects the row clicked. The detail pane shows the
 // selected command's description, its demo program, and preview (a
 // command-preview.js player) running the demo. Demos come from the worker
-// (turtle/demos.lua) via setDemos, keyed by the row's signature.
+// (turtle/demos.lua) via setDemoPrograms, keyed by the row's signature.
+//
+// Demos are off until the learner turns them on, with the toggle in the
+// panel's header or toggleDemos (the owner's shortcut), and the choice is
+// remembered. Off, the detail pane shows only the command's description,
+// and nothing plays.
 //
 // Each row has buttons at its right edge that insert its signature with
 // onInsert (the editor, on a new line) and copy it. They show only on a row
@@ -40,8 +42,10 @@
 // the search bar, so copy-then-paste works without closing the overlay.
 
 import { highlightLua } from './lua-highlight.js';
+import * as storage from './storage.js';
 
 const DONE_RESET_MS = 1500;
+const DEMOS_KEY = 'luaturtle-reference-demos';   // 'on', or anything else for off
 const ICON_OPEN = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">';
 const ICON_DONE = '<path class="icon-done" d="M20 6 9 17l-5-5"/></svg>';
 const COPY_ICON = ICON_OPEN
@@ -142,7 +146,12 @@ function hasTextSelection() {
     return !(window.getSelection()?.isCollapsed ?? true);
 }
 
-export function initCommandReference({ overlay, button, preview, host: initialHost, shortcut, copyShortcut, insertShortcut, onToggle, onClose, onPaste, onInsert, onMove }) {
+// dock: the panel it lives in, from dock.js; its onToggle must call the
+//   returned dockChanged.
+// demoToggle: the button that turns demos on and off.
+// shortcut, demoShortcut: labels for the owner's shortcuts that open it and
+//   toggle demos, as shown; keyShortcuts: the same, for aria-keyshortcuts.
+export function initCommandReference({ overlay, button, preview, dock, demoToggle, shortcut, demoShortcut, keyShortcuts, copyShortcut, insertShortcut, onToggle, onClose, onPaste, onInsert }) {
     const search      = overlay.querySelector('#api-search');
     const sections    = [...overlay.querySelectorAll('.api-section')];
     const empty       = overlay.querySelector('#api-empty');
@@ -153,13 +162,12 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
     const detailAbout = overlay.querySelector('#api-detail-about');
     const detailDemo  = overlay.querySelector('#api-detail-demo');
     const detailCode  = overlay.querySelector('#api-detail-code');
-    const moveButtons = [...overlay.querySelectorAll('.api-move')];
 
     let selected = null;   // the row <li> shown in the detail pane
     let picked = false;    // the learner picked or copied a command since the query last changed
     let demos = {};        // signature → demo program; empty until the worker is ready
-    let shown = false;     // open, in whichever host it lives
-    let host = null;       // where it shows: see command-placement.js
+    let shown = false;     // open: its panel isn't collapsed
+    let demosOn = storage.load(DEMOS_KEY) === 'on';
 
     // Each row keeps its signature and description, since its text later
     // includes the buttons and, while selected, the hint.
@@ -232,9 +240,23 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
         detailAbout.textContent = about;
         highlightLua(demo ?? '', detailCode);
         detailDemo.hidden = demo === null;
-        if (demo === null) preview.stop();
+        if (demo === null || !demosOn) preview.stop();
         else preview.show(demo);
     }
+
+    function setDemosOn(on) {
+        demosOn = on;
+        storage.save(DEMOS_KEY, on ? 'on' : 'off');
+        renderDemoToggle();
+        showDetail();
+    }
+
+    function renderDemoToggle() {
+        demoToggle.setAttribute('aria-pressed', String(demosOn));
+        detail.classList.toggle('demos-off', !demosOn);
+    }
+
+    const toggleDemos = () => setDemosOn(!demosOn);
 
     function moveSelection(direction) {
         const rows = visibleRows();
@@ -282,8 +304,8 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
         select(visibleRows()[0] ?? null);
     }
 
-    // Set before asking the host to show or hide it, so the host's report
-    // of the change finds nothing left to do.
+    // Set before opening or collapsing the panel, so the panel's report of
+    // the change finds nothing left to do.
     function setShown(open) {
         shown = open;
         button.classList.toggle('active', open);
@@ -291,44 +313,34 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
         onToggle(open);
     }
 
-    function open() {
-        if (shown) return search.focus();
+    function show() {
+        if (shown) return;
         search.value = '';
         setShown(true);
-        host.show(overlay);
+        dock.open();
         filter('');
+    }
+
+    function open() {
+        show();
         search.focus();
     }
 
     function close() {
         setShown(false);
-        host.hide(overlay);
+        dock.close();
         select(null);
         onClose();
     }
 
-    // The host showed or hid it without being asked.
-    function hostChanged(visible) {
+    // The learner opened or collapsed the panel from its header.
+    function dockChanged(visible) {
         if (visible === shown) return;
         if (visible) return open();
         const hadFocus = hasFocus();
         setShown(false);
         select(null);
         if (hadFocus) onClose();
-    }
-
-    // Moves it into next, open or closed as it was. The move takes focus
-    // out of the page, so it goes to the button that moves it back.
-    function setHost(next) {
-        const refocus = hasFocus();
-        const previous = host;
-        previous?.detach(overlay);
-        host = next;
-        overlay.dataset.placement = next.name;
-        host.attach(overlay, hostChanged);
-        if (!shown) return;
-        host.show(overlay);
-        if (refocus) moveButtons.find((b) => b.dataset.placement === previous.name)?.focus();
     }
 
     const toggle = () => (isOpen() ? close() : open());
@@ -352,8 +364,8 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
     // Focusing the search bar during keydown sends the key's character (or
     // deletion) to it, in every browser. The caret goes to the end, so the
     // key extends the query.
-    document.addEventListener('keydown', (e) => {
-        if (!shown || e.defaultPrevented || !isTypingKey(e) || isEditable(e.target)) return;
+    overlay.addEventListener('keydown', (e) => {
+        if (e.defaultPrevented || !isTypingKey(e) || isEditable(e.target)) return;
         search.focus();
         search.setSelectionRange(search.value.length, search.value.length);
     });
@@ -380,16 +392,18 @@ export function initCommandReference({ overlay, button, preview, host: initialHo
         else moveSelection(direction);
     });
     button.addEventListener('click', toggle);
-    overlay.querySelector('#api-close').addEventListener('click', close);
-    for (const b of moveButtons) b.addEventListener('click', () => onMove(b.dataset.placement));
-    setHost(initialHost);
     button.title = `Command reference (${shortcut})`;
+    search.setAttribute('aria-keyshortcuts', keyShortcuts.focus);
+    demoToggle.addEventListener('click', toggleDemos);
+    demoToggle.title = `Show a demo of the selected command (${demoShortcut})`;
+    demoToggle.setAttribute('aria-keyshortcuts', keyShortcuts.demos);
+    renderDemoToggle();
 
     // demos: signature → demo program, from the worker's ready message.
-    function setDemos(next) {
+    function setDemoPrograms(next) {
         demos = next || {};
         showDetail();
     }
 
-    return { isOpen, hasFocus, open, close, toggle, setHost, setDemos };
+    return { isOpen, hasFocus, show, open, close, toggle, dockChanged, toggleDemos, setDemoPrograms };
 }

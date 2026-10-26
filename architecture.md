@@ -22,7 +22,8 @@ Layer boundaries, top to bottom:
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
 | UI shell | `app.js` | Editor, draft autosave + share links, run state machine, worker lifecycle, frame ack, shortcuts |
-| UI panels | `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-placement.js`, `floating-frame.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js` | Tabbed output panel; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference; where the reference shows (over the canvas, in a terminal tab, or floating); a draggable, resizable floating window; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them |
+| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them |
+| Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
@@ -276,6 +277,8 @@ The pieces, each with one job:
 
 The command reference (`command-reference.js`) lists only signatures, each with buttons at the row's right edge to insert it into the editor or copy it, shown only once the learner clicks or arrows to that row.
 The selected entry (the first match, until the learner picks another) fills a detail pane: its description, a demo program (with buttons to copy it, or insert it into the editor below the caret's line), and a miniature canvas playing that program on a loop.
+Demos are off until the learner turns them on, with the Demos toggle in the reference's header or ⌘⇧D (Ctrl+Shift+D elsewhere), and the choice is saved in `localStorage`.
+Off, the detail pane shows only the description, with a note saying how to turn them on.
 The pieces, each with one job:
 
 - **`index.html` holds the entries.** Each is `<li><code>signature</code><span class="api-about">description</span></li>`; the description is hidden in the list and read by the search and the detail pane.
@@ -285,6 +288,7 @@ The pieces, each with one job:
   The list starts with the blank canvas and is posted back whole as `recording`.
   The `ready` message carries the demos, as it carries the usage catalog.
 - **`command-preview.js` plays a recording.** It owns a second `worker.js` instance, so recording never waits behind (or disturbs) the learner's own run, and a second `Renderer` on the miniature canvas.
+  The worker starts with the first demo shown, so with demos off no second Lua VM loads.
   Playback spaces frames as a live run would (`work`, then the frame, then `delay` plus a small round-trip allowance), rendering at most one frame per display refresh, and reveals `print()` output under the canvas as the frames that printed it go up.
   The view is centered on the drawing's bounds and scaled down (never up) to fit; a recording is cached per program and canvas size.
   Demos run at the real canvas's size, so `screen_width()` reports what a run would.
@@ -292,25 +296,62 @@ The pieces, each with one job:
 Because both the recording and the drawing go through the production code paths, a demo looks exactly like the same program run on the real canvas, zoomed out.
 Under `prefers-reduced-motion`, the preview shows only the finished drawing.
 
-### Command reference placement
+### Panels
 
-The reference shows over the canvas, as a Commands tab in the terminal panel, or in a floating window, so the drawing can stay in view while it's open.
-Buttons in its header, one for each place it isn't, move it, and the choice is saved in `localStorage`.
+Each column has a panel docked along its bottom: the command reference under the editor, and the terminal under the canvas.
+The reference is open when the page loads, so the commands are always in view beside the code they go into, and the drawing is never covered.
 The boundaries:
 
+- **`dock.js` owns a panel's frame:** collapsing it to its header, resizing it by dragging the header, and its saved height.
+  `dockHeight` decides the height from the panel's state, as a pure function; the rest is the shell that measures, stores, and applies it.
+  It knows nothing about what the panel holds.
 - **`command-reference.js` owns what the reference is:** its query, selection, and whether it's open.
-  It never touches the page around it; it asks a host to attach, detach, show, and hide the one `#api-overlay` element, which is moved rather than duplicated, so listeners and state survive a move.
-- **`command-placement.js` owns where it is:** one host for the canvas (toggles `.visible`), one for the terminal (adds and selects a tab), one for the floating window, and the saved choice.
-  The reference writes the host's name to the overlay's `data-placement`, and the stylesheet draws each frame from that.
-  A host reports visibility changes the learner makes without the reference (clicking a tab, collapsing the panel), which the reference treats as opening or closing.
-- **`terminal.js` owns the panel:** tabs, collapse, and a height per tab (the Commands tab defaults taller than the output).
-  It knows nothing about the reference; any pane can be added as a tab.
-- **`floating-frame.js` owns the floating window's geometry:** dragging by the reference's header, resizing from a corner grip, keeping it on screen when the viewport shrinks, and the saved position and size.
-  It knows nothing about the reference either; it's attached to the overlay only while the float host holds it.
+  Opening and closing it open and collapse its dock, and the dock reports the learner collapsing or opening it from the header, which the reference treats as closing or opening.
+  The page load opens it without taking focus from the editor.
+  Its shortcut, ⌘K (Ctrl+K elsewhere), is labeled in its header and moves focus between the editor and the search bar, opening the reference if it's collapsed but never collapsing it.
+- **`terminal.js` owns the output:** print output, errors, and hints, in its dock.
+  Output that arrives while it's collapsed marks it unread, and an error opens it.
 
-Anywhere but over the canvas, a run doesn't close the reference, and Esc closes it only while focus is inside it, so Esc in the editor still stops a run.
-An error brings the output tab forward.
-The overlay is a size container, so its layout adapts to the terminal panel's short, wide shape and to any size the floating window is given by container queries alone.
+The reference stays open through a run, and Esc closes it only while focus is inside it, so Esc in the editor still stops a run.
+The reference is a size container, so its layout adapts to whatever height its panel is dragged to by container queries alone.
+
+### Game controller
+
+A controller works the app through the browser's Gamepad API: a menu in a corner of the canvas lists the reference's commands, and each button is mapped to a function.
+The menu has the reference's sections, a Recent page with the five commands inserted most recently, and a Favorites page of categories the learner makes and saves commands into.
+A command is inserted exactly as the reference inserts it: its signature, on a new line below the caret.
+The boundaries:
+
+- **`gamepad-input.js` reads the controller.** It polls once per frame while one is connected and reports presses, repeats while a button is held, and releases, like the keyboard does for keys.
+  The left stick counts as the d-pad, and every connected controller is read as one.
+  A browser only reveals a controller once a button is pressed, so whatever is down when one first shows up is ignored until it's released.
+  It knows nothing about what a button does.
+- **`gamepad-layout.js` is the controller, as data:** each button's index in the W3C standard mapping, its name, the short label shown wherever it is named, and its shape in the drawing.
+  Only the Xbox 360 layout exists; another controller is another object of the same shape, and nothing else knows what a controller looks like.
+- **`gamepad-bindings.js` owns the mapping:** button → function id, or nothing, saved in `localStorage`.
+- **`gamepad-controller.js` owns the functions** and sends each press to the one its button is mapped to.
+  A function is `{ id, label, group, run }`: working the menu (move, select, back, previous and next group, save to favorites, show recent, show favorites), the program (run, stop, undo, redo), and one per command in the catalog, which inserts it.
+  So a button can open the menu or be a command outright, and both are the same thing to the mapping.
+  A function that works the menu opens it instead when it's closed.
+- **`gamepad-menu.js` owns the menu:** a stack of pages, each a list of rows with one selected.
+  Saving a command, and renaming or deleting a category, are pages too, so everything is reached the same way with the same few buttons.
+  It never reads the controller; its owner calls `move`, `select`, `alt`, `back`, `sibling`, and `show`, and rows can be clicked.
+  It never takes focus from the editor, so the caret marks where an insert will land; typing a category's name is the one exception.
+- **`gamepad-mapping.js` owns the mapping view:** the drawing, a legend of what each button does, and the list of functions to give the selected button.
+  While it's open, presses go to it rather than to functions, and the layout's `nav` buttons (d-pad up and down, A, B) work it whatever they are mapped to.
+  So a mapping that unmapped the menu's own buttons can be repaired with the controller alone, and Reset puts the defaults back.
+- **`command-catalog.js` reads the commands** from the reference's list in `index.html`, so the reference, the menu, and the mapping view cannot list different ones.
+  Anything added to that list (part of Lua's standard library, later) shows up in all three.
+- **`recent-commands.js` and `favorites.js` own the two lists,** saved in `localStorage`.
+  Both drop a saved command the reference no longer lists.
+  Only inserts made with the controller count as recent.
+
+The button that opens the menu appears in the canvas's corner once a controller has connected, and stays for the visit.
+The mapping view covers the canvas, so a run closes it.
+
+`test/gamepad_test.mjs` covers the parts that need no page (reading presses, the mapping, the two lists).
+`test/dock_test.mjs` covers a panel's height.
+Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 
 ### Zoom about a point (`zoomAt`)
 

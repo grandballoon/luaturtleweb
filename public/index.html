@@ -66,163 +66,204 @@
   <div id="main">
     <div id="editor-panel">
       <textarea id="editor-textarea"></textarea>
-      <div id="terminal-panel">
-        <div id="terminal-header">
-          <button id="terminal-caret" data-tooltip="close" aria-label="Toggle terminal" aria-expanded="true" aria-controls="terminal-panel"><span id="terminal-caret-icon">&#9660;</span></button>
-          <div id="terminal-tabs" role="tablist" aria-label="Panel">
-            <button id="terminal-tab-output" class="terminal-tab" role="tab" aria-controls="terminal-content" aria-selected="true">Terminal</button>
-          </div>
-          <button id="terminal-clear">clear</button>
+      <section id="reference-panel" class="dock" aria-label="Command reference">
+        <div id="reference-header" class="dock-header">
+          <button id="reference-caret" class="dock-caret" aria-label="Toggle command reference" aria-controls="api-overlay"><span class="dock-caret-icon">&#9660;</span></button>
+          <h2 class="dock-title">Commands</h2>
+          <span class="dock-hint" aria-hidden="true"><kbd id="reference-focus-key" class="kbd"></kbd> focus</span>
+          <button id="api-demo-toggle" class="dock-toggle" aria-pressed="false">Demos <kbd id="api-demo-key" class="kbd" aria-hidden="true"></kbd></button>
         </div>
-        <div id="terminal-content" role="log" aria-label="Program output"></div>
-      </div>
+        <div id="api-overlay" class="dock-body" tabindex="-1">
+          <div id="api-header">
+            <div id="api-searchbar">
+              <label id="api-search-field">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <input id="api-search" type="search" placeholder="Search commands" aria-label="Search commands" aria-controls="api-list" autocomplete="off" spellcheck="false">
+              </label>
+            </div>
+            <p id="api-scroll-hint">Use <kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> to select a command, <kbd class="kbd api-section-key"></kbd> <kbd class="kbd api-section-key"></kbd> to jump between sections.</p>
+          </div>
+          <div id="api-body">
+            <div id="api-list">
+              <section class="api-section">
+                <h2>Movement</h2>
+                <ul class="api-rows">
+                  <li><code>forward(n)</code><span class="api-about">Move forward n pixels. Alias: fd</span></li>
+                  <li><code>back(n)</code><span class="api-about">Move backward n pixels. Alias: bk</span></li>
+                  <li><code>left(degrees)</code><span class="api-about">Turn left. Alias: lt</span></li>
+                  <li><code>right(degrees)</code><span class="api-about">Turn right. Alias: rt</span></li>
+                  <li><code>setpos(x, y)</code><span class="api-about">Move to coordinates (x, y)</span></li>
+                  <li><code>setheading(angle)</code><span class="api-about">Face a direction (0=east, 90=north). Alias: seth</span></li>
+                  <li><code>home()</code><span class="api-about">Return to center, face east</span></li>
+                  <li><code>setx(x)</code><span class="api-about">Set x coordinate, keep y</span></li>
+                  <li><code>sety(y)</code><span class="api-about">Set y coordinate, keep x</span></li>
+                  <li><code>teleport(x, y)</code><span class="api-about">Jump to position instantly, no drawing</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Pen</h2>
+                <ul class="api-rows">
+                  <li><code>penup()</code><span class="api-about">Stop drawing. Alias: pu</span></li>
+                  <li><code>pendown()</code><span class="api-about">Start drawing. Alias: pd</span></li>
+                  <li><code>pensize(n)</code><span class="api-about">Set line width</span></li>
+                  <li><code>pencolor(r, g, b)</code><span class="api-about">Set color with RGB (0–1 or 0–255)</span></li>
+                  <li><code>pencolor("name")</code><span class="api-about">Set color by name: "red", "blue", "gold", etc.</span></li>
+                  <li><code>color("red")</code><span class="api-about">Set both pen and fill color</span></li>
+                  <li><code>color("red", "blue")</code><span class="api-about">Set pen and fill color independently</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Shapes</h2>
+                <ul class="api-rows">
+                  <li><code>circle(radius)</code><span class="api-about">Draw a full circle</span></li>
+                  <li><code>circle(radius, extent)</code><span class="api-about">Arc: extent in degrees</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Fill</h2>
+                <ul class="api-rows">
+                  <li><code>begin_fill()</code><span class="api-about">Start recording a filled shape</span></li>
+                  <li><code>end_fill()</code><span class="api-about">Fill the shape drawn since begin_fill</span></li>
+                  <li><code>filling()</code><span class="api-about">Returns true if currently filling</span></li>
+                  <li><code>fillcolor(r, g, b)</code><span class="api-about">Set fill color</span></li>
+                  <li><code>dot(size)</code><span class="api-about">Draw a filled circle at turtle's position</span></li>
+                  <li><code>dot(size, "red")</code><span class="api-about">Draw a dot with a specific color</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Text</h2>
+                <ul class="api-rows">
+                  <li><code>write(text)</code><span class="api-about">Write text at turtle's position</span></li>
+                  <li><code>write(text, move, align, font)</code><span class="api-about">align: "left", "center", "right"; font: {family, size}</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Canvas</h2>
+                <ul class="api-rows">
+                  <li><code>bgcolor(r, g, b)</code><span class="api-about">Set background color</span></li>
+                  <li><code>bgcolor("name")</code><span class="api-about">Set background color by name</span></li>
+                  <li><code>screen_width()</code><span class="api-about">Returns canvas width in pixels</span></li>
+                  <li><code>screen_height()</code><span class="api-about">Returns canvas height in pixels</span></li>
+                  <li><code>clear()</code><span class="api-about">Erase drawing, keep turtle position</span></li>
+                  <li><code>reset()</code><span class="api-about">Erase drawing and reset turtle to start</span></li>
+                  <li><code>undo()</code><span class="api-about">Undo the last command</span></li>
+                  <li><code>setundobuffer(n)</code><span class="api-about">Set max undo history length</span></li>
+                  <li><code>speed(n)</code><span class="api-about">0=instant, 1=slowest, 10=fastest</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Turtle</h2>
+                <ul class="api-rows">
+                  <li><code>hideturtle()</code><span class="api-about">Hide the turtle. Alias: ht</span></li>
+                  <li><code>showturtle()</code><span class="api-about">Show the turtle. Alias: st</span></li>
+                  <li><code>stamp()</code><span class="api-about">Stamp turtle shape; returns id</span></li>
+                  <li><code>clearstamp(id)</code><span class="api-about">Remove a stamp</span></li>
+                  <li><code>clearstamps(n)</code><span class="api-about">Remove last n stamps; omit n to clear all</span></li>
+                  <li><code>Turtle()</code><span class="api-about">Create a second turtle with all the same methods</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>State Queries</h2>
+                <ul class="api-rows">
+                  <li><code>position()</code><span class="api-about">Returns x, y coordinates</span></li>
+                  <li><code>xcor() / ycor()</code><span class="api-about">Returns x or y coordinate</span></li>
+                  <li><code>heading()</code><span class="api-about">Returns current angle in degrees</span></li>
+                  <li><code>isdown()</code><span class="api-about">Returns true if pen is down</span></li>
+                  <li><code>isvisible()</code><span class="api-about">Returns true if turtle is visible</span></li>
+                  <li><code>distance(x, y)</code><span class="api-about">Returns distance to point</span></li>
+                  <li><code>towards(x, y)</code><span class="api-about">Returns angle towards point</span></li>
+                </ul>
+              </section>
+              <p id="api-empty" hidden>No commands match <q id="api-empty-query"></q></p>
+            </div>
+            <section id="api-detail" aria-label="Selected command">
+              <h2 id="api-detail-call"></h2>
+              <p id="api-detail-about" aria-live="polite"></p>
+              <p id="api-demo-off">Turn on <b>Demos</b> above to see this command in action.</p>
+              <div id="api-detail-demo">
+                <pre id="api-detail-code" class="cm-s-turtle" aria-label="Example"></pre>
+              </div>
+              <div id="api-preview">
+                <canvas id="api-preview-canvas" aria-label="The example drawing"></canvas>
+              </div>
+              <pre id="api-preview-output" aria-label="The example's printed output" hidden></pre>
+            </section>
+          </div>
+        </div>
+      </section>
     </div>
     <div id="splitter" title="Drag to resize · double-click to reset" role="separator" tabindex="0"
          aria-label="Resize editor and canvas" aria-controls="editor-panel" aria-valuemin="10" aria-valuemax="90">
       <div id="splitter-grip"><span></span><span></span><span></span></div>
     </div>
-    <div id="canvas-panel">
-      <div id="canvas-controls">
-        <div id="canvas-toolbar">
-          <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
-          <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
-          <button id="btn-zoom-reset" title="Reset view">Reset</button>
-          <span id="zoom-label" aria-live="polite">100%</span>
-          <button id="btn-grid" title="Toggle grid" aria-pressed="false">Grid</button>
+    <div id="stage">
+      <div id="canvas-panel">
+        <div id="canvas-controls">
+          <div id="canvas-toolbar">
+            <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+            <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+            <button id="btn-zoom-reset" title="Reset view">Reset</button>
+            <span id="zoom-label" aria-live="polite">100%</span>
+            <button id="btn-grid" title="Toggle grid" aria-pressed="false">Grid</button>
+          </div>
+          <p id="canvas-hint">
+            <span class="hint-pointer">Drag or scroll to pan<br>Pinch or Ctrl/⌘+scroll to zoom</span>
+            <span class="hint-touch">Drag to pan<br>Pinch to zoom</span>
+          </p>
         </div>
-        <p id="canvas-hint">
-          <span class="hint-pointer">Drag or scroll to pan<br>Pinch or Ctrl/⌘+scroll to zoom</span>
-          <span class="hint-touch">Drag to pan<br>Pinch to zoom</span>
-        </p>
+        <canvas id="turtle-canvas" aria-label="Turtle drawing" aria-describedby="canvas-hint"></canvas>
+        <button id="gamepad-chip" aria-label="Controller commands" title="Controller commands" aria-controls="gamepad-menu" hidden>
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
+          <span class="btn-label">Controller</span>
+          <span id="gamepad-chip-glyph" class="pad-glyph" aria-hidden="true"></span>
+        </button>
+        <section id="gamepad-menu" aria-label="Controller commands" hidden>
+          <div id="gamepad-menu-header">
+            <button id="gamepad-menu-back" class="icon-button quiet" aria-label="Back" title="Back" hidden>
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </button>
+            <h2 id="gamepad-menu-title"></h2>
+            <button id="gamepad-menu-mapping" class="icon-button quiet" aria-label="Controller mapping" title="Controller mapping" aria-controls="gamepad-mapping">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11h4"/><path d="M8 9v4"/><path d="M15 12h.01"/><path d="M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
+            </button>
+            <button id="gamepad-menu-close" class="icon-button" aria-label="Close controller commands" title="Close">&times;</button>
+          </div>
+          <ol id="gamepad-menu-rows"></ol>
+          <form id="gamepad-menu-form" hidden>
+            <input id="gamepad-menu-input" type="text" maxlength="40" autocomplete="off" spellcheck="false">
+          </form>
+          <p id="gamepad-menu-empty" hidden></p>
+          <div id="gamepad-menu-hints" aria-hidden="true"></div>
+          <p id="gamepad-menu-status" class="visually-hidden" role="status"></p>
+        </section>
+        <div id="gamepad-mapping" role="dialog" aria-label="Controller mapping" hidden>
+          <div id="gamepad-mapping-header">
+            <div id="gamepad-mapping-titlebar">
+              <h2>Controller mapping</h2>
+              <button id="gamepad-mapping-reset" title="Put every button back to what it did at first">Reset</button>
+              <button id="gamepad-mapping-close" class="icon-button" aria-label="Close controller mapping" title="Close (Esc)">&times;</button>
+            </div>
+            <p id="gamepad-mapping-help"></p>
+          </div>
+          <div id="gamepad-mapping-body">
+            <div id="gamepad-mapping-controller">
+              <div id="gamepad-mapping-diagram"></div>
+              <ul id="gamepad-mapping-legend" aria-label="What each button does"></ul>
+            </div>
+            <section id="gamepad-mapping-picker" aria-labelledby="gamepad-mapping-button">
+              <h3 id="gamepad-mapping-button"></h3>
+              <ul id="gamepad-mapping-options"></ul>
+            </section>
+          </div>
+        </div>
       </div>
-      <canvas id="turtle-canvas" aria-label="Turtle drawing" aria-describedby="canvas-hint"></canvas>
-      <div id="api-overlay" role="dialog" aria-label="Command reference" tabindex="-1">
-        <div id="api-header">
-          <div id="api-drag-bar" aria-hidden="true"></div>
-          <div id="api-searchbar">
-            <label id="api-search-field">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-              <input id="api-search" type="search" placeholder="Search commands" aria-label="Search commands" aria-controls="api-list" autocomplete="off" spellcheck="false">
-            </label>
-            <button class="api-header-button api-move" data-placement="canvas" aria-label="Move over the canvas" title="Move over the canvas">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/><path d="m8 9 3 3-3 3"/></svg>
-            </button>
-            <button class="api-header-button api-move" data-placement="terminal" aria-label="Move to a tab in the terminal panel" title="Move to a tab in the terminal panel">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 15h18"/><path d="m9 8 3 3 3-3"/></svg>
-            </button>
-            <button class="api-header-button api-move" data-placement="float" aria-label="Pop out into a floating window" title="Pop out into a floating window">
-              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-            </button>
-            <button id="api-close" class="api-header-button" aria-label="Close command reference" title="Close (Esc)">&times;</button>
-          </div>
-          <p id="api-scroll-hint">Use <kbd class="kbd">↑</kbd> <kbd class="kbd">↓</kbd> to select a command, <kbd class="kbd api-section-key"></kbd> <kbd class="kbd api-section-key"></kbd> to jump between sections.</p>
+      <div id="terminal-panel" class="dock">
+        <div id="terminal-header" class="dock-header">
+          <button id="terminal-caret" class="dock-caret" aria-label="Toggle terminal" aria-controls="terminal-content"><span class="dock-caret-icon">&#9660;</span></button>
+          <h2 id="terminal-title" class="dock-title">Terminal</h2>
+          <button id="terminal-clear">clear</button>
         </div>
-        <div id="api-body">
-          <div id="api-list">
-            <section class="api-section">
-              <h2>Movement</h2>
-              <ul class="api-rows">
-                <li><code>forward(n)</code><span class="api-about">Move forward n pixels. Alias: fd</span></li>
-                <li><code>back(n)</code><span class="api-about">Move backward n pixels. Alias: bk</span></li>
-                <li><code>left(degrees)</code><span class="api-about">Turn left. Alias: lt</span></li>
-                <li><code>right(degrees)</code><span class="api-about">Turn right. Alias: rt</span></li>
-                <li><code>setpos(x, y)</code><span class="api-about">Move to coordinates (x, y)</span></li>
-                <li><code>setheading(angle)</code><span class="api-about">Face a direction (0=east, 90=north). Alias: seth</span></li>
-                <li><code>home()</code><span class="api-about">Return to center, face east</span></li>
-                <li><code>setx(x)</code><span class="api-about">Set x coordinate, keep y</span></li>
-                <li><code>sety(y)</code><span class="api-about">Set y coordinate, keep x</span></li>
-                <li><code>teleport(x, y)</code><span class="api-about">Jump to position instantly, no drawing</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Pen</h2>
-              <ul class="api-rows">
-                <li><code>penup()</code><span class="api-about">Stop drawing. Alias: pu</span></li>
-                <li><code>pendown()</code><span class="api-about">Start drawing. Alias: pd</span></li>
-                <li><code>pensize(n)</code><span class="api-about">Set line width</span></li>
-                <li><code>pencolor(r, g, b)</code><span class="api-about">Set color with RGB (0–1 or 0–255)</span></li>
-                <li><code>pencolor("name")</code><span class="api-about">Set color by name: "red", "blue", "gold", etc.</span></li>
-                <li><code>color("red")</code><span class="api-about">Set both pen and fill color</span></li>
-                <li><code>color("red", "blue")</code><span class="api-about">Set pen and fill color independently</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Shapes</h2>
-              <ul class="api-rows">
-                <li><code>circle(radius)</code><span class="api-about">Draw a full circle</span></li>
-                <li><code>circle(radius, extent)</code><span class="api-about">Arc: extent in degrees</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Fill</h2>
-              <ul class="api-rows">
-                <li><code>begin_fill()</code><span class="api-about">Start recording a filled shape</span></li>
-                <li><code>end_fill()</code><span class="api-about">Fill the shape drawn since begin_fill</span></li>
-                <li><code>filling()</code><span class="api-about">Returns true if currently filling</span></li>
-                <li><code>fillcolor(r, g, b)</code><span class="api-about">Set fill color</span></li>
-                <li><code>dot(size)</code><span class="api-about">Draw a filled circle at turtle's position</span></li>
-                <li><code>dot(size, "red")</code><span class="api-about">Draw a dot with a specific color</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Text</h2>
-              <ul class="api-rows">
-                <li><code>write(text)</code><span class="api-about">Write text at turtle's position</span></li>
-                <li><code>write(text, move, align, font)</code><span class="api-about">align: "left", "center", "right"; font: {family, size}</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Canvas</h2>
-              <ul class="api-rows">
-                <li><code>bgcolor(r, g, b)</code><span class="api-about">Set background color</span></li>
-                <li><code>bgcolor("name")</code><span class="api-about">Set background color by name</span></li>
-                <li><code>screen_width()</code><span class="api-about">Returns canvas width in pixels</span></li>
-                <li><code>screen_height()</code><span class="api-about">Returns canvas height in pixels</span></li>
-                <li><code>clear()</code><span class="api-about">Erase drawing, keep turtle position</span></li>
-                <li><code>reset()</code><span class="api-about">Erase drawing and reset turtle to start</span></li>
-                <li><code>undo()</code><span class="api-about">Undo the last command</span></li>
-                <li><code>setundobuffer(n)</code><span class="api-about">Set max undo history length</span></li>
-                <li><code>speed(n)</code><span class="api-about">0=instant, 1=slowest, 10=fastest</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>Turtle</h2>
-              <ul class="api-rows">
-                <li><code>hideturtle()</code><span class="api-about">Hide the turtle. Alias: ht</span></li>
-                <li><code>showturtle()</code><span class="api-about">Show the turtle. Alias: st</span></li>
-                <li><code>stamp()</code><span class="api-about">Stamp turtle shape; returns id</span></li>
-                <li><code>clearstamp(id)</code><span class="api-about">Remove a stamp</span></li>
-                <li><code>clearstamps(n)</code><span class="api-about">Remove last n stamps; omit n to clear all</span></li>
-                <li><code>Turtle()</code><span class="api-about">Create a second turtle with all the same methods</span></li>
-              </ul>
-            </section>
-            <section class="api-section">
-              <h2>State Queries</h2>
-              <ul class="api-rows">
-                <li><code>position()</code><span class="api-about">Returns x, y coordinates</span></li>
-                <li><code>xcor() / ycor()</code><span class="api-about">Returns x or y coordinate</span></li>
-                <li><code>heading()</code><span class="api-about">Returns current angle in degrees</span></li>
-                <li><code>isdown()</code><span class="api-about">Returns true if pen is down</span></li>
-                <li><code>isvisible()</code><span class="api-about">Returns true if turtle is visible</span></li>
-                <li><code>distance(x, y)</code><span class="api-about">Returns distance to point</span></li>
-                <li><code>towards(x, y)</code><span class="api-about">Returns angle towards point</span></li>
-              </ul>
-            </section>
-            <p id="api-empty" hidden>No commands match <q id="api-empty-query"></q></p>
-          </div>
-          <section id="api-detail" aria-label="Selected command">
-            <h2 id="api-detail-call"></h2>
-            <p id="api-detail-about" aria-live="polite"></p>
-            <div id="api-detail-demo">
-              <pre id="api-detail-code" class="cm-s-turtle" aria-label="Example"></pre>
-            </div>
-            <div id="api-preview">
-              <canvas id="api-preview-canvas" aria-label="The example drawing"></canvas>
-            </div>
-            <pre id="api-preview-output" aria-label="The example's printed output" hidden></pre>
-          </section>
-        </div>
-        <div id="api-resize" aria-hidden="true"></div>
+        <div id="terminal-content" role="log" aria-label="Program output"></div>
       </div>
     </div>
   </div>
