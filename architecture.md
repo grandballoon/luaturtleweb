@@ -9,7 +9,7 @@ view — `forward(100)` animates and returns — even though rendering happens o
 Main thread (app.js)                         Web Worker (worker.js)
 ┌──────────────────────────┐   postMessage   ┌───────────────────────────────┐
 │ CodeMirror editor        │ ──── run ─────► │ Wasmoon (Lua 5.4 in WASM)     │
-│ Renderer (renderer.js)   │ ◄─── frame ──── │  turtle_web.lua (exec host)   │
+│ Renderer (renderer.js)   │ ◄─── frame ──── │  turtle_web.lua → host.lua    │
 │ Canvas2D + commit canvas │                 │   ├─ core.lua  (state machine)│
 │                          │  SharedArray-   │   └─ screen.lua (segment log) │
 │ Atomics.notify ──────────┼──── Buffer ────►│  Atomics.wait (blocks worker) │
@@ -28,7 +28,8 @@ Layer boundaries, top to bottom:
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
 | Worker bridge | `worker.js` | Wasmoon boot, frame protocol, sandbox run, error mapping |
-| Execution host | `turtle/turtle_web.lua` | Animation pacing, undo orchestration, tracer, API/globals |
+| Execution host | `turtle/host.lua`, `turtle/random.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random` |
+| Web adapter | `turtle/turtle_web.lua` | Holds the worker's current host instance and exposes it as the `_bridge_*` globals `worker.js` calls |
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
 | Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
 | Reference demos | `turtle/demos.lua` | A demo program per command-reference entry, played in the reference's detail pane |
@@ -132,16 +133,32 @@ uses shared memory.
   Device-pixel-ratio scaling is applied once via `setTransform` so drawing code works in CSS
   pixels.
 
-### The sandbox environment (`_turtle_make_env`)
+### The host instance (`Host.new`)
+
+`host.lua` returns `Host.new(opts)`: an instance owning its own screen, turtles, tracer state and sandbox env, so one Lua VM can run several programs without them touching.
+The web runs one at a time; the LÖVE desktop app (see `spec-love-port.md`) runs the learner's program and a reference demo side by side.
+`opts` carries what differs between hosts: the canvas size, `post_frame(delay_ms)` (the web blocks on the main thread's ack; the desktop yields a coroutine), `print`, a `seed`, and `on_command`.
+`turtle_web.lua` is the web's adapter: `_bridge_hard_reset` makes a new instance per Run, and the other `_bridge_*` globals read from it.
+
+`on_command(record)` is called after every public command with `{ name, turtle_id, first, last }`: the name as typed and the range of log indices the command appended.
+Nothing uses it yet; it is the hook point for the execution trace the desktop spec plans, and with no `on_command` the host does no extra work.
+
+`host.lua` runs on Lua 5.4 and LuaJIT alike, and shims `table.unpack` (missing in LuaJIT) before loading the core, so the shared files stay verbatim.
+`sh test/run.sh` runs every Lua suite under both `lua` and `luajit`.
+
+### The sandbox environment (`host.env()`)
 
 User code is loaded with `load(code, "user_code", "t", env)` where `env` is a fresh table
 exposing a whitelisted Lua stdlib subset (`math`, `string`, `table`, `pairs`, `pcall`, …) and
 the full turtle API — but not `require`, `io`, `os`, `debug`, or the module internals. Built
 fresh per Run, so nothing leaks between runs.
 
+The env's `math` is a copy whose `random` and `randomseed` belong to the instance (`random.lua`), seeded from `opts.seed` (or the clock) and recorded as `host.seed`.
+Lua's own generator is one per VM and differs between Lua 5.4 and LuaJIT; this one gives each program its own sequence, identical on the web and the desktop for the same seed, so a run can be reproduced exactly.
+
 ### The command table (`TURTLE_COMMANDS`, `SCREEN_COMMANDS`)
 
-Every public command is declared once in `turtle_web.lua` as `{ check, run }`, plus an `ALIASES` map (`fd` → `forward`, …).
+Every public command is declared once in `host.lua` as `{ check, run }`, plus an `ALIASES` map (`fd` → `forward`, …).
 The module-level globals, each `Turtle()`'s method table, and the sandbox env are all generated from these tables, so they cannot drift apart.
 `TURTLE_COMMANDS` act on one turtle (globals on the default core, methods on their own); `SCREEN_COMMANDS` (`bgcolor`, `tracer`, `update`, `Turtle`, …) are globals only.
 
@@ -260,7 +277,7 @@ The pieces, each with one job:
   So a runtime error, a stop, the learner's own `error()`, or a rejection they caught with `pcall` never picks up examples.
 - **`examples.lua` holds the examples.** Pure data, keyed by the command's own name, with up to three calls each.
   This is the file to edit when iterating on the examples; the tests run every example, and check that every command and alias has some.
-- **`turtle_web.lua` maps the command to its examples.** `_bridge_command_usage(err)` resolves an alias to its command (`fd` → `forward`) and returns `{ command, examples }`, or nil.
+- **`host.lua` maps the command to its examples.** `Host.command_usage(err)` (exposed to the worker as `_bridge_command_usage`) resolves an alias to its command (`fd` → `forward`) and returns `{ command, examples }`, or nil.
   `_bridge_get_usage_catalog()` returns the same for every command and alias, keyed by the name typed.
 - **`worker.js` carries them.** Its `xpcall` handler records the usage alongside the error line, and the `error` message gains `usage`.
   The `ready` message carries the whole catalog once, so lookups never need a round trip to the worker (or wait for a run to finish).
@@ -372,7 +389,7 @@ raster resampling, just a full vector replay.
   all *annotate* the shared log instead of mutating it — the trick that makes per-turtle
   operations composable when logs interleave.
 - **Layered core / host split.** `core.lua` + `screen.lua` are a pure, platform-free state
-  machine (testable with plain `lua`); `turtle_web.lua` is the *execution host* layering
+  machine (testable with plain `lua`); `host.lua` is the *execution host* layering
   animation, pacing, undo orchestration, and API surface on top. Animation lives only in the
   host — never in core.
 - **Pipeline of filters.** `visible_segments()` is a composition of three small pure filters,
@@ -390,9 +407,9 @@ raster resampling, just a full vector replay.
   (`Core.__index = Core`).
 - **Sandbox via environment injection.** User code gets a fresh whitelist `env` per run —
   isolation without patching globals.
-- **Hard reset by reconstruction.** Each Run rebuilds `Screen` and the default `Core` from
-  scratch (`_bridge_hard_reset`) rather than trying to scrub state — no leakage between runs
-  by construction.
+- **Hard reset by reconstruction.** Each Run makes a new host instance, with a new `Screen`
+  and default `Core` (`_bridge_hard_reset`), rather than trying to scrub state — no leakage
+  between runs by construction.
 - **Web default colors.** `core.lua` and `screen.lua` hard-code white ink on black paper.
   The web host overrides both with black ink on white paper, like Python turtle, so the shared
   files stay verbatim. The drawing ignores the page palette; only the program's own

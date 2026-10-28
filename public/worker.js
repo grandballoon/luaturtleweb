@@ -76,6 +76,8 @@ async function initLua() {
         'turtle/args.lua',
         'turtle/examples.lua',
         'turtle/demos.lua',
+        'turtle/random.lua',
+        'turtle/host.lua',
         'turtle/turtle_web.lua',
     ];
     for (const path of files) {
@@ -96,7 +98,7 @@ async function initLua() {
         end
     `);
 
-    // Load turtle_web.lua (which requires core + screen + colors).
+    // Load turtle_web.lua (which requires host.lua, and it the core).
     await lua.doString(`require("turtle.turtle_web")`);
 
     // Expose _bridge_post_frame as a Lua global.
