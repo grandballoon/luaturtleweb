@@ -516,7 +516,8 @@ function Host.new(opts)
         return screen:visible_segments()
     end
 
-    -- All turtle head states (position, heading, visible, colors).
+    -- All turtle head states (position, heading, visible, pen up or down,
+    -- colors).
     function self.turtle_states()
         local result = {}
         for _, t in ipairs(screen.turtles) do
@@ -525,6 +526,7 @@ function Host.new(opts)
                 y       = t.y,
                 angle   = t.angle,
                 visible = t.visible,
+                pen_down = t.pen_down,
                 pen_r   = t.pen_color[1],
                 pen_g   = t.pen_color[2],
                 pen_b   = t.pen_color[3],

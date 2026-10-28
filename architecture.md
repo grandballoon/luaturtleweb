@@ -33,6 +33,7 @@ Layer boundaries, top to bottom:
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
 | Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
 | Reference demos | `turtle/demos.lua` | A demo program per command-reference entry, played in the reference's detail pane |
+| Command catalog | `turtle/catalog.lua` | The reference's sections and entries as data, with a runnable call per entry; read by the LÖVE desktop app's controller menu and mapping, kept identical to `index.html` by `test/catalog_test.lua` |
 | Core | `turtle/core.lua`, `turtle/screen.lua` | Pure turtle state machine + shared segment log (verbatim from the desktop repo) |
 | Data | `turtle/colors.lua` | 140+ CSS/SVG named colors |
 
