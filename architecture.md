@@ -28,7 +28,7 @@ Layer boundaries, top to bottom:
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
-| Worker bridge | `worker.js` | Wasmoon boot, frame protocol, sandbox run, error mapping |
+| Worker bridge | `worker.js` | Wasmoon boot (mounting a fixed list of Lua files, which `test/worker_files_test.mjs` checks covers everything `turtle_web.lua` requires), frame protocol, sandbox run, error mapping |
 | Execution host | `turtle/host.lua`, `turtle/random.lua`, `turtle/plane.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random`; the coordinate plane the canvas shows, and graph paper and curves drawn on it |
 | Web adapter | `turtle/turtle_web.lua` | Holds the worker's current host instance and exposes it as the `_bridge_*` globals `worker.js` calls |
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |

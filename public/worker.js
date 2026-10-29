@@ -79,6 +79,7 @@ async function initLua() {
         'turtle/demos.lua',
         'turtle/lessons.lua',
         'turtle/random.lua',
+        'turtle/plane.lua',
         'turtle/host.lua',
         'turtle/turtle_web.lua',
     ];
