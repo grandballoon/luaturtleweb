@@ -152,6 +152,18 @@
                 </ul>
               </section>
               <section class="api-section">
+                <h2>Graphing</h2>
+                <ul class="api-rows">
+                  <li><code>graph(left, bottom, right, top)</code><span class="api-about">Use graph coordinates: this rectangle, one unit the same length both ways</span></li>
+                  <li><code>graph(left, bottom, right, top, "stretch")</code><span class="api-about">Graph coordinates stretched to fill the canvas</span></li>
+                  <li><code>setworldcoordinates(left, bottom, right, top)</code><span class="api-about">Make the canvas edges these coordinates, as in Python</span></li>
+                  <li><code>axes()</code><span class="api-about">Draw graph paper: grid, axes and numbers</span></li>
+                  <li><code>axes(xstep, ystep, xname, yname)</code><span class="api-about">Grid lines every xstep and ystep; name the axes</span></li>
+                  <li><code>plot(f, color)</code><span class="api-about">Draw the curve y = f(x) across the graph</span></li>
+                  <li><code>mark(x, y, color, label)</code><span class="api-about">Draw a dot at (x, y), with a label</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
                 <h2>Turtle</h2>
                 <ul class="api-rows">
                   <li><code>hideturtle()</code><span class="api-about">Hide the turtle. Alias: ht</span></li>

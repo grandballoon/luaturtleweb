@@ -8,7 +8,7 @@
 // looks exactly like the same code typed into the editor.
 
 // Matches a turtle command at the start of the text.
-export const TURTLE_COMMANDS = /^(forward|back|left|right|fd|bk|lt|rt|penup|pendown|pu|pd|pensize|pencolor|fillcolor|color|bgcolor|clear|reset|undo|speed|position|heading|isdown|filling|isvisible|hideturtle|showturtle|xcor|ycor|distance|towards|setheading|seth|home|setpos|setx|sety|teleport|circle|begin_fill|end_fill|dot|write|stamp|clearstamp|clearstamps|Turtle|tracer|update|done)\b/;
+export const TURTLE_COMMANDS = /^(forward|back|left|right|fd|bk|lt|rt|penup|pendown|pu|pd|pensize|pencolor|fillcolor|color|bgcolor|clear|reset|undo|speed|position|heading|isdown|filling|isvisible|hideturtle|showturtle|xcor|ycor|distance|towards|setheading|seth|home|setpos|setx|sety|teleport|circle|begin_fill|end_fill|dot|write|stamp|clearstamp|clearstamps|Turtle|tracer|update|done|setworldcoordinates|graph|axes|plot|mark)\b/;
 
 // Replaces the contents of `into` with `code`, highlighted. Needs
 // CodeMirror's runmode addon.

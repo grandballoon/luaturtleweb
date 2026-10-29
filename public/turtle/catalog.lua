@@ -120,6 +120,25 @@ return {
         },
     },
     {
+        title = "Graphing",
+        commands = {
+            { call = "graph(left, bottom, right, top)", about = "Use graph coordinates: this rectangle, one unit the same length both ways",
+              insert = "graph(-5, -5, 5, 5)", params = { { "left", "number" }, { "bottom", "number" }, { "right", "number" }, { "top", "number" } } },
+            { call = "graph(left, bottom, right, top, \"stretch\")", about = "Graph coordinates stretched to fill the canvas",
+              insert = "graph(0, 0, 10, 100, \"stretch\")", params = { { "left", "number" }, { "bottom", "number" }, { "right", "number" }, { "top", "number" }, { "units", "string" } } },
+            { call = "setworldcoordinates(left, bottom, right, top)", about = "Make the canvas edges these coordinates, as in Python",
+              insert = "setworldcoordinates(-10, -10, 10, 10)", params = { { "left", "number" }, { "bottom", "number" }, { "right", "number" }, { "top", "number" } } },
+            { call = "axes()", about = "Draw graph paper: grid, axes and numbers",
+              insert = "axes()", params = {} },
+            { call = "axes(xstep, ystep, xname, yname)", about = "Grid lines every xstep and ystep; name the axes",
+              insert = "axes(1, 10, \"time\", \"height\")", params = { { "xstep", "number" }, { "ystep", "number" }, { "xname", "string" }, { "yname", "string" } } },
+            { call = "plot(f, color)", about = "Draw the curve y = f(x) across the graph",
+              insert = "plot(function(x) return x * x end, \"royalblue\")", params = { { "f", "any" }, { "color", "color" } } },
+            { call = "mark(x, y, color, label)", about = "Draw a dot at (x, y), with a label",
+              insert = "mark(2, 3, \"crimson\", \"(2, 3)\")", params = { { "x", "number" }, { "y", "number" }, { "color", "color" }, { "label", "string" } } },
+        },
+    },
+    {
         title = "Turtle",
         commands = {
             { call = "hideturtle()", about = "Hide the turtle. Alias: ht",

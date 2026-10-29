@@ -28,7 +28,7 @@ Layer boundaries, top to bottom:
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
 | Worker bridge | `worker.js` | Wasmoon boot, frame protocol, sandbox run, error mapping |
-| Execution host | `turtle/host.lua`, `turtle/random.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random` |
+| Execution host | `turtle/host.lua`, `turtle/random.lua`, `turtle/plane.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random`; the coordinate plane the canvas shows, and graph paper and curves drawn on it |
 | Web adapter | `turtle/turtle_web.lua` | Holds the worker's current host instance and exposes it as the `_bridge_*` globals `worker.js` calls |
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
 | Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
@@ -71,6 +71,9 @@ Key properties:
 - **Renderer-neutral.** The records contain only geometry and color in turtle space
   (center origin, y-up, degrees). The Canvas2D renderer and the desktop Cairo renderer both
   consume this exact shape.
+- **In world units.** Positions are in whatever units the program's coordinate plane uses
+  (see [The coordinate plane](#the-coordinate-plane-planelua)); the host projects them to
+  pixels on the way out, so renderers only ever see pixels.
 
 This is essentially **event sourcing**: the log is the source of truth, and the visible
 picture is a projection computed from it.
@@ -143,6 +146,28 @@ The web runs one at a time; the LÖVE desktop app (see `spec-love-port.md`) runs
 
 `on_command(record)` is called after every public command with `{ name, turtle_id, first, last }`: the name as typed and the range of log indices the command appended.
 Nothing uses it yet; it is the hook point for the execution trace the desktop spec plans, and with no `on_command` the host does no extra work.
+
+### The coordinate plane (`plane.lua`)
+
+Turtles live in world units.
+Until a program says otherwise a world unit is a pixel, with (0, 0) at the canvas's center and y up.
+`setworldcoordinates(left, bottom, right, top)` makes the canvas show that rectangle of the world, as Python turtle's does, and `graph(left, bottom, right, top[, "stretch"])` puts the rectangle across 80% of the canvas, with a unit as long up as across unless stretched, leaving a margin for the axes' numbers.
+Every other command then speaks those units: `setpos(3, 14)` goes to the point (3, 14) of the graph.
+As in Python, only positions scale; pen widths, dot sizes and fonts stay in pixels.
+Unlike Python's, changing the world keeps the drawing, which moves to its new place.
+
+The host keeps one plane per instance, `{ view, paper }`: the world rectangle the canvas shows (nil for the standard plane) and the rectangle graph paper covers.
+The segment log, the turtles and undo snapshots all stay in world units.
+`host.visible_segments()` and `host.turtle_states()` run them through `Plane.project` and `Plane.project_turtles`, which return pixel copies (a stretched heading turned to how it looks), so neither renderer, the frame protocol, nor anything else a shell reads changed.
+The standard plane returns them untouched.
+Animation pacing measures a step in the pixels it covers, so a world unit of any size animates as smoothly as a pixel.
+
+`axes()`, `plot(f)` and `mark(x, y)` draw graph paper, the curve y = f(x), and a labeled dot.
+`plane.lua` computes them as segment records (grid lines at multiples of each step, axes through 0 or along the nearest edge, numbers nudged a few pixels off their axis, curves sampled at 201 points and clipped to the paper), and the host logs those records straight from the turtle's core inside one `with_undo`.
+So each is one undo step, carries its turtle's id, and leaves the turtle and its pen where they were.
+`plot` posts a frame every few pieces, like `circle`.
+A rule only running can check (too many grid lines, a function that returns a string) is rejected through `args.fail`, so the learner still sees how the command is called.
+`test/plane_test.lua` checks the pure functions by equality and the commands on a host.
 
 `host.lua` runs on Lua 5.4 and LuaJIT alike, and shims `table.unpack` (missing in LuaJIT) before loading the core, so the shared files stay verbatim.
 `sh test/run.sh` runs every Lua suite under both `lua` and `luajit`.

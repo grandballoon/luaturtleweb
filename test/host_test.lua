@@ -90,7 +90,7 @@ local function with_commands(log)
         post_frame = function() log[#log + 1] = "frame" end,
         commands = {
             turtle = {
-                mark = {
+                blot = {
                     check = function(a) a:req("size", require("turtle.args").NUMBER) end,
                     run = function(c, size)
                         c:_log({ type = "dot", pos = { c.x, c.y }, size = size, color = { 0, 0, 0, 1 } })
@@ -107,18 +107,18 @@ end
 
 test("a shell's turtle commands are globals and methods, checked like the rest", function()
     local log = {}
-    local env = run(with_commands(log), "speed(0)\nlocal t = Turtle()\nt:forward(10)\nmark(4)\nhere = t:where()\nping()")
+    local env = run(with_commands(log), "speed(0)\nlocal t = Turtle()\nt:forward(10)\nblot(4)\nhere = t:where()\nping()")
     eq(env.here, 10, "the method acts on its own turtle")
     eq(log[#log], "ping", "the screen command ran")
-    local ok, err = pcall(env.mark, "big")
-    assert(not ok and err:find("mark: size must be a number"), "mark(\"big\") gave " .. tostring(err))
+    local ok, err = pcall(env.blot, "big")
+    assert(not ok and err:find("blot: size must be a number"), "blot(\"big\") gave " .. tostring(err))
 end)
 
 test("a shell's drawing command is one undo step and one frame, and keeps its results", function()
     local log = {}
     local host = with_commands(log)
     local env = host.env()
-    local a, b, c = env.mark(3)
+    local a, b, c = env.blot(3)
     eq(a, 6, "first result"); eq(b, nil, "second result"); eq(c, "third", "third result")
     eq(log[1], "frame", "a frame after drawing")
     eq(#host.visible_segments(), 1, "drawn")

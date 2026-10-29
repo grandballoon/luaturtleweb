@@ -42,6 +42,8 @@ local args     = require("turtle.args")
 local examples = require("turtle.examples")
 local demos    = require("turtle.demos")
 local Random   = require("turtle.random")
+local Plane    = require("turtle.plane")
+local colors   = require("turtle.colors")
 
 local Host = {}
 
@@ -74,8 +76,9 @@ end
 -- Argument checks, shared by every instance.
 ----------------------------------------------------------------
 
-local NUMBER, WHOLE, COUNT = args.NUMBER, args.WHOLE, args.COUNT
+local NUMBER, WHOLE, COUNT, POSITIVE = args.NUMBER, args.WHOLE, args.COUNT, args.POSITIVE
 local ALIGN = args.one_of("left", "center", "right")
+local UNITS = args.one_of("equal", "stretch")
 
 local function distance(a) a:req("distance", NUMBER) end
 local function angle(a)    a:req("angle", NUMBER) end
@@ -138,6 +141,17 @@ end
 
 local function canvas_size(v) return type(v) == "number" and v or 0 end
 
+-- A color value as args.COLOR_VALUE accepts it (a name, or a table of red,
+-- green, blue and maybe alpha) as {r, g, b, a}; `default` (copied) if nil.
+local function color_of(v, default)
+    if v == nil then return { default[1], default[2], default[3], default[4] } end
+    if type(v) == "string" then
+        local c = colors[v:lower()]
+        return { c[1], c[2], c[3], c[4] or 1 }
+    end
+    return Core.normalize_color(v[1], v[2], v[3], v[4])
+end
+
 function Host.new(opts)
     opts = opts or {}
     local self = {}
@@ -155,6 +169,12 @@ function Host.new(opts)
 
     local tracer_n         = 1  -- 0=batch, 1=default, n>1=every-nth
     local tracer_cmd_count = 0
+
+    -- Which rectangle of the world the canvas shows (see plane.lua). The
+    -- log and the turtles are in world units; what the shell reads is
+    -- projected to pixels.
+    local W, H  = canvas_size(opts.width), canvas_size(opts.height)
+    local plane = Plane.standard(W, H)
 
     self.seed = opts.seed or os.time()
     local random, randomseed = Random.new(self.seed)
@@ -190,10 +210,12 @@ function Host.new(opts)
                 maybe_post_frame()
                 return
             end
-            local step_size = step_size_for_speed(c.speed_setting)
-            local steps     = math.max(1, math.floor(math.abs(dist) / step_size))
-            local step_dist = dist / steps
+            -- Paced by how far the step looks, so a world unit of any
+            -- size animates as smoothly as a pixel.
             local dx, dy    = c:_dx_dy(dist)
+            local step_size = step_size_for_speed(c.speed_setting)
+            local steps     = math.max(1, math.floor(Plane.pixels(plane, dx, dy, W, H) / step_size))
+            local step_dist = dist / steps
             local x1, y1    = c.x + dx, c.y + dy
             for _ = 1, steps do
                 c:forward(step_dist)
@@ -302,6 +324,48 @@ function Host.new(opts)
             with_undo(c, function() c:pensize(w) end)
         end
         return c:pensize()
+    end
+
+    -- Graph paper and curves: ink logged straight from plane.lua's records,
+    -- one undo step each, leaving the turtle and its pen as they were.
+    local function log_all(c, records)
+        for _, record in ipairs(records) do c:_log(record) end
+    end
+
+    local function _axes(c, xstep, ystep, xname, yname)
+        local records, why = Plane.paper(plane, W, H, xstep, ystep, xname, yname)
+        if not records then args.fail("axes", why) end
+        with_undo(c, function()
+            log_all(c, records)
+            maybe_post_frame()
+        end)
+    end
+
+    -- Animated like circle(): the curve grows a few pieces per frame.
+    local function _plot(c, f, color, width)
+        local pieces, why = Plane.curve(f, plane.paper, 200)
+        if not pieces then args.fail("plot", why) end
+        color = color_of(color, c.pen_color)
+        width = width or c.pen_size
+        with_undo(c, function()
+            local animated = tracer_n == 1 and c.speed_setting ~= 0
+            local every    = step_size_for_speed(c.speed_setting)
+            for i, piece in ipairs(pieces) do
+                c:_log({ type = "line", from = piece[1], to = piece[2],
+                         color = { color[1], color[2], color[3], color[4] }, width = width })
+                if animated and (i % every == 0 or i == #pieces) then raw_post_frame() end
+            end
+            if not animated then maybe_post_frame() end
+        end)
+    end
+
+    local function _mark(c, x, y, color, label)
+        if type(x) == "table" then x, y, color, label = x[1], x[2], y, color end
+        with_undo(c, function()
+            log_all(c, Plane.mark(plane, W, H, x, y, color_of(color, c.pen_color), label,
+                color_of(nil, c.pen_color)))
+            maybe_post_frame()
+        end)
     end
 
     local function _undo(c)
@@ -415,8 +479,34 @@ function Host.new(opts)
                               run = function(c, n) c:setundobuffer(n) end },
         undobufferentries = { run = function(c) return c:undobufferentries() end },
 
-        screen_width  = { run = function() return canvas_size(opts.width) end },
-        screen_height = { run = function() return canvas_size(opts.height) end },
+        screen_width  = { run = function() return W end },
+        screen_height = { run = function() return H end },
+
+        axes = {
+            check = function(a)
+                a:opt("xstep", POSITIVE)
+                a:opt("ystep", POSITIVE)
+                a:opt("xname", args.VALUE)
+                a:opt("yname", args.VALUE)
+            end,
+            run = _axes,
+        },
+        plot = {
+            check = function(a)
+                a:req("f", args.FUNCTION)
+                a:opt("color", args.COLOR_VALUE)
+                a:opt("width", POSITIVE)
+            end,
+            run = _plot,
+        },
+        mark = {
+            check = function(a)
+                a:point()
+                a:opt("color", args.COLOR_VALUE)
+                a:opt("label", args.VALUE)
+            end,
+            run = _mark,
+        },
     }
 
     -- Commands that act on the screen as a whole: globals only.
@@ -444,6 +534,29 @@ function Host.new(opts)
             end,
         },
         update = { run = function() raw_post_frame() end },
+
+        -- The canvas shows the world's rectangle left..right by
+        -- bottom..top, as Python turtle's does. Unlike Python's, it keeps
+        -- the turtles and the drawing, which move to their places in it.
+        setworldcoordinates = {
+            check = function(a) a:rect() end,
+            run = function(l, b, r, t)
+                plane = Plane.world({ l, b, r, t })
+                maybe_post_frame()
+            end,
+        },
+        -- Graph paper's coordinates: the rectangle left..right by
+        -- bottom..top across most of the canvas, for axes() and plot().
+        graph = {
+            check = function(a)
+                a:rect(true)
+                a:opt("units", UNITS)
+            end,
+            run = function(l, b, r, t, units)
+                plane = Plane.graph({ l, b, r, t }, units, W, H)
+                maybe_post_frame()
+            end,
+        },
 
         -- done() is a no-op: the program ends and the canvas stays up.
         done = { run = function() end },
@@ -565,12 +678,13 @@ function Host.new(opts)
     function self.screen() return screen end
     function self.default_turtle() return core end
 
+    -- The visible segments, in pixels.
     function self.visible_segments()
-        return screen:visible_segments()
+        return Plane.project(plane, screen:visible_segments(), W, H)
     end
 
     -- All turtle head states (position, heading, visible, pen up or down,
-    -- colors).
+    -- colors), in pixels.
     function self.turtle_states()
         local result = {}
         for _, t in ipairs(screen.turtles) do
@@ -586,7 +700,7 @@ function Host.new(opts)
                 pen_a   = t.pen_color[4],
             })
         end
-        return result
+        return Plane.project_turtles(plane, result, W, H)
     end
 
     function self.tracer_n() return tracer_n end
