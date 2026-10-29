@@ -14,11 +14,12 @@
 //   3. After waking, checks sabI32[1] (stop flag) and throws if set.
 //
 // Messages sent TO main thread:
-//   {type: "ready", usage, demos}          — Wasmoon loaded, VM ready; usage maps
+//   {type: "ready", usage, demos, lessons} — Wasmoon loaded, VM ready; usage maps
 //                                            every command and alias to
 //                                            {command, examples}; demos maps each
 //                                            command-reference entry to its demo
-//                                            program
+//                                            program; lessons are the Lessons
+//                                            sidebar's chapters (turtle/lessons.lua)
 //   {type: "init-error", message}          — the VM failed to load
 //   {type: "frame", segments, turtles, bgcolor}
 //   {type: "print", runId, lines}          — buffered print() output
@@ -76,6 +77,7 @@ async function initLua() {
         'turtle/args.lua',
         'turtle/examples.lua',
         'turtle/demos.lua',
+        'turtle/lessons.lua',
         'turtle/random.lua',
         'turtle/host.lua',
         'turtle/turtle_web.lua',
@@ -117,6 +119,7 @@ async function initLua() {
         type:  'ready',
         usage: lua.global.get('_bridge_get_usage_catalog')(),
         demos: lua.global.get('_bridge_get_demos')(),
+        lessons: lua.global.get('_bridge_get_lessons')(),
     });
 }
 

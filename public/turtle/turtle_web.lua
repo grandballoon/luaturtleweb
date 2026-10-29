@@ -49,4 +49,8 @@ function _bridge_command_usage(err) return Host.command_usage(err) end
 function _bridge_get_usage_catalog() return Host.usage_catalog() end
 function _bridge_get_demos() return Host.demos end
 
+-- The Lessons sidebar's chapters (turtle/lessons.lua): data the page shows,
+-- not part of the turtle library, so the host never loads them itself.
+function _bridge_get_lessons() return require("turtle.lessons") end
+
 _bridge_hard_reset()

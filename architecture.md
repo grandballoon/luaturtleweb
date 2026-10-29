@@ -22,7 +22,8 @@ Layer boundaries, top to bottom:
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
 | UI shell | `app.js` | Editor, draft autosave + share links, run state machine, worker lifecycle, frame ack, shortcuts |
-| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them |
+| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
+| Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
@@ -339,6 +340,36 @@ The pieces, each with one job:
 Because both the recording and the drawing go through the production code paths, a demo looks exactly like the same program run on the real canvas, zoomed out.
 Under `prefers-reduced-motion`, the preview shows only the finished drawing.
 
+### Lessons sidebar
+
+The Lessons button (⌘⇧L, Ctrl+Shift+L elsewhere) pops a sidebar up over the editor column that teaches the Linear Equations and Quadratic Equations chapters of Triangle Lab, after chapters 3 and 6 of The Art of Problem Solving, Volume 1.
+Each page is one example: what it is about, its program step by step (each step a chunk of the program with its line numbers, and what that chunk does), and then the whole program, which the learner can run on the canvas, open in the editor, or copy.
+The sidebar is docked over the editor column, or detached into a window that floats over the page, so a learner can read it beside the editor while typing a program in by hand.
+The floating window is dragged by its header and resized from any of its edges or corners, so it can be widened leftward to show long lines of code even when it sits against the right of the window.
+Every lesson shows its idea both ways: on a Cartesian graph ("On the plane") and as turtle geometry, with headings, walks and vectors ("With the turtle"), and word problems are worked both ways too.
+The pieces, each with one job:
+
+- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples, each example with its text and a whole program.
+  Plane examples start with the turtle library's own `graph()` and `axes()`, then draw in the graph's coordinates with `plot`, `mark`, `teleport` and `setpos`, so every program runs on its own and is the code a learner could write.
+  A program is written as its own tutorial: `--:` lines at the left edge explain the chunk below them, and `tutorial()` splits each program at those lines into `steps` when the file loads, taking the lines out of the program.
+  The explanation sits right above the code it explains, so the two are edited together.
+  A step marked `--::` shows folded; no lesson uses that now.
+  `test/lessons_test.lua` checks the shape, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
+- **`worker.js` carries them.** `turtle_web.lua`'s `_bridge_get_lessons` loads the data, and the `ready` message sends it once, as it does the demos; the host itself never loads it.
+- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what the contents list, and which parts of a paragraph are `code`.
+  `test/lessons_test.mjs` covers it.
+- **`floating.js` decides where the detached window sits.** Pure functions of the window's size give its first box, and the box after a drag, a resize by any edge or corner, or the window shrinking; every box they return fits the window.
+  A resize moves only the edges held, and stops each at the window's margin or where the box would get smaller than its minimum.
+  `test/floating_test.mjs` covers it.
+- **`lessons-panel.js` is the shell.** It renders what `lessons.js` returns, opens and closes, docks and detaches, applies the boxes `floating.js` returns while the header or an edge or corner handle is dragged (each handle names its edges in `data-edges`), remembers the page by its id and where the window sits in `localStorage`, and turns the page on ←/→, Page Up/Down, Home and End while focus is inside it.
+  Esc closes it from inside, like the reference.
+- **`app.js` runs the programs.** A page's Run starts a normal run with the page's code, without touching the editor; its errors go to the terminal with the lesson program's line, and never mark an editor line.
+  Open in editor replaces the editor's text with `setValue`, which the editor's undo reverses; when docked, the sidebar also closes so the code is in view.
+
+Docked, the sidebar covers only the editor column, so the drawing is always in view while the learner reads about it.
+Detached, it is `position: fixed` and stays where it was left, above the canvas's own overlays.
+Its resize handles sit mostly outside its border, so they never take a grab meant for its scrollbar.
+
 ### Panels
 
 Each column has a panel docked along its bottom: the command reference under the editor, and the terminal under the canvas.
@@ -393,7 +424,7 @@ The button that opens the menu appears in the canvas's corner once a controller 
 The mapping view covers the canvas, so a run closes it.
 
 `test/gamepad_test.mjs` covers the parts that need no page (reading presses, the mapping, the two lists).
-`test/dock_test.mjs` covers a panel's height.
+`test/dock_test.mjs` covers a panel's height, and `test/lessons_test.mjs` and `test/floating_test.mjs` the Lessons sidebar's pages and floating window.
 Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 
 ### Zoom about a point (`zoomAt`)
