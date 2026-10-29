@@ -61,6 +61,26 @@ for i, section in ipairs(reference) do
     end
 end
 
+-- Every entry names its arguments, one per argument of its call; an
+-- argument the call spells as a name ("forward(n)") keeps that name.
+local KINDS = { number = true, color = true, string = true, boolean = true, any = true }
+for _, section in ipairs(catalog) do
+    for _, c in ipairs(section.commands) do
+        local inside = c.call:match("^[%w_]+%((.-)%)") or ""
+        local spelled = {}
+        for arg in inside:gmatch("[^,]+") do spelled[#spelled + 1] = arg:match("^%s*(.-)%s*$") end
+        local params = c.params
+        check(type(params) == "table" and #params == #spelled,
+            string.format("%s has %d arguments but %s params", c.call, #spelled, type(params) == "table" and #params or "no"))
+        for i, p in ipairs(type(params) == "table" and params or {}) do
+            check(type(p[1]) == "string" and KINDS[p[2]], string.format("%s, param %d: %s", c.call, i, tostring(p[2])))
+            if spelled[i] and spelled[i]:match("^[%a_][%w_]*$") then
+                check(p[1] == spelled[i], string.format("%s, param %d is named %s", c.call, i, tostring(p[1])))
+            end
+        end
+    end
+end
+
 require("turtle.turtle_web")  -- defines _turtle_make_env and the bridge globals
 
 for _, section in ipairs(catalog) do

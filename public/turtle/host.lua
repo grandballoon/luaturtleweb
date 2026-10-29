@@ -642,6 +642,9 @@ end
 -- { ["forward(n)"] = "forward(100)", ... }.
 Host.demos = demos
 
+-- The other names a command answers to, alias → command: { fd = "forward", ... }.
+Host.ALIASES = ALIASES
+
 -- The commands only the desktop app has (images, sounds, the keyboard and
 -- mouse), which it adds through opts.commands. Anywhere else, using one
 -- raises "<name> works only in the Lua Turtle desktop app".
