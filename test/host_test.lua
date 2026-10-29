@@ -83,6 +83,62 @@ test("screen_width and screen_height report the instance's canvas", function()
     eq(run(Host.new(), "").screen_width(), 0, "width with no canvas")
 end)
 
+-- Commands a shell adds -------------------------------------------------------
+
+local function with_commands(log)
+    return Host.new({
+        post_frame = function() log[#log + 1] = "frame" end,
+        commands = {
+            turtle = {
+                mark = {
+                    check = function(a) a:req("size", require("turtle.args").NUMBER) end,
+                    run = function(c, size)
+                        c:_log({ type = "dot", pos = { c.x, c.y }, size = size, color = { 0, 0, 0, 1 } })
+                        return size * 2, nil, "third"
+                    end,
+                    draws = true,
+                },
+                where = { run = function(c) return c.x end },
+            },
+            screen = { ping = { run = function(...) log[#log + 1] = "ping" end } },
+        },
+    })
+end
+
+test("a shell's turtle commands are globals and methods, checked like the rest", function()
+    local log = {}
+    local env = run(with_commands(log), "speed(0)\nlocal t = Turtle()\nt:forward(10)\nmark(4)\nhere = t:where()\nping()")
+    eq(env.here, 10, "the method acts on its own turtle")
+    eq(log[#log], "ping", "the screen command ran")
+    local ok, err = pcall(env.mark, "big")
+    assert(not ok and err:find("mark: size must be a number"), "mark(\"big\") gave " .. tostring(err))
+end)
+
+test("a shell's drawing command is one undo step and one frame, and keeps its results", function()
+    local log = {}
+    local host = with_commands(log)
+    local env = host.env()
+    local a, b, c = env.mark(3)
+    eq(a, 6, "first result"); eq(b, nil, "second result"); eq(c, "third", "third result")
+    eq(log[1], "frame", "a frame after drawing")
+    eq(#host.visible_segments(), 1, "drawn")
+    env.undo()
+    eq(#host.visible_segments(), 0, "undone in one step")
+end)
+
+test("a shell can't replace a built-in command or alias", function()
+    local ok = pcall(Host.new, { commands = { turtle = { forward = { run = function() end } } } })
+    assert(not ok, "replaced forward")
+    ok = pcall(Host.new, { commands = { screen = { fd = { run = function() end } } } })
+    assert(not ok, "replaced the alias fd")
+end)
+
+test("a desktop-only command says so where the host lacks it", function()
+    local ok, err = pcall(load("drawimage('cat.png')", "user_code", "t", Host.new().env()))
+    assert(not ok and err:find("drawimage works only in the Lua Turtle desktop app"), tostring(err))
+    eq(Host.new().env().some_variable, nil, "other globals are still nil")
+end)
+
 -- Randomness ---------------------------------------------------------------
 
 local RANDOMS = "local r = {}\nfor i = 1, 20 do r[i] = math.random(1000) end\nresult = table.concat(r, ',')"
@@ -189,6 +245,19 @@ test("a rejected call is not reported", function()
     local ok = pcall(run, host, "forward()")
     assert(not ok, "forward() was accepted")
     eq(#records, 0, "records")
+end)
+
+-- LuaJIT's math.atan ignores a second argument; host.lua shims it.
+-- Headings below the x-axis come out negative, as core.lua has them.
+test("towards gives the heading in every quadrant, on every Lua", function()
+    local env = Host.new({ seed = 0 }).env()
+    local function near(a, b, what) assert(math.abs(a - b) < 1e-9, what .. ": expected " .. b .. ", got " .. a) end
+    near(env.towards(10, 10), 45, "north-east")
+    near(env.towards(-10, 10), 135, "north-west")
+    near(env.towards(-10, -10), -135, "south-west")
+    near(env.towards(10, -10), -45, "south-east")
+    near(env.towards(-10, 0), 180, "west")
+    near(env.math.atan(1, -1), 3 * math.pi / 4, "the sandbox's math.atan(y, x)")
 end)
 
 print(string.format("%d passed, %d failed", passed, failures))

@@ -24,6 +24,18 @@
 table.unpack = table.unpack or unpack
 local unpack = table.unpack
 
+-- core.lua's towards() calls math.atan(y, x), Lua 5.4's two-argument form.
+-- LuaJIT's math.atan ignores the second argument (it has math.atan2
+-- instead), which turned every heading into one east of north or south.
+-- Shimmed for the same reason; learners' math gets the 5.4 form too.
+if math.atan2 and math.atan(1, -1) ~= math.atan2(1, -1) then
+    local atan, atan2 = math.atan, math.atan2
+    math.atan = function(y, x)
+        if x == nil then return atan(y) end
+        return atan2(y, x)
+    end
+end
+
 local Core     = require("turtle.core")
 local Screen   = require("turtle.screen")
 local args     = require("turtle.args")
@@ -100,6 +112,12 @@ end
 --   seed           the seed of this instance's math.random; chosen if
 --                  omitted, and kept as instance.seed so a run can be
 --                  reproduced
+--   commands       commands the shell adds to the built-in ones:
+--                  { turtle = { name = { check, run(c, ...), draws } },
+--                    screen = { name = { check, run(...) } } }, shaped like
+--                  the tables below; a turtle command with draws = true is
+--                  one undo step and posts one frame. The desktop app adds
+--                  its images, sounds and input this way (Host.DESKTOP_ONLY).
 --   on_command     function(record), called after every public command
 --                  completes, with { name, turtle_id, first, last }: the
 --                  command as typed and the log indices it appended
@@ -435,6 +453,35 @@ function Host.new(opts)
         Turtle = { run = function() return make_turtle_methods(new_core()) end },
     }
 
+    -- Commands the shell adds (see opts.commands), joined to the built-in
+    -- ones so they are checked, traced and offered as methods alike. A
+    -- drawing command is one undo step and shows in one frame, like dot().
+    local function drawing(run)
+        return function(c, ...)
+            local call_args = { n = select("#", ...), ... }
+            local result
+            with_undo(c, function()
+                result = (function(...) return { n = select("#", ...), ... } end)(
+                    run(c, unpack(call_args, 1, call_args.n)))
+                maybe_post_frame()
+            end)
+            return unpack(result, 1, result.n)
+        end
+    end
+
+    local function add_commands(into, extra, is_turtle)
+        for name, command in pairs(extra or {}) do
+            assert(not TURTLE_COMMANDS[name] and not SCREEN_COMMANDS[name] and not ALIASES[name],
+                "the command " .. name .. " already exists")
+            local run = command.run
+            if is_turtle and command.draws then run = drawing(run) end
+            into[name] = { check = command.check, run = run }
+        end
+    end
+    local extra = opts.commands or {}
+    add_commands(TURTLE_COMMANDS, extra.turtle, true)
+    add_commands(SCREEN_COMMANDS, extra.screen, false)
+
     ----------------------------------------------------------------
     -- Calling a command: check, run, and report it to on_command.
     ----------------------------------------------------------------
@@ -506,7 +553,13 @@ function Host.new(opts)
             unpack   = unpack,
         }
         for name, fn in pairs(api) do env[name] = fn end
-        return env
+        -- A desktop-only command this host doesn't have (a program brought
+        -- over from the desktop app) says so instead of being a nil global.
+        return setmetatable(env, { __index = function(_, name)
+            if Host.DESKTOP_ONLY[name] then
+                error(name .. " works only in the Lua Turtle desktop app", 2)
+            end
+        end })
     end
 
     function self.screen() return screen end
@@ -588,6 +641,15 @@ end
 -- The command reference's demo programs, keyed by the entry they show:
 -- { ["forward(n)"] = "forward(100)", ... }.
 Host.demos = demos
+
+-- The commands only the desktop app has (images, sounds, the keyboard and
+-- mouse), which it adds through opts.commands. Anywhere else, using one
+-- raises "<name> works only in the Lua Turtle desktop app".
+Host.DESKTOP_ONLY = {
+    drawimage = true, imagesize = true,
+    playsound = true, stopsounds = true, tone = true, wait = true,
+    keydown = true, mouse = true, mousedown = true,
+}
 
 -- Forgets the last rejected call, so a new run never inherits its usage.
 function Host.forget_failure()
