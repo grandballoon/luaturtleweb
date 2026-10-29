@@ -443,6 +443,30 @@ raster resampling, just a full vector replay.
 - **Registry + ownership tags.** The Screen registers turtles and hands out `turtle_id`s;
   every log entry is tagged with its owner, which is what all per-turtle semantics hang off.
 
+## Local dev server and UI feedback (`tools/dev-server.mjs`, `dev/feedback/`)
+
+`node tools/dev-server.mjs` serves the site locally on port 5520 (`.claude/launch.json` starts it), the way the deployed site is served: `public/` as is, cross-origin isolated with the headers in `public/_headers`.
+It listens on the loopback addresses only.
+
+It adds one thing, a review aid for the developer: hold Option (Alt off macOS) to outline the element under the pointer, and Option-click it to leave Claude a comment on it.
+The server appends each comment to `ui-feedback.md` in the repo root, which is gitignored: it is read by Claude, and goes nowhere else.
+Each entry is a Markdown section that starts open (`[ ]`) and is marked `[x]` once dealt with, with the page, a selector that finds the element again, the start of its text, and where it was clicked.
+The format is Triangle Lab's, so both projects' feedback files read alike.
+
+The overlay can never reach the published site.
+The server adds its script tag to `index.html` as it serves it, and serves the script from `dev/`, outside `public/`; no app module imports it.
+It takes Option-clicks in the capture phase, before the app's listeners see them, and keys typed into its comment box stop at the box, so the app's shortcuts never fire while a comment is written.
+The server takes comments only from its own pages: a POST's `Origin` must be its own host.
+
+| File | Role |
+| --- | --- |
+| `dev/feedback/entry.js` | A comment's wire format, its validation, and its Markdown form. Shared by page and server; no DOM or Node APIs. |
+| `dev/feedback/capture.js` | A clicked element → a selector, a description and the click's position. Pure over anything shaped like an element. |
+| `dev/feedback/overlay.js` | The outline, the comment box, and the post to the server. |
+| `tools/dev-server.mjs` | Serves the site, adds the overlay, records comments. Its decisions (which file a path reads, the injection, whose comments to take) are pure exports. |
+
+`test/feedback_test.mjs` covers the entry and the capture, and `test/dev_server_test.mjs` the server's decisions, including that its isolation headers match `public/_headers`.
+
 ## Deployment
 
 Static files served by a Cloudflare Worker (`wrangler.jsonc`, assets = `./public`). Everything

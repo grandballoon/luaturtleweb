@@ -7,5 +7,8 @@
 buglist.md
 plan.md
 
+# Dev-only UI feedback for Claude (tools/dev-server.mjs)
+ui-feedback.md
+
 # macOS
 .DS_Store
