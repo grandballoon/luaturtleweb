@@ -354,36 +354,8 @@ The structural editing operations are pure buffer functions, so each one is unit
 ### Blocks and cards (experimental third input)
 
 A card- or block-based view is the third way to write a program, alongside typing and the controller, and it is an experiment: the design keeps it cheap to try and cheap to drop.
-
-**The text stays the source of truth.**
-Blocks are a view of the program's syntax tree, and every block edit is a text edit made through the buffer's operations.
-So undo, files, share links, error lines and keyboard editing all keep working unchanged, and a learner can switch between text and blocks at any moment.
-The opposite design (blocks as the source, generating text) would fork every one of those features.
-
-The pieces:
-
-- **A Lua parser in Lua (pure).**
-  A small recursive-descent parser over the editor's tokenizer, producing a tree in which every node keeps its source range.
-  Existing pure-Lua parsers mostly depend on LPeg, a C library LÖVE does not ship, so it is written here; it parses full Lua 5.1 syntax, but only a subset gets rich blocks.
-  The tokenizer and parser move to `shared/lua_syntax/`, since the editor, the blocks and the trace's line display all use them.
-- **Rich blocks** for turtle command calls (one per catalog entry, with a slot per parameter named from its signature), numeric and generic `for`, `while`, `repeat`, `if`, `local` assignment, and function definitions and calls.
-  Anything else becomes an opaque Lua card showing its code, editable as text, so no program is unrepresentable and nothing is lost by opening the block view.
-- **Edits touch only their own range.**
-  Moving a block or filling a slot rewrites just that node's text, in canonical formatting; untouched code keeps its exact text and comments.
-  A test round-trips every example, demo and sketch (text → tree → text) and requires an identical result.
-- **Slots.**
-  Numbers scrub by dragging horizontally (Victor's scrubbable numbers) or with the controller's stick, colors pick from the named-color palette, and variable slots offer the names in scope, which the parser knows.
-- **The palette** is the command catalog, the same single source as the reference, the controller menu and the mapping view.
-
-Two presentations are worth trying over the same model:
-
-- **Nested blocks**, in the style of Scratch or Blockly: statements snap inside loops and functions, dragged with the mouse.
-- **A deck of cards**: one card per statement in a vertical column, nesting shown by indentation, with a hand of cards to play from.
-  A deck is a list, so it fits the controller (the menu's page-stack navigation, pick a card, place it) as well as the mouse, and it suits the geometry library, where a `Construction` is already an ordered list of steps.
-
-The experiment succeeds if a learner can build the welcome program with the mouse alone and with the controller alone, faster or with fewer errors than typing, and the round-trip test holds.
-It runs behind a setting until then.
-If the execution trace ships, a card highlights while its steps play, and clicking a segment selects its card.
+Its design lives in [spec-blocks.md](spec-blocks.md).
+In short: the text stays the source of truth, blocks are a view over a pure Lua parser's syntax tree, and every block edit is a text edit through the buffer.
 
 ## Controller support
 
