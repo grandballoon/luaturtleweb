@@ -58,6 +58,14 @@ return {
     speed         = { "speed(1)", "speed(10)", "speed(0)" },
     tracer        = { "tracer(0)", "tracer(1)", "tracer(10)" },
     update        = { "tracer(0)\nforward(100)\nupdate()" },
+
+    -- Graphing
+    setworldcoordinates = { "setworldcoordinates(-10, -10, 10, 10)", "setworldcoordinates(0, 0, 100, 50)" },
+    graph      = { "graph(-5, -5, 5, 5)", 'graph(0, 0, 10, 100, "stretch")' },
+    axes       = { "axes()", "axes(1, 10)", 'axes(1, 10, "time", "height")' },
+    plot       = { "plot(function(x) return x * x end)", 'plot(function(x) return 2 * x + 1 end, "royalblue")',
+                   'plot(math.sin, "crimson", 4)' },
+    mark       = { "mark(2, 3)", 'mark(2, 3, "crimson")', 'mark(2, 3, "crimson", "(2, 3)")' },
     done          = { "done()" },
     bye           = { "bye()" },
 

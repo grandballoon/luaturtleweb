@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "luaturtleweb",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["tools/dev-server.mjs", "5520"],
+      "port": 5520
+    }
+  ]
+}

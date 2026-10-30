@@ -66,6 +66,12 @@ function args.NUMBER(v)
     return type(v) == "number" and "a finite number" or "a number"
 end
 
+-- More than zero, e.g. the step between an axis's grid lines.
+function args.POSITIVE(v)
+    if is_finite(v) and v > 0 then return nil end
+    return "a number more than 0"
+end
+
 function args.WHOLE(v)
     if is_whole(v) then return nil end
     return "a whole number"
@@ -80,6 +86,11 @@ end
 function args.BOOLEAN(v)
     if type(v) == "boolean" then return nil end
     return "true or false"
+end
+
+function args.FUNCTION(v)
+    if type(v) == "function" then return nil end
+    return "a function"
 end
 
 -- Any value at all, as long as there is one (write() accepts anything).
@@ -142,6 +153,13 @@ local function fail(command, message)
     error(message, 0)
 end
 
+-- Rejects a call to `command` for a reason only running it can find, with
+-- `detail` read as the rest of "command: detail"; reported like any other
+-- rejected call, so the learner is shown how the command is called.
+function args.fail(command, detail)
+    fail(command, command .. ": " .. detail)
+end
+
 function Cursor:_fail(detail)
     fail(self.command, self.command .. ": " .. detail)
 end
@@ -193,6 +211,27 @@ function Cursor:point()
     end
     self:req("x", args.NUMBER)
     self:req("y", args.NUMBER)
+end
+
+-- A rectangle as its sides: left, bottom, right, top, as four numbers.
+-- Opposite sides must differ, or the rectangle has no width or height;
+-- with `increasing`, right must be more than left and top more than bottom.
+function Cursor:rect(increasing)
+    local first = self.i
+    self:req("left", args.NUMBER)
+    self:req("bottom", args.NUMBER)
+    self:req("right", args.NUMBER)
+    self:req("top", args.NUMBER)
+    local v = self.values
+    for _, pair in ipairs({ { "left", "right", first }, { "bottom", "top", first + 1 } }) do
+        local low, high = v[pair[3]], v[pair[3] + 2]
+        local got = ", got " .. args.describe(low) .. " and " .. args.describe(high)
+        if increasing and high <= low then
+            self:_fail(pair[2] .. " must be more than " .. pair[1] .. got)
+        elseif high == low then
+            self:_fail(pair[1] .. " and " .. pair[2] .. " must differ" .. got)
+        end
+    end
 end
 
 -- An optional color, as pencolor() and friends take it:

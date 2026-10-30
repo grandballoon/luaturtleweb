@@ -9,7 +9,7 @@ view — `forward(100)` animates and returns — even though rendering happens o
 Main thread (app.js)                         Web Worker (worker.js)
 ┌──────────────────────────┐   postMessage   ┌───────────────────────────────┐
 │ CodeMirror editor        │ ──── run ─────► │ Wasmoon (Lua 5.4 in WASM)     │
-│ Renderer (renderer.js)   │ ◄─── frame ──── │  turtle_web.lua (exec host)   │
+│ Renderer (renderer.js)   │ ◄─── frame ──── │  turtle_web.lua → host.lua    │
 │ Canvas2D + commit canvas │                 │   ├─ core.lua  (state machine)│
 │                          │  SharedArray-   │   └─ screen.lua (segment log) │
 │ Atomics.notify ──────────┼──── Buffer ────►│  Atomics.wait (blocks worker) │
@@ -22,16 +22,19 @@ Layer boundaries, top to bottom:
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
 | UI shell | `app.js` | Editor, draft autosave + share links, run state machine, worker lifecycle, frame ack, shortcuts |
-| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them |
+| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
+| Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
-| Worker bridge | `worker.js` | Wasmoon boot, frame protocol, sandbox run, error mapping |
-| Execution host | `turtle/turtle_web.lua` | Animation pacing, undo orchestration, tracer, API/globals |
+| Worker bridge | `worker.js` | Wasmoon boot (mounting a fixed list of Lua files, which `test/worker_files_test.mjs` checks covers everything `turtle_web.lua` requires), frame protocol, sandbox run, error mapping |
+| Execution host | `turtle/host.lua`, `turtle/random.lua`, `turtle/plane.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random`; the coordinate plane the canvas shows, and graph paper and curves drawn on it |
+| Web adapter | `turtle/turtle_web.lua` | Holds the worker's current host instance and exposes it as the `_bridge_*` globals `worker.js` calls |
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
 | Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
 | Reference demos | `turtle/demos.lua` | A demo program per command-reference entry, played in the reference's detail pane |
+| Command catalog | `turtle/catalog.lua` | The reference's sections and entries as data, with a runnable call per entry; read by the LÖVE desktop app's controller menu and mapping, kept identical to `index.html` by `test/catalog_test.lua` |
 | Core | `turtle/core.lua`, `turtle/screen.lua` | Pure turtle state machine + shared segment log (verbatim from the desktop repo) |
 | Data | `turtle/colors.lua` | 140+ CSS/SVG named colors |
 
@@ -69,6 +72,9 @@ Key properties:
 - **Renderer-neutral.** The records contain only geometry and color in turtle space
   (center origin, y-up, degrees). The Canvas2D renderer and the desktop Cairo renderer both
   consume this exact shape.
+- **In world units.** Positions are in whatever units the program's coordinate plane uses
+  (see [The coordinate plane](#the-coordinate-plane-planelua)); the host projects them to
+  pixels on the way out, so renderers only ever see pixels.
 
 This is essentially **event sourcing**: the log is the source of truth, and the visible
 picture is a projection computed from it.
@@ -132,16 +138,54 @@ uses shared memory.
   Device-pixel-ratio scaling is applied once via `setTransform` so drawing code works in CSS
   pixels.
 
-### The sandbox environment (`_turtle_make_env`)
+### The host instance (`Host.new`)
+
+`host.lua` returns `Host.new(opts)`: an instance owning its own screen, turtles, tracer state and sandbox env, so one Lua VM can run several programs without them touching.
+The web runs one at a time; the LÖVE desktop app (see `spec-love-port.md`) runs the learner's program and a reference demo side by side.
+`opts` carries what differs between hosts: the canvas size, `post_frame(delay_ms)` (the web blocks on the main thread's ack; the desktop yields a coroutine), `print`, a `seed`, and `on_command`.
+`turtle_web.lua` is the web's adapter: `_bridge_hard_reset` makes a new instance per Run, and the other `_bridge_*` globals read from it.
+
+`on_command(record)` is called after every public command with `{ name, turtle_id, first, last }`: the name as typed and the range of log indices the command appended.
+Nothing uses it yet; it is the hook point for the execution trace the desktop spec plans, and with no `on_command` the host does no extra work.
+
+### The coordinate plane (`plane.lua`)
+
+Turtles live in world units.
+Until a program says otherwise a world unit is a pixel, with (0, 0) at the canvas's center and y up.
+`setworldcoordinates(left, bottom, right, top)` makes the canvas show that rectangle of the world, as Python turtle's does, and `graph(left, bottom, right, top[, "stretch"])` puts the rectangle across 80% of the canvas, with a unit as long up as across unless stretched, leaving a margin for the axes' numbers.
+Every other command then speaks those units: `setpos(3, 14)` goes to the point (3, 14) of the graph.
+As in Python, only positions scale; pen widths, dot sizes and fonts stay in pixels.
+Unlike Python's, changing the world keeps the drawing, which moves to its new place.
+
+The host keeps one plane per instance, `{ view, paper }`: the world rectangle the canvas shows (nil for the standard plane) and the rectangle graph paper covers.
+The segment log, the turtles and undo snapshots all stay in world units.
+`host.visible_segments()` and `host.turtle_states()` run them through `Plane.project` and `Plane.project_turtles`, which return pixel copies (a stretched heading turned to how it looks), so neither renderer, the frame protocol, nor anything else a shell reads changed.
+The standard plane returns them untouched.
+Animation pacing measures a step in the pixels it covers, so a world unit of any size animates as smoothly as a pixel.
+
+`axes()`, `plot(f)` and `mark(x, y)` draw graph paper, the curve y = f(x), and a labeled dot.
+`plane.lua` computes them as segment records (grid lines at multiples of each step, axes through 0 or along the nearest edge, numbers nudged a few pixels off their axis, curves sampled at 201 points and clipped to the paper), and the host logs those records straight from the turtle's core inside one `with_undo`.
+So each is one undo step, carries its turtle's id, and leaves the turtle and its pen where they were.
+`plot` posts a frame every few pieces, like `circle`.
+A rule only running can check (too many grid lines, a function that returns a string) is rejected through `args.fail`, so the learner still sees how the command is called.
+`test/plane_test.lua` checks the pure functions by equality and the commands on a host.
+
+`host.lua` runs on Lua 5.4 and LuaJIT alike, and shims `table.unpack` (missing in LuaJIT) before loading the core, so the shared files stay verbatim.
+`sh test/run.sh` runs every Lua suite under both `lua` and `luajit`.
+
+### The sandbox environment (`host.env()`)
 
 User code is loaded with `load(code, "user_code", "t", env)` where `env` is a fresh table
 exposing a whitelisted Lua stdlib subset (`math`, `string`, `table`, `pairs`, `pcall`, …) and
 the full turtle API — but not `require`, `io`, `os`, `debug`, or the module internals. Built
 fresh per Run, so nothing leaks between runs.
 
+The env's `math` is a copy whose `random` and `randomseed` belong to the instance (`random.lua`), seeded from `opts.seed` (or the clock) and recorded as `host.seed`.
+Lua's own generator is one per VM and differs between Lua 5.4 and LuaJIT; this one gives each program its own sequence, identical on the web and the desktop for the same seed, so a run can be reproduced exactly.
+
 ### The command table (`TURTLE_COMMANDS`, `SCREEN_COMMANDS`)
 
-Every public command is declared once in `turtle_web.lua` as `{ check, run }`, plus an `ALIASES` map (`fd` → `forward`, …).
+Every public command is declared once in `host.lua` as `{ check, run }`, plus an `ALIASES` map (`fd` → `forward`, …).
 The module-level globals, each `Turtle()`'s method table, and the sandbox env are all generated from these tables, so they cannot drift apart.
 `TURTLE_COMMANDS` act on one turtle (globals on the default core, methods on their own); `SCREEN_COMMANDS` (`bgcolor`, `tracer`, `update`, `Turtle`, …) are globals only.
 
@@ -260,7 +304,7 @@ The pieces, each with one job:
   So a runtime error, a stop, the learner's own `error()`, or a rejection they caught with `pcall` never picks up examples.
 - **`examples.lua` holds the examples.** Pure data, keyed by the command's own name, with up to three calls each.
   This is the file to edit when iterating on the examples; the tests run every example, and check that every command and alias has some.
-- **`turtle_web.lua` maps the command to its examples.** `_bridge_command_usage(err)` resolves an alias to its command (`fd` → `forward`) and returns `{ command, examples }`, or nil.
+- **`host.lua` maps the command to its examples.** `Host.command_usage(err)` (exposed to the worker as `_bridge_command_usage`) resolves an alias to its command (`fd` → `forward`) and returns `{ command, examples }`, or nil.
   `_bridge_get_usage_catalog()` returns the same for every command and alias, keyed by the name typed.
 - **`worker.js` carries them.** Its `xpcall` handler records the usage alongside the error line, and the `error` message gains `usage`.
   The `ready` message carries the whole catalog once, so lookups never need a round trip to the worker (or wait for a run to finish).
@@ -295,6 +339,36 @@ The pieces, each with one job:
 
 Because both the recording and the drawing go through the production code paths, a demo looks exactly like the same program run on the real canvas, zoomed out.
 Under `prefers-reduced-motion`, the preview shows only the finished drawing.
+
+### Lessons sidebar
+
+The Lessons button (⌘⇧L, Ctrl+Shift+L elsewhere) pops a sidebar up over the editor column that teaches the Linear Equations and Quadratic Equations chapters of Triangle Lab, after chapters 3 and 6 of The Art of Problem Solving, Volume 1.
+Each page is one example: what it is about, its program step by step (each step a chunk of the program with its line numbers, and what that chunk does), and then the whole program, which the learner can run on the canvas, open in the editor, or copy.
+The sidebar is docked over the editor column, or detached into a window that floats over the page, so a learner can read it beside the editor while typing a program in by hand.
+The floating window is dragged by its header and resized from any of its edges or corners, so it can be widened leftward to show long lines of code even when it sits against the right of the window.
+Every lesson shows its idea both ways: on a Cartesian graph ("On the plane") and as turtle geometry, with headings, walks and vectors ("With the turtle"), and word problems are worked both ways too.
+The pieces, each with one job:
+
+- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples, each example with its text and a whole program.
+  Plane examples start with the turtle library's own `graph()` and `axes()`, then draw in the graph's coordinates with `plot`, `mark`, `teleport` and `setpos`, so every program runs on its own and is the code a learner could write.
+  A program is written as its own tutorial: `--:` lines at the left edge explain the chunk below them, and `tutorial()` splits each program at those lines into `steps` when the file loads, taking the lines out of the program.
+  The explanation sits right above the code it explains, so the two are edited together.
+  A step marked `--::` shows folded; no lesson uses that now.
+  `test/lessons_test.lua` checks the shape, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
+- **`worker.js` carries them.** `turtle_web.lua`'s `_bridge_get_lessons` loads the data, and the `ready` message sends it once, as it does the demos; the host itself never loads it.
+- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what the contents list, and which parts of a paragraph are `code`.
+  `test/lessons_test.mjs` covers it.
+- **`floating.js` decides where the detached window sits.** Pure functions of the window's size give its first box, and the box after a drag, a resize by any edge or corner, or the window shrinking; every box they return fits the window.
+  A resize moves only the edges held, and stops each at the window's margin or where the box would get smaller than its minimum.
+  `test/floating_test.mjs` covers it.
+- **`lessons-panel.js` is the shell.** It renders what `lessons.js` returns, opens and closes, docks and detaches, applies the boxes `floating.js` returns while the header or an edge or corner handle is dragged (each handle names its edges in `data-edges`), remembers the page by its id and where the window sits in `localStorage`, and turns the page on ←/→, Page Up/Down, Home and End while focus is inside it.
+  Esc closes it from inside, like the reference.
+- **`app.js` runs the programs.** A page's Run starts a normal run with the page's code, without touching the editor; its errors go to the terminal with the lesson program's line, and never mark an editor line.
+  Open in editor replaces the editor's text with `setValue`, which the editor's undo reverses; when docked, the sidebar also closes so the code is in view.
+
+Docked, the sidebar covers only the editor column, so the drawing is always in view while the learner reads about it.
+Detached, it is `position: fixed` and stays where it was left, above the canvas's own overlays.
+Its resize handles sit mostly outside its border, so they never take a grab meant for its scrollbar.
 
 ### Panels
 
@@ -350,7 +424,7 @@ The button that opens the menu appears in the canvas's corner once a controller 
 The mapping view covers the canvas, so a run closes it.
 
 `test/gamepad_test.mjs` covers the parts that need no page (reading presses, the mapping, the two lists).
-`test/dock_test.mjs` covers a panel's height.
+`test/dock_test.mjs` covers a panel's height, and `test/lessons_test.mjs` and `test/floating_test.mjs` the Lessons sidebar's pages and floating window.
 Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 
 ### Zoom about a point (`zoomAt`)
@@ -372,7 +446,7 @@ raster resampling, just a full vector replay.
   all *annotate* the shared log instead of mutating it — the trick that makes per-turtle
   operations composable when logs interleave.
 - **Layered core / host split.** `core.lua` + `screen.lua` are a pure, platform-free state
-  machine (testable with plain `lua`); `turtle_web.lua` is the *execution host* layering
+  machine (testable with plain `lua`); `host.lua` is the *execution host* layering
   animation, pacing, undo orchestration, and API surface on top. Animation lives only in the
   host — never in core.
 - **Pipeline of filters.** `visible_segments()` is a composition of three small pure filters,
@@ -390,15 +464,39 @@ raster resampling, just a full vector replay.
   (`Core.__index = Core`).
 - **Sandbox via environment injection.** User code gets a fresh whitelist `env` per run —
   isolation without patching globals.
-- **Hard reset by reconstruction.** Each Run rebuilds `Screen` and the default `Core` from
-  scratch (`_bridge_hard_reset`) rather than trying to scrub state — no leakage between runs
-  by construction.
+- **Hard reset by reconstruction.** Each Run makes a new host instance, with a new `Screen`
+  and default `Core` (`_bridge_hard_reset`), rather than trying to scrub state — no leakage
+  between runs by construction.
 - **Web default colors.** `core.lua` and `screen.lua` hard-code white ink on black paper.
   The web host overrides both with black ink on white paper, like Python turtle, so the shared
   files stay verbatim. The drawing ignores the page palette; only the program's own
   `pencolor`/`fillcolor`/`bgcolor` calls change it.
 - **Registry + ownership tags.** The Screen registers turtles and hands out `turtle_id`s;
   every log entry is tagged with its owner, which is what all per-turtle semantics hang off.
+
+## Local dev server and UI feedback (`tools/dev-server.mjs`, `dev/feedback/`)
+
+`node tools/dev-server.mjs` serves the site locally on port 5520 (`.claude/launch.json` starts it), the way the deployed site is served: `public/` as is, cross-origin isolated with the headers in `public/_headers`.
+It listens on the loopback addresses only.
+
+It adds one thing, a review aid for the developer: hold Option (Alt off macOS) to outline the element under the pointer, and Option-click it to leave Claude a comment on it.
+The server appends each comment to `ui-feedback.md` in the repo root, which is gitignored: it is read by Claude, and goes nowhere else.
+Each entry is a Markdown section that starts open (`[ ]`) and is marked `[x]` once dealt with, with the page, a selector that finds the element again, the start of its text, and where it was clicked.
+The format is Triangle Lab's, so both projects' feedback files read alike.
+
+The overlay can never reach the published site.
+The server adds its script tag to `index.html` as it serves it, and serves the script from `dev/`, outside `public/`; no app module imports it.
+It takes Option-clicks in the capture phase, before the app's listeners see them, and keys typed into its comment box stop at the box, so the app's shortcuts never fire while a comment is written.
+The server takes comments only from its own pages: a POST's `Origin` must be its own host.
+
+| File | Role |
+| --- | --- |
+| `dev/feedback/entry.js` | A comment's wire format, its validation, and its Markdown form. Shared by page and server; no DOM or Node APIs. |
+| `dev/feedback/capture.js` | A clicked element → a selector, a description and the click's position. Pure over anything shaped like an element. |
+| `dev/feedback/overlay.js` | The outline, the comment box, and the post to the server. |
+| `tools/dev-server.mjs` | Serves the site, adds the overlay, records comments. Its decisions (which file a path reads, the injection, whose comments to take) are pure exports. |
+
+`test/feedback_test.mjs` covers the entry and the capture, and `test/dev_server_test.mjs` the server's decisions, including that its isolation headers match `public/_headers`.
 
 ## Deployment
 

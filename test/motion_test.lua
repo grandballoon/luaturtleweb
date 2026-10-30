@@ -11,6 +11,9 @@ require("turtle.turtle_web")  -- defines _turtle_make_env and the bridge globals
 
 local failures, passed = 0, 0
 
+-- table.pack is Lua 5.2+; the suites also run under LuaJIT.
+local pack = table.pack or function(...) return { n = select("#", ...), ... } end
+
 -- Runs code at the given speed and returns the values of `query`.
 local function after(speed, code, query)
     _bridge_hard_reset()
@@ -21,8 +24,8 @@ local function after(speed, code, query)
 end
 
 local function expect_same(code, query)
-    local animated = table.pack(after(5, code, query))
-    local instant  = table.pack(after(0, code, query))
+    local animated = pack(after(5, code, query))
+    local instant  = pack(after(0, code, query))
     for i = 1, instant.n do
         if animated[i] ~= instant[i] then
             failures = failures + 1
