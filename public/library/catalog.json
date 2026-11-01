@@ -1,0 +1,138 @@
+{
+  "concepts": [
+    { "id": "graphs", "name": "Graphs of functions", "about": "y = f(x), drawn on graph paper." },
+    { "id": "trigonometry", "name": "Trigonometry", "about": "Sine and cosine turn an angle into a position." },
+    { "id": "polar", "name": "Polar curves", "about": "A distance r that depends on the angle." },
+    { "id": "parametric", "name": "Parametric curves", "about": "x and y each a function of a third variable, t." },
+    { "id": "spirals", "name": "Spirals", "about": "Curves that wind outward as they turn." },
+    { "id": "golden-ratio", "name": "The golden ratio", "about": "1.618…, the ratio Fibonacci numbers approach." },
+    { "id": "polygons", "name": "Polygons and stars", "about": "Straight sides and the turns between them." },
+    { "id": "symmetry", "name": "Symmetry and rotation", "about": "Shapes that look the same turned or reflected." },
+    { "id": "modular", "name": "Modular arithmetic", "about": "Counting that wraps around, like a clock." },
+    { "id": "recursion", "name": "Recursion", "about": "A drawing defined by smaller copies of itself." },
+    { "id": "fractals", "name": "Fractals", "about": "Detail at every scale." },
+    { "id": "series", "name": "Series", "about": "Adding up infinitely many terms." }
+  ],
+  "examples": [
+    {
+      "id": "sine-waves",
+      "name": "Sine waves",
+      "about": "y = a sin(bx): amplitude stretches the wave, frequency squeezes it.",
+      "concepts": ["graphs", "trigonometry"]
+    },
+    {
+      "id": "parabolas",
+      "name": "Parabolas",
+      "about": "y = ax², narrower as a grows, and a shifted vertex.",
+      "concepts": ["graphs"]
+    },
+    {
+      "id": "damped-oscillation",
+      "name": "Damped oscillation",
+      "about": "A swing that shrinks inside its exponential envelope.",
+      "concepts": ["graphs", "trigonometry"]
+    },
+    {
+      "id": "fourier-square-wave",
+      "name": "Square wave from sines",
+      "about": "A Fourier series: odd harmonics add up to a square wave.",
+      "concepts": ["series", "trigonometry", "graphs"]
+    },
+    {
+      "id": "rose-curve",
+      "name": "Rose curve",
+      "about": "r = cos(7θ/4): petals that close after four turns.",
+      "concepts": ["polar", "trigonometry", "symmetry"]
+    },
+    {
+      "id": "maurer-rose",
+      "name": "Maurer rose",
+      "about": "Jumping around a rose 71 degrees at a time.",
+      "concepts": ["polar", "modular", "polygons"]
+    },
+    {
+      "id": "times-table",
+      "name": "Times tables on a circle",
+      "about": "Join i to 2i mod 200 and a cardioid appears.",
+      "concepts": ["modular", "symmetry"]
+    },
+    {
+      "id": "lissajous",
+      "name": "Lissajous figure",
+      "about": "Two pendulum swings, 3 to 4, traced together.",
+      "concepts": ["parametric", "trigonometry", "symmetry"]
+    },
+    {
+      "id": "spirograph",
+      "name": "Spirograph",
+      "about": "A wheel rolling inside a ring: a hypotrochoid.",
+      "concepts": ["parametric", "trigonometry", "symmetry"]
+    },
+    {
+      "id": "butterfly-curve",
+      "name": "Butterfly curve",
+      "about": "Temple Fay's polar curve, twelve turns before it repeats.",
+      "concepts": ["polar", "trigonometry"]
+    },
+    {
+      "id": "archimedean-spiral",
+      "name": "Archimedean spiral",
+      "about": "r = aθ: every turn the same distance apart.",
+      "concepts": ["spirals", "polar"]
+    },
+    {
+      "id": "sunflower",
+      "name": "Sunflower seeds",
+      "about": "Seeds placed by the golden angle pack without gaps.",
+      "concepts": ["golden-ratio", "spirals", "polar"]
+    },
+    {
+      "id": "fibonacci-spiral",
+      "name": "Fibonacci spiral",
+      "about": "Quarter circles in squares of side 1, 1, 2, 3, 5, 8, …",
+      "concepts": ["golden-ratio", "spirals"]
+    },
+    {
+      "id": "squiral",
+      "name": "Squiral",
+      "about": "Longer steps and 89° turns twist a square spiral.",
+      "concepts": ["spirals", "polygons"]
+    },
+    {
+      "id": "koch-snowflake",
+      "name": "Koch snowflake",
+      "about": "An endless outline around a finite area.",
+      "concepts": ["fractals", "recursion", "symmetry"]
+    },
+    {
+      "id": "sierpinski-triangle",
+      "name": "Sierpinski triangle",
+      "about": "Three half-size copies of itself, all the way down.",
+      "concepts": ["fractals", "recursion"]
+    },
+    {
+      "id": "fractal-tree",
+      "name": "Fractal tree",
+      "about": "Every branch is a smaller tree.",
+      "concepts": ["fractals", "recursion", "symmetry"]
+    },
+    {
+      "id": "dragon-curve",
+      "name": "Dragon curve",
+      "about": "A strip of paper folded in half eleven times.",
+      "concepts": ["fractals", "recursion"]
+    },
+    {
+      "id": "star-polygons",
+      "name": "Star polygons",
+      "about": "{n/k}: join every k-th of n points on a circle.",
+      "concepts": ["polygons", "modular", "symmetry"]
+    },
+    {
+      "id": "rosette",
+      "name": "Rosette",
+      "about": "One circle drawn 36 times, 10° apart.",
+      "concepts": ["symmetry", "polygons"]
+    }
+  ]
+}

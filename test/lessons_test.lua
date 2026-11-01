@@ -11,8 +11,8 @@
 
 package.path = "public/?.lua;" .. package.path
 
-local Host    = require("turtle.host")
 local lessons = require("turtle.lessons")
+local programs = dofile("test/program_check.lua")
 
 local failures, passed = 0, 0
 
@@ -34,36 +34,7 @@ local function lines(text)
 end
 
 local KINDS = { plane = true, turtle = true }
-local SIZES = { { 900, 640 }, { 420, 420 } }
-
--- Every point a visible segment puts ink on, as {x, y, reach}.
-local function ink(segments)
-    local points = {}
-    for _, seg in ipairs(segments) do
-        if seg.type == "line" then
-            points[#points + 1] = { seg.from[1], seg.from[2], seg.width / 2 }
-            points[#points + 1] = { seg.to[1], seg.to[2], seg.width / 2 }
-        elseif seg.type == "fill" then
-            for _, v in ipairs(seg.vertices) do points[#points + 1] = { v[1], v[2], 0 } end
-        elseif seg.type == "dot" then
-            points[#points + 1] = { seg.pos[1], seg.pos[2], seg.size / 2 }
-        elseif seg.type == "text" then
-            points[#points + 1] = { seg.pos[1], seg.pos[2], 0 }
-        end
-    end
-    return points
-end
-
--- Runs a program the way worker.js does, in a fresh host's env as chunk
--- "user_code", and returns the host, or nil and the error.
-local function run(code, width, height)
-    local host = Host.new({ width = width, height = height, seed = 0, print = function() end })
-    local chunk, err = load(code, "user_code", "t", host.env())
-    if not chunk then return nil, "does not compile: " .. tostring(err) end
-    local ok, run_err = pcall(chunk)
-    if not ok then return nil, "fails: " .. tostring(run_err) end
-    return host
-end
+local SIZES = programs.SIZES
 
 check(#lessons > 0, "there are no chapters")
 local ids = {}
@@ -126,17 +97,11 @@ for c, chapter in ipairs(lessons) do
 
             for _, size in ipairs(SIZES) do
                 local w, h = size[1], size[2]
-                local host, err = run(example.code, w, h)
+                local host, err = programs.run(example.code, w, h)
                 check(host ~= nil, string.format("%s at %dx%d %s", id, w, h, tostring(err)))
                 if host then
-                    local points = ink(host.visible_segments())
-                    check(#points > 0, string.format("%s at %dx%d draws nothing", id, w, h))
-                    local outside = 0
-                    for _, p in ipairs(points) do
-                        if math.abs(p[1]) + p[3] > w / 2 or math.abs(p[2]) + p[3] > h / 2 then
-                            outside = outside + 1
-                        end
-                    end
+                    local outside, inked = programs.off_canvas(host, w, h)
+                    check(inked > 0, string.format("%s at %dx%d draws nothing", id, w, h))
                     check(outside == 0, string.format("%s at %dx%d draws %d points off the canvas", id, w, h, outside))
                 end
             end

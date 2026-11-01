@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Library — Lua Turtle</title>
+<meta name="theme-color" content="#f6f2eb">
+<meta name="description" content="Mathematical functions and the drawings they make, each a short Lua program you can run and change.">
+<meta name="robots" content="noindex">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><polygon points='24,16 10,24 10,8' fill='%23237a69'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<!-- CodeMirror 5.65.16, vendored: see vendor/codemirror/ -->
+<link rel="stylesheet" href="vendor/codemirror/codemirror.min.css">
+<script src="vendor/codemirror/codemirror.min.js"></script>
+<script src="vendor/codemirror/mode/lua/lua.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="library.css">
+</head>
+<body>
+
+<div id="sab-warning" role="alert" hidden>
+  ⚠ SharedArrayBuffer is not available. Animation requires the COOP/COEP headers to be set.
+  Check the <code>_headers</code> file and your server configuration.
+</div>
+
+<div id="app" class="library-app">
+  <header>
+    <div class="header-brand">
+      <h1>
+        <a class="brand-link" href="./">
+          <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><polygon points="24,16 10,24 10,8" fill="currentColor"/></svg>
+          <span class="brand-text">LUA TURTLE</span>
+        </a>
+        <span class="brand-page">Library</span>
+      </h1>
+    </div>
+    <div class="header-controls">
+      <span id="header-status" role="status" aria-live="polite"></span>
+      <a id="btn-open-editor" class="button btn-secondary" href="./" aria-disabled="true" title="Open this program in the full editor" aria-label="Open in editor">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+        <span class="btn-label">Open in editor</span>
+      </a>
+      <button id="btn-stop" class="btn-secondary" aria-label="Stop" disabled>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/></svg>
+        <span class="btn-label">Stop</span>
+      </button>
+      <button id="btn-run" class="primary" aria-label="Run" disabled>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
+        <span class="btn-label">Run</span>
+        <kbd id="run-shortcut" class="kbd" aria-hidden="true"></kbd>
+      </button>
+    </div>
+  </header>
+
+  <div id="library">
+    <div id="library-browse">
+      <aside id="library-sidebar" aria-label="Find an example">
+        <label id="library-search-field">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="library-search" type="search" placeholder="Search examples" aria-label="Search examples" aria-controls="library-gallery" autocomplete="off" spellcheck="false">
+          <kbd id="library-search-key" class="kbd" aria-hidden="true">/</kbd>
+        </label>
+        <nav id="library-concepts" aria-label="Concepts">
+          <h2 class="library-concepts-title">Concepts</h2>
+          <ul id="library-concept-list"></ul>
+        </nav>
+      </aside>
+
+      <main id="library-gallery" tabindex="-1" aria-live="polite">
+        <p id="library-loading">Loading the library…</p>
+        <p id="library-empty" hidden>No examples match <q id="library-empty-query"></q></p>
+      </main>
+    </div>
+
+    <section id="stage" aria-label="Canvas and code">
+      <div id="canvas-panel">
+        <div id="canvas-controls">
+          <div id="canvas-toolbar">
+            <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+            <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+            <button id="btn-zoom-reset" title="Reset view">Reset</button>
+            <span id="zoom-label" aria-live="polite">100%</span>
+            <button id="btn-grid" title="Toggle grid" aria-pressed="false">Grid</button>
+          </div>
+        </div>
+        <p id="library-canvas-hint">Pick an example to draw it here.</p>
+        <canvas id="turtle-canvas" aria-label="Turtle drawing"></canvas>
+      </div>
+
+      <section id="library-editor-panel" class="dock" aria-label="Code">
+        <div id="library-editor-header" class="dock-header">
+          <button id="library-editor-caret" class="dock-caret" aria-label="Toggle code" aria-controls="library-editor-body"><span class="dock-caret-icon">&#9660;</span></button>
+          <h2 id="library-editor-title" class="dock-title">Code</h2>
+          <span id="library-editor-error" class="dock-hint" hidden></span>
+          <button id="library-editor-reset" class="dock-toggle-plain" title="Put the example's own program back" hidden>Revert</button>
+        </div>
+        <div id="library-editor-body">
+          <textarea id="library-editor-textarea"></textarea>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<template id="library-card-template">
+  <li class="library-card">
+    <div class="library-card-preview">
+      <video muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true"></video>
+    </div>
+    <div class="library-card-body">
+      <h3 class="library-card-name"></h3>
+      <p class="library-card-about"></p>
+      <button class="library-card-run" type="button">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
+        <span>Run on canvas</span>
+      </button>
+    </div>
+  </li>
+</template>
+
+<script type="module" src="library-page.js"></script>
+
+</body>
+</html>

@@ -1,9 +1,10 @@
 // app.js
-// UI shell. Wires the editor, run lifecycle, worker, and panels together.
-// Owns: CodeMirror setup, draft autosave and share links, the run state
-//       machine (loading → idle ⇄ running), header controls, and global
-//       keyboard shortcuts.
-// Delegates: drawing to renderer.js, canvas gestures to canvas-view.js,
+// UI shell. Wires the editor, runs, and panels together.
+// Owns: CodeMirror setup, draft autosave and share links, what the page
+//       shows about a run (status, terminal, error marks), header
+//       controls, and global keyboard shortcuts.
+// Delegates: running programs (the worker, the run state machine) to
+//            runner.js, drawing to renderer.js, canvas gestures to canvas-view.js,
 //            output to terminal.js, the divider to splitter.js, the
 //            command reference to command-reference.js (its demo animations
 //            to command-preview.js, and the panel it sits in to dock.js),
@@ -26,7 +27,8 @@ import { createCommandPreview } from './command-preview.js';
 import { readCommandCatalog }   from './command-catalog.js';
 import { initGamepad }          from './gamepad-controller.js';
 import { createLessonsPanel }   from './lessons-panel.js';
-import { TURTLE_COMMANDS }      from './lua-highlight.js';
+import { createRunner }         from './runner.js';
+import { createLuaEditor }      from './lua-editor.js';
 import * as storage             from './storage.js';
 
 const IS_MAC       = /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
@@ -83,28 +85,7 @@ const initial = initialCode();
 const textarea = $('editor-textarea');
 textarea.value = initial.code;
 
-const editor = CodeMirror.fromTextArea(textarea, {
-    mode: 'lua',
-    theme: 'turtle',   // colors come from the palette tokens in styles.css
-    lineNumbers: true,
-    indentUnit: 4,
-    tabSize: 4,
-    indentWithTabs: false,
-    lineWrapping: false,
-    smartIndent: false,
-    extraKeys: {
-        'Tab':       (cm) => cm.execCommand('insertSoftTab'),
-        'Shift-Tab': (cm) => cm.execCommand('indentLess'),
-    },
-});
-
-editor.addOverlay({
-    token(stream) {
-        if (stream.match(TURTLE_COMMANDS)) return 'turtle-cmd';
-        stream.next();
-        return null;
-    },
-});
+const editor = createLuaEditor(textarea);
 
 // Draft autosave. The first edit also drops the share hash, so a reload
 // keeps the learner's edits instead of snapping back to the shared program.
@@ -243,13 +224,7 @@ function canvasSize() {
 
 // ---- Run lifecycle ----
 
-let state         = 'loading';   // 'loading' | 'idle' | 'running' | 'failed'
-let runId         = 0;
-let pendingRun    = initial.shared;   // shared links run as soon as the VM is ready
-let stopRequested = false;
-let runStartedAt  = 0;
-let sab, sabI32, worker;
-let runFromEditor = true;   // false while a lesson's program runs: its lines aren't the editor's
+let state = 'loading';   // the runner's: 'loading' | 'idle' | 'running' | 'failed'
 
 function setState(next) {
     state = next;
@@ -259,10 +234,49 @@ function setState(next) {
     btnRun.title      = next === 'running' ? `Restart (${RUN_SHORTCUT})` : `Run (${RUN_SHORTCUT})`;
 }
 
-function signalStop() {
-    Atomics.store(sabI32, 1, 1);
-    Atomics.notify(sabI32, 0);   // wake the worker if it's waiting on a frame ack
+function formatElapsed(ms) {
+    return ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(1)} s`;
 }
+
+// Each run's meta says whether its code is the editor's: a lesson's
+// program runs on the canvas without touching the editor, so its lines
+// aren't the editor's.
+const runner = createRunner({
+    renderer,
+    canvasSize,
+    onState: setState,
+    onReady(msg) {
+        usageCatalog = msg.usage || {};
+        commandRef.setDemoPrograms(msg.demos);
+        lessons.setLessons(msg.lessons);
+        setStatus(`Ready · ${RUN_SHORTCUT} to run`);   // a waiting run's status follows at once
+    },
+    onFail(detail) {
+        setStatus('Lua failed to load — try reloading', 'error');
+        terminal.error(`Could not start the Lua VM: ${detail}`);
+        terminal.open();
+    },
+    onStart({ fromEditor }) {
+        terminal.clear();
+        clearError();
+        setStatus(fromEditor ? 'Running' : "Running the lesson's program", 'running');
+    },
+    onPrint: (lines) => terminal.print(lines),
+    onDone({ stopped, elapsed }) {
+        setStatus(stopped ? 'Stopped' : `Done in ${formatElapsed(elapsed)}`);
+    },
+    onError({ message, line, usage }, { fromEditor }) {
+        terminal.open();
+        if (!fromEditor) {
+            terminal.error(line ? `${message} (line ${line} of the lesson's program)` : message);
+            setStatus("Error in the lesson's program — see terminal", 'error');
+            return;
+        }
+        terminal.error(message, line);
+        if (line) markError(line, message, usage);
+        setStatus(line ? `Error on line ${line}` : 'Error — see terminal', 'error');
+    },
+});
 
 function runCode() {
     startRun(editor.getValue(), true);
@@ -273,110 +287,15 @@ function runLesson(code) {
     startRun(code, false);
 }
 
+// A run asked for while Lua loads starts as soon as it has.
 function startRun(code, fromEditor) {
-    if (state === 'failed') return;
-    if (state === 'loading') {
-        pendingRun = true;
-        setStatus('Starting Lua…', 'running');
-        return;
-    }
-    // Run while running restarts: stop the current run, then queue the new
-    // one. The worker clears the stop flag when it picks up the new message.
-    if (state === 'running') signalStop();
-
-    runId++;
-    stopRequested = false;
-    runStartedAt  = performance.now();
-    runFromEditor = fromEditor;
-    terminal.clear();
-    clearError();
-    setState('running');
-    setStatus(fromEditor ? 'Running' : "Running the lesson's program", 'running');
-
-    const { width, height } = canvasSize();
-    worker.postMessage({
-        type: 'run', runId, code, sab,
-        canvasWidth: width, canvasHeight: height,
-    });
+    if (runner.run(code, { fromEditor }) && state === 'loading') setStatus('Starting Lua…', 'running');
 }
 
 function stopCode() {
     if (state !== 'running') return;
-    stopRequested = true;
-    signalStop();
+    runner.stop();
     setStatus('Stopping…', 'running');
-}
-
-function formatElapsed(ms) {
-    return ms < 1000 ? `${Math.max(1, Math.round(ms))} ms` : `${(ms / 1000).toFixed(1)} s`;
-}
-
-function onWorkerMessage(e) {
-    const msg = e.data;
-
-    if (msg.type === 'frame') {
-        // Always render and ack, even a straggler from a replaced run:
-        // the worker blocks until it gets the ack.
-        renderer.applyFrame(msg.segments, msg.turtles, msg.bgcolor);
-        Atomics.store(sabI32, 0, 1);
-        Atomics.notify(sabI32, 0);
-        return;
-    }
-
-    if (msg.type === 'ready') {
-        usageCatalog = msg.usage || {};
-        commandRef.setDemoPrograms(msg.demos);
-        lessons.setLessons(msg.lessons);
-        setState('idle');
-        setStatus(`Ready · ${RUN_SHORTCUT} to run`);
-        if (pendingRun) { pendingRun = false; runCode(); }
-        return;
-    }
-
-    if (msg.type === 'init-error') {
-        failToLoad(msg.message);
-        return;
-    }
-
-    // Everything below belongs to a run; ignore replies from a replaced one.
-    if (msg.runId !== runId) return;
-
-    if (msg.type === 'print') {
-        terminal.print(msg.lines);
-
-    } else if (msg.type === 'done') {
-        setState('idle');
-        setStatus(stopRequested ? 'Stopped' : `Done in ${formatElapsed(performance.now() - runStartedAt)}`);
-
-    } else if (msg.type === 'error') {
-        setState('idle');
-        terminal.open();
-        if (!runFromEditor) {
-            // Its line numbers are the lesson program's, not the editor's.
-            terminal.error(msg.line ? `${msg.message} (line ${msg.line} of the lesson's program)` : msg.message);
-            setStatus("Error in the lesson's program — see terminal", 'error');
-            return;
-        }
-        terminal.error(msg.message, msg.line);
-        if (msg.line) markError(msg.line, msg.message, msg.usage);
-        setStatus(msg.line ? `Error on line ${msg.line}` : 'Error — see terminal', 'error');
-    }
-}
-
-function failToLoad(detail) {
-    setState('failed');
-    setStatus('Lua failed to load — try reloading', 'error');
-    terminal.error(`Could not start the Lua VM: ${detail}`);
-    terminal.open();
-}
-
-function startWorker() {
-    sab    = new SharedArrayBuffer(8);   // [FRAME_ACK, STOP_FLAG]
-    sabI32 = new Int32Array(sab);
-    worker = new Worker('worker.js');
-    worker.onmessage = onWorkerMessage;
-    worker.onerror   = (e) => failToLoad(e.message || 'the worker script failed');
-    worker.postMessage({ type: 'init' });
 }
 
 btnRun.addEventListener('click', runCode);
@@ -591,12 +510,11 @@ document.addEventListener('keydown', (e) => {
 // ---- Boot ----
 
 setState('loading');
-
-if (typeof SharedArrayBuffer === 'undefined') {
+setStatus('Loading Lua…', 'running');
+if (!runner.start()) {
     $('sab-warning').hidden = false;
-    setState('failed');
+    runner.fail('missing COOP/COEP headers');
     setStatus('Error: missing COOP/COEP headers', 'error');
-} else {
-    setStatus('Loading Lua…', 'running');
-    startWorker();
 }
+// Shared links run as soon as the VM is ready.
+if (initial.shared) runCode();

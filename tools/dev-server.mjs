@@ -6,7 +6,7 @@
 //
 // Run from the repo root:  node tools/dev-server.mjs [port]   (default 5520)
 //
-// It listens on the loopback addresses only. The overlay is added to index.html as it is
+// It listens on the loopback addresses only. The overlay is added to every page as it is
 // served and is itself served from dev/, outside public/, so the published
 // site (Cloudflare serves public/ as is) never has it. Comments are taken
 // only from this server's own pages.
@@ -46,6 +46,8 @@ const TYPES = {
     '.wasm': 'application/wasm',
     '.svg': 'image/svg+xml',
     '.png': 'image/png',
+    '.mp4': 'video/mp4',
+    '.webp': 'image/webp',
     '.ico': 'image/x-icon',
 };
 
@@ -66,7 +68,28 @@ export function resolvePath(urlPath) {
     const rel = normalize((dev ? path.slice(DEV_PREFIX.length) : path).replace(/^\/+/, ''));
     if (rel === '..' || rel.startsWith(`..${sep}`) || rel.includes('\0')) return null;
     if (dev) return { root: 'dev', path: rel };
-    return { root: 'public', path: rel === '.' || rel === '' || path.endsWith('/') ? join(rel, 'index.html') : rel };
+    if (rel === '.' || rel === '' || path.endsWith('/')) return { root: 'public', path: join(rel, 'index.html') };
+    // A page is served without its extension, as Cloudflare does: /library
+    // is library.html.
+    return { root: 'public', path: extname(rel) ? rel : `${rel}.html` };
+}
+
+// The byte range a Range header asks for in a file of `size` bytes, as
+// {start, end} (end inclusive), null for the whole file, or 'unsatisfiable'.
+// Safari plays a <video> only from a server that answers ranges.
+export function parseRange(header, size) {
+    if (!header) return null;
+    const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+    if (!m || (m[1] === '' && m[2] === '')) return null;
+    let start, end;
+    if (m[1] === '') {
+        start = Math.max(0, size - Number(m[2]));
+        end = size - 1;
+    } else {
+        start = Number(m[1]);
+        end = m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+    }
+    return start > end || start >= size ? 'unsatisfiable' : { start, end };
 }
 
 // The page with the overlay's script added at the end of its body.
@@ -142,12 +165,21 @@ async function serveFile(req, res) {
     } catch {
         return reply(res, 404, 'not found');
     }
-    if (target.root === 'public' && target.path === 'index.html') body = injectOverlay(body.toString('utf8'));
-    res.writeHead(200, {
+    if (target.root === 'public' && extname(target.path) === '.html') body = Buffer.from(injectOverlay(body.toString('utf8')));
+    const headers = {
         ...ISOLATION_HEADERS,
         'Content-Type': contentType(target.path),
         'Cache-Control': 'no-store',
-    });
+        'Accept-Ranges': 'bytes',
+    };
+    const range = parseRange(req.headers.range, body.length);
+    if (range === 'unsatisfiable') return reply(res, 416, '', { 'Content-Range': `bytes */${body.length}` });
+    if (range) {
+        headers['Content-Range'] = `bytes ${range.start}-${range.end}/${body.length}`;
+        body = body.subarray(range.start, range.end + 1);
+    }
+    headers['Content-Length'] = body.length;
+    res.writeHead(range ? 206 : 200, headers);
     res.end(req.method === 'HEAD' ? undefined : body);
 }
 
