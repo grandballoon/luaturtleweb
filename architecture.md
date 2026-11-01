@@ -427,6 +427,22 @@ The mapping view covers the canvas, so a run closes it.
 `test/dock_test.mjs` covers a panel's height, and `test/lessons_test.mjs` and `test/floating_test.mjs` the Lessons sidebar's pages and floating window.
 Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 
+### Feature flags
+
+A feature can be switched off with one flag, without touching its code.
+`public/flags.json` names each flag and says whether it is on; today they are `share`, `export` and `lessons`.
+
+- **`flags.js` decides.** Pure functions read the file, apply a tab's `?flags=` overrides, and make the edits the CLI asks for.
+  A flag is on unless something turns it off, so a missing or unreadable file leaves every feature on.
+  `test/flags_test.mjs` covers it.
+- **`app.js` is the shell.** It fetches the file before anything else, and its `feature(name, ...elements)` removes a feature's elements when it is off and tells the caller to skip wiring it.
+  Removed elements leave no gap in the header's flex row, and a feature that is off also loses its shortcut (the Lessons' ⌘⇧L).
+- **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>` or `off <name>` rewrites the file; it refuses a name the file does not have.
+
+The site is static, so a change goes live on the next deploy, and in the dev server on the next page load.
+`?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have.
+Adding a flag means adding it to `flags.json` and guarding the feature's wiring in `app.js` with `feature()`.
+
 ### Zoom about a point (`zoomAt`)
 
 Standard anchor-preserving zoom: convert the cursor's screen position to turtle coordinates
