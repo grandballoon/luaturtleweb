@@ -512,3 +512,5 @@ require-corp` so the page is cross-origin isolated — a hard requirement for
 modules, CodeMirror from static include, `wasmoon.js` and its `glue.wasm` binary vendored.
 Both come from wasmoon 1.16.0 and must be replaced together; `worker.js` passes the local
 `glue.wasm` URL to `LuaFactory` because the default is a runtime fetch from unpkg.com.
+CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license).
+Google Fonts is the only third-party origin the page loads from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet `index.html` names exists.
