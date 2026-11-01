@@ -13,7 +13,8 @@
 //            command to command-lookup.js, a game controller to
 //            gamepad-controller.js (given the reference's commands by
 //            command-catalog.js), and the Lessons sidebar to
-//            lessons-panel.js.
+//            lessons-panel.js. Feature flags (flags.js) say which of
+//            those features the page shows.
 
 import { Renderer }             from './renderer.js';
 import { Terminal }             from './terminal.js';
@@ -30,6 +31,7 @@ import { createLessonsPanel }   from './lessons-panel.js';
 import { createRunner }         from './runner.js';
 import { createLuaEditor }      from './lua-editor.js';
 import * as storage             from './storage.js';
+import { isOn, resolveFlags }   from './flags.js';
 
 const IS_MAC       = /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
 const RUN_SHORTCUT = IS_MAC ? '⌘↵' : 'Ctrl+Enter';
@@ -58,6 +60,23 @@ const DEFAULT_CODE = [
 const START_CURSOR_LINE = 9;  // the blank line after the example, zero-based
 
 const $ = (id) => document.getElementById(id);
+
+// ---- Feature flags ----
+
+// public/flags.json, with this tab's ?flags= overrides. An unreadable file
+// leaves every feature on.
+const flags = resolveFlags(
+    await fetch(new URL('flags.json', import.meta.url)).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    location.search,
+);
+
+// Whether a feature is on. When it is off, its elements leave the page, so
+// it leaves no gap, and the caller skips wiring it and its shortcuts.
+function feature(name, ...els) {
+    if (isOn(flags, name)) return true;
+    for (const el of els) el.remove();
+    return false;
+}
 
 const app          = $('app');
 const headerStatus = $('header-status');
@@ -248,7 +267,7 @@ const runner = createRunner({
     onReady(msg) {
         usageCatalog = msg.usage || {};
         commandRef.setDemoPrograms(msg.demos);
-        lessons.setLessons(msg.lessons);
+        lessons?.setLessons(msg.lessons);
         setStatus(`Ready · ${RUN_SHORTCUT} to run`);   // a waiting run's status follows at once
     },
     onFail(detail) {
@@ -325,8 +344,8 @@ async function share() {
     }, 1800);
 }
 
-btnShare.addEventListener('click', share);
-$('btn-export').addEventListener('click', () => renderer.exportPNG());
+if (feature('share', btnShare)) btnShare.addEventListener('click', share);
+if (feature('export', $('btn-export'))) $('btn-export').addEventListener('click', () => renderer.exportPNG());
 
 // ---- Command reference ----
 
@@ -408,7 +427,7 @@ function openInEditor(code) {
     setStatus(`Opened the lesson's program · ${MOD_LABEL}Z brings yours back`);
 }
 
-const lessons = createLessonsPanel({
+const lessons = feature('lessons', $('btn-lessons'), $('lessons-panel')) ? createLessonsPanel({
     els: {
         panel:          $('lessons-panel'),
         button:         $('btn-lessons'),
@@ -443,9 +462,11 @@ const lessons = createLessonsPanel({
     onRun:    (code) => { gamepad.closeMapping(); runLesson(code); },
     onOpen:   openInEditor,
     onClose:  () => editor.focus(),
-});
-$('lessons-shortcut').textContent = LESSONS_SHORTCUT;
-$('btn-lessons').title = `Lessons (${LESSONS_SHORTCUT})`;
+}) : null;
+if (lessons) {
+    $('lessons-shortcut').textContent = LESSONS_SHORTCUT;
+    $('btn-lessons').title = `Lessons (${LESSONS_SHORTCUT})`;
+}
 
 // ---- Game controller ----
 
@@ -486,7 +507,7 @@ document.addEventListener('keydown', (e) => {
     } else if (mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();   // browsers otherwise bookmark the open tabs
         commandRef.toggleDemos();
-    } else if (mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
+    } else if (lessons && mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
         e.preventDefault();   // Safari otherwise toggles its own sidebar
         lessons.toggle();
     } else if (e.key === 'Escape') {
@@ -495,7 +516,7 @@ document.addEventListener('keydown', (e) => {
         // The lessons close the same way.
         if (gamepad.isMappingOpen()) {
             gamepad.closeMapping();
-        } else if (lessons.isOpen() && lessons.hasFocus()) {
+        } else if (lessons?.isOpen() && lessons.hasFocus()) {
             lessons.close();
         } else if (commandRef.isOpen() && commandRef.hasFocus()) {
             commandRef.close();
