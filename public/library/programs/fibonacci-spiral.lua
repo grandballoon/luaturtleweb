@@ -1,55 +1,34 @@
 -- Fibonacci spiral
--- Each square's side is the sum of the two before it: 1, 1, 2, 3, 5, 8, ...
--- Laid around each other they make rectangles whose sides approach the golden
--- ratio, and a quarter circle in each square makes the spiral.
+-- Each square's side is the sum of the two after it: 34 = 21 + 13, 21 = 13 +
+-- 8, and so on down to 1, 1. Cut a 55 by 34 rectangle into those squares and
+-- a quarter circle in each makes the spiral. The rectangles left over have
+-- sides that approach the golden ratio, 1.618…
 
-local fib = { 1, 1, 2, 3, 5, 8, 13, 21, 34 }
+local fib = { 34, 21, 13, 8, 5, 3, 2, 1, 1 }
 
--- The squares go right, up, left, down around the rectangle so far, which
--- spans x0..x1 and y0..y1. Each arc turns about one corner of its square.
-local squares = {}
-local x0, y0, x1, y1 = 0, 0, 1, 1
-squares[1] = { x = 0, y = 0, size = 1, cx = 1, cy = 1, start = 180 }
-for i = 2, #fib do
-    local f = fib[i]
-    local side = i % 4
-    local sq
-    if side == 2 then       -- right
-        sq = { x = x1, y = y0, cx = x1, cy = y1, start = -90 }
-        x1 = x1 + f
-    elseif side == 3 then   -- up
-        sq = { x = x0, y = y1, cx = x0, cy = y1, start = 0 }
-        y1 = y1 + f
-    elseif side == 0 then   -- left
-        sq = { x = x0 - f, y = y0, cx = x0, cy = y0, start = 90 }
-        x0 = x0 - f
-    else                    -- down
-        sq = { x = x0, y = y0 - f, cx = x1, cy = y0, start = 180 }
-        y0 = y0 - f
+local unit = math.min(screen_width() * 0.84 / 55, screen_height() * 0.84 / 34)
+
+-- A square turning right, ending where it began, facing the same way.
+local function square(side)
+    for _ = 1, 4 do
+        forward(side)
+        right(90)
     end
-    sq.size = f
-    squares[i] = sq
 end
 
-graph(x0, y0, x1, y1)
-hideturtle()
 speed(6)
+teleport(-55 * unit / 2, -34 * unit / 2)
+setheading(90)
+for _, f in ipairs(fib) do
+    local side = f * unit
+    pencolor("tan")
+    pensize(1)
+    square(side)
 
-pencolor("tan")
-for _, sq in ipairs(squares) do
-    teleport(sq.x, sq.y)
-    setpos(sq.x + sq.size, sq.y)
-    setpos(sq.x + sq.size, sq.y + sq.size)
-    setpos(sq.x, sq.y + sq.size)
-    setpos(sq.x, sq.y)
+    -- A quarter of a circle turning right carries the turtle to the far
+    -- corner of the square, facing along the side where the next one goes.
+    pencolor("darkgoldenrod")
+    pensize(3)
+    circle(-side, 90)
 end
-
-pencolor("darkgoldenrod")
-pensize(3)
-for _, sq in ipairs(squares) do
-    for step = 0, 30 do
-        local a = math.rad(sq.start + 90 * step / 30)
-        local x, y = sq.cx + sq.size * math.cos(a), sq.cy + sq.size * math.sin(a)
-        if step == 0 then teleport(x, y) else setpos(x, y) end
-    end
-end
+hideturtle()
