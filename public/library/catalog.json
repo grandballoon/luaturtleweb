@@ -6,11 +6,14 @@
     { "id": "parametric", "name": "Parametric curves", "about": "x and y each a function of a third variable, t." },
     { "id": "spirals", "name": "Spirals", "about": "Curves that wind outward as they turn." },
     { "id": "golden-ratio", "name": "The golden ratio", "about": "1.618…, the ratio Fibonacci numbers approach." },
+    { "id": "fractions", "name": "Fractions", "about": "Parts of a whole: here, slices of a full turn." },
     { "id": "polygons", "name": "Polygons and stars", "about": "Straight sides and the turns between them." },
     { "id": "symmetry", "name": "Symmetry and rotation", "about": "Shapes that look the same turned or reflected." },
     { "id": "modular", "name": "Modular arithmetic", "about": "Counting that wraps around, like a clock." },
     { "id": "recursion", "name": "Recursion", "about": "A drawing defined by smaller copies of itself." },
     { "id": "fractals", "name": "Fractals", "about": "Detail at every scale." },
+    { "id": "lsystems", "name": "L-systems", "about": "A word rewritten by rules, then read as turtle moves." },
+    { "id": "complex", "name": "Complex numbers", "about": "Points of the plane that multiply: z² + c, again and again." },
     { "id": "series", "name": "Series", "about": "Adding up infinitely many terms." }
   ],
   "examples": [
@@ -121,6 +124,60 @@
       "name": "Dragon curve",
       "about": "A strip of paper folded in half eleven times.",
       "concepts": ["fractals", "recursion"]
+    },
+    {
+      "id": "equivalent-fractions",
+      "name": "Equivalent fractions",
+      "about": "1/2, 2/4, 3/6 and 4/8 of a pie: the same half, cut finer.",
+      "concepts": ["fractions"]
+    },
+    {
+      "id": "halves-forever",
+      "name": "Halves forever",
+      "about": "1/2 + 1/4 + 1/8 + … fills the circle; 1/4 + 1/16 + … fills a third.",
+      "concepts": ["fractions", "series"]
+    },
+    {
+      "id": "arc-petals",
+      "name": "Petals from arcs",
+      "about": "Two arcs of 1/12, 1/6 or 1/4 of a circle make a petal.",
+      "concepts": ["fractions", "symmetry"]
+    },
+    {
+      "id": "yin-yang",
+      "name": "Yin and yang",
+      "about": "Three half circles cut a circle into two equal halves.",
+      "concepts": ["fractions", "symmetry"]
+    },
+    {
+      "id": "hilbert-curve",
+      "name": "Hilbert curve",
+      "about": "One line through every cell of a grid, never crossing itself.",
+      "concepts": ["fractals", "recursion"]
+    },
+    {
+      "id": "lsystem-plant",
+      "name": "L-system plant",
+      "about": "Two rewriting rules and a stack grow a branching plant.",
+      "concepts": ["lsystems", "fractals", "recursion"]
+    },
+    {
+      "id": "gosper-curve",
+      "name": "Gosper curve",
+      "about": "An L-system whose curve fills a snowflake-shaped island.",
+      "concepts": ["lsystems", "fractals"]
+    },
+    {
+      "id": "mandelbrot-set",
+      "name": "Mandelbrot set",
+      "about": "The points c where z² + c, from 0, never runs away.",
+      "concepts": ["complex", "fractals"]
+    },
+    {
+      "id": "julia-set",
+      "name": "Julia set",
+      "about": "Fix c = -0.8 + 0.156i and ask which starting points stay.",
+      "concepts": ["complex", "fractals"]
     },
     {
       "id": "star-polygons",
