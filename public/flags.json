@@ -1,5 +1,5 @@
 {
-  "share": true,
+  "share": false,
   "export": true,
-  "lessons": true
+  "lessons": false
 }
