@@ -12,3 +12,6 @@ ui-feedback.md
 
 # macOS
 .DS_Store
+
+# Dev tools (package.json)
+node_modules

@@ -1,8 +1,8 @@
 // test/index_assets_test.mjs
 //
-// index.html loads every script and stylesheet from public/ (CodeMirror is
-// vendored in public/vendor/codemirror/), except the Google Fonts stylesheet,
-// whose loss only changes the typeface. A third-party script is a runtime
+// Every page (index.html, library.html) loads every script and stylesheet
+// from public/ (CodeMirror is vendored in public/vendor/codemirror/), except
+// the Google Fonts stylesheet, whose loss only changes the typeface. A third-party script is a runtime
 // dependency that can take the editor down with it; a local path that does
 // not exist does the same without any test failing.
 //
@@ -11,7 +11,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 const PUBLIC = new URL('../public/', import.meta.url);
 const ALLOWED_ORIGINS = ['https://fonts.googleapis.com'];
@@ -34,14 +34,22 @@ test('assetUrls reads script srcs and stylesheet hrefs only', () => {
     assert.deepEqual(assetUrls(html), ['b.js', 'c.js', 'a.css']);
 });
 
-const urls = assetUrls(readFileSync(new URL('index.html', PUBLIC), 'utf8'));
+const PAGES = readdirSync(PUBLIC).filter((name) => name.endsWith('.html'));
 
-test('index.html loads no scripts or stylesheets from third parties but Google Fonts', () => {
-    const foreign = urls.filter(isRemote).filter(url => !ALLOWED_ORIGINS.includes(new URL(url).origin));
-    assert.deepEqual(foreign, []);
+test('the pages are the editor and the library', () => {
+    assert.deepEqual(PAGES.sort(), ['index.html', 'library.html']);
 });
 
-test('every local script and stylesheet index.html names exists in public/', () => {
-    const missing = urls.filter(url => !isRemote(url)).filter(url => !existsSync(new URL(url, PUBLIC)));
-    assert.deepEqual(missing, []);
-});
+for (const page of PAGES) {
+    const urls = assetUrls(readFileSync(new URL(page, PUBLIC), 'utf8'));
+
+    test(`${page} loads no scripts or stylesheets from third parties but Google Fonts`, () => {
+        const foreign = urls.filter(isRemote).filter(url => !ALLOWED_ORIGINS.includes(new URL(url).origin));
+        assert.deepEqual(foreign, []);
+    });
+
+    test(`every local script and stylesheet ${page} names exists in public/`, () => {
+        const missing = urls.filter(url => !isRemote(url)).filter(url => !existsSync(new URL(url, PUBLIC)));
+        assert.deepEqual(missing, []);
+    });
+}

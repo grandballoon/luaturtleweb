@@ -21,8 +21,11 @@ Layer boundaries, top to bottom:
 | Layer | File | Role |
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
-| UI shell | `app.js` | Editor, draft autosave + share links, run state machine, worker lifecycle, frame ack, shortcuts |
-| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player; a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
+| UI shell | `app.js` | The editor page: draft autosave + share links, what a run shows (status, terminal, error marks), shortcuts |
+| Runs | `runner.js` | The main thread's half of the frame protocol: the worker, the run state machine, run ids, frame ack, Stop; shared by both pages |
+| Editor | `lua-editor.js` | The CodeMirror editor both pages write Lua in |
+| Library page | `library.html`, `library.css`, `library-page.js`, `library.js`, `library/` | `/library`: example programs by concept, with preview videos, run on a canvas with their code beneath (see [The library](#the-library-library)) |
+| UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player (its timing and fit in `recording.js`, pure); a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
 | Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
@@ -338,7 +341,43 @@ The pieces, each with one job:
   Demos run at the real canvas's size, so `screen_width()` reports what a run would.
 
 Because both the recording and the drawing go through the production code paths, a demo looks exactly like the same program run on the real canvas, zoomed out.
-Under `prefers-reduced-motion`, the preview shows only the finished drawing.
+The timing and the fit are pure functions in `recording.js` (`frameTimes`, `frameAt`, `drawingBounds`, `fitView`), shared with the library's preview recorder and covered by `test/recording_test.mjs`.
+
+### The library (`/library`)
+
+`/library` is a second page: a gallery of short programs that draw mathematical functions, or something beautiful made from one, grouped by the concepts they show.
+Nothing links to it from the editor page yet.
+A sidebar holds a search bar and the concepts; the gallery shows a card per example, with its name, a preview video that plays on hover, and a button that runs it on the page's canvas; beneath the canvas, the program sits in a collapsible editor, where it can be changed and run again, or opened in the editor page through a share link.
+The page's link names the example on the canvas (`/library#rose-curve`).
+
+Concepts and examples are many to many: an example lists every concept it shows, and appears under each of them.
+Searching drops the grouping for one list of results, best first: a word in the name ranks above one in a concept's name, above one in the description, and every word must match somewhere.
+A selected concept narrows either view to its examples.
+
+The pieces, each with one job:
+
+- **`library/catalog.json` names the examples.** Pure data: the concepts `{id, name, about}`, in the order the sidebar and gallery show them, and the examples `{id, name, about, concepts}`.
+- **`library/programs/<id>.lua` holds each program,** as the learner sees it in the editor: a comment naming it and saying what it shows, then code that sizes itself to the canvas.
+  Each is fetched when its example is first run, so the gallery loads with the catalog alone.
+- **`library/previews/` holds each example's preview,** `<id>.mp4` (a few seconds of H.264, 480×360) and `<id>.webp` (the finished drawing, shown until the video plays), and `manifest.json`, which records the hash each was made from.
+  They are made by `tools/library-previews.mjs` (below), never by hand.
+- **`library.js` decides.** Pure functions of the catalog: the gallery's sections for a search and a concept, the concepts' counts, the example a link names, and where an example's files are.
+- **`library-page.js` is the shell.** It renders what `library.js` returns, shows each card's poster as it nears the view and plays its video, loaded then, only while the mouse is over the card or it has keyboard focus (one at a time, and none under `prefers-reduced-motion`), so a page of cards decodes no video until one is pointed at, runs the chosen program through `runner.js`, and keeps the link and the editor's dock (`dock.js`).
+  Cards are kept across renders, so a search never reloads a video.
+
+The previews are made faithfully, the way the command reference's demos are played.
+`tools/library-previews.mjs` starts the dev server and loads its dev-only recorder page, `dev/library-recorder/`, in headless Chromium through Playwright.
+The recorder records the program with `worker.js`'s `record` message on an 800×600 canvas, draws each frame with the real `Renderer`, fitted to a 240×180 canvas at 2× pixel density, and hands the frames back as PNGs, which the tool pipes into `ffmpeg`.
+It draws off the clock: `recording.js`'s `videoFrames` picks the frame for each tick of a 30 fps video from the program's own pacing, stretched to last at least 4 s or squeezed to at most 8 s, so every video is the same on any machine.
+A program that posts more frames than a recording keeps (`MAX_RECORDED_FRAMES`) is rejected; batching its frames with `tracer(n)` fixes it, and keeps its live run quick too.
+
+`npm run previews` remakes the previews whose program, or the tool's settings, changed since they were made; `--all` remakes every one, and naming ids remakes just those.
+It needs `npm install` (Playwright and its Chromium) and `ffmpeg` on the `PATH`.
+
+`test/library_test.lua` runs every program on the host at two canvas sizes, checking that it draws inside the canvas, like the Lessons' test (both use `test/program_check.lua`).
+`test/library_test.mjs` covers `library.js`, checks that the catalog's concepts and examples are consistent and that its examples and the program files match both ways, and fails while any preview is missing or stale.
+
+To add an example: write `library/programs/<id>.lua`, add it to the catalog with its concepts, and run `npm run previews`.
 
 ### Lessons sidebar
 
@@ -426,6 +465,7 @@ The mapping view covers the canvas, so a run closes it.
 `test/gamepad_test.mjs` covers the parts that need no page (reading presses, the mapping, the two lists).
 `test/dock_test.mjs` covers a panel's height, and `test/lessons_test.mjs` and `test/floating_test.mjs` the Lessons sidebar's pages and floating window.
 Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
+`npm test` runs those and then `sh test/run.sh`.
 
 ### Zoom about a point (`zoomAt`)
 
@@ -478,6 +518,7 @@ raster resampling, just a full vector replay.
 
 `node tools/dev-server.mjs` serves the site locally on port 5520 (`.claude/launch.json` starts it), the way the deployed site is served: `public/` as is, cross-origin isolated with the headers in `public/_headers`.
 It listens on the loopback addresses only.
+Like Cloudflare, it serves a page without its extension (`/library` is `library.html`), and it answers byte ranges, which Safari needs to play a video.
 
 It adds one thing, a review aid for the developer: hold Option (Alt off macOS) to outline the element under the pointer, and Option-click it to leave Claude a comment on it.
 The server appends each comment to `ui-feedback.md` in the repo root, which is gitignored: it is read by Claude, and goes nowhere else.
@@ -485,7 +526,7 @@ Each entry is a Markdown section that starts open (`[ ]`) and is marked `[x]` on
 The format is Triangle Lab's, so both projects' feedback files read alike.
 
 The overlay can never reach the published site.
-The server adds its script tag to `index.html` as it serves it, and serves the script from `dev/`, outside `public/`; no app module imports it.
+The server adds its script tag to every page as it serves it, and serves the script from `dev/`, outside `public/`; no app module imports it.
 It takes Option-clicks in the capture phase, before the app's listeners see them, and keys typed into its comment box stop at the box, so the app's shortcuts never fire while a comment is written.
 The server takes comments only from its own pages: a POST's `Origin` must be its own host.
 
@@ -494,7 +535,7 @@ The server takes comments only from its own pages: a POST's `Origin` must be its
 | `dev/feedback/entry.js` | A comment's wire format, its validation, and its Markdown form. Shared by page and server; no DOM or Node APIs. |
 | `dev/feedback/capture.js` | A clicked element → a selector, a description and the click's position. Pure over anything shaped like an element. |
 | `dev/feedback/overlay.js` | The outline, the comment box, and the post to the server. |
-| `tools/dev-server.mjs` | Serves the site, adds the overlay, records comments. Its decisions (which file a path reads, the injection, whose comments to take) are pure exports. |
+| `tools/dev-server.mjs` | Serves the site, adds the overlay, records comments. Its decisions (which file a path reads, the injection, the byte range a request asks for, whose comments to take) are pure exports. |
 
 `test/feedback_test.mjs` covers the entry and the capture, and `test/dev_server_test.mjs` the server's decisions, including that its isolation headers match `public/_headers`.
 
@@ -513,4 +554,7 @@ modules, CodeMirror from static include, `wasmoon.js` and its `glue.wasm` binary
 Both come from wasmoon 1.16.0 and must be replaced together; `worker.js` passes the local
 `glue.wasm` URL to `LuaFactory` because the default is a runtime fetch from unpkg.com.
 CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license).
-Google Fonts is the only third-party origin the page loads from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet `index.html` names exists.
+Google Fonts is the only third-party origin the pages load from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet each page names exists.
+Cloudflare serves `library.html` at `/library`, without its extension.
+The library's previews are committed media files, made ahead of time by a dev tool (see [The library](#the-library-library)), so deploying still needs no build step.
+`package.json` lists only dev tools (Playwright, for that tool) and is never part of the site.

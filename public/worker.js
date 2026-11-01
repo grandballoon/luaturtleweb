@@ -30,11 +30,14 @@
 //                                            usage is {command, examples} when a
 //                                            turtle command rejected its arguments
 //
-//   {type: "recording", id, frames, error} — reply to "record": every frame the
+//   {type: "recording", id, frames, error, truncated}
+//                                          — reply to "record": every frame the
 //                                            program posted, in order, each as
 //                                            {segments, turtles, bgcolor, prints,
 //                                            work, delay}; error is the message if
-//                                            the program threw, else null
+//                                            the program threw, else null;
+//                                            truncated is true if it was cut off
+//                                            at MAX_RECORDED_FRAMES
 //
 // runId echoes the id of the run message, so the main thread can ignore
 // stragglers from a run it has already replaced (Run pressed while running).
@@ -325,7 +328,7 @@ async function recordCode(id) {
     const frames = recording;
     recording = null;
     frames[frames.length - 1].prints.push(...takePrints());   // printed after the last frame
-    postMessage({ type: 'recording', id, frames, error });
+    postMessage({ type: 'recording', id, frames, error, truncated: frames.length >= MAX_RECORDED_FRAMES });
 }
 
 function loadCode(msg) {
