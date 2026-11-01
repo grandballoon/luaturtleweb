@@ -18,6 +18,8 @@
   --accent: #237a69;
   --accent-dim: #8fbfb2;
   --accent-wash: rgba(35, 122, 105, 0.1);
+  --plane: #a85a22;                        /* a lesson drawn on the Cartesian plane */
+  --plane-wash: rgba(191, 106, 44, 0.12);
   --selection: rgba(35, 122, 105, 0.18);
   --error: #b5443b;
   --error-bg: rgba(181, 68, 59, 0.09);
@@ -811,15 +813,15 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
   .CodeMirror { font-size: 13px; }
 }
 
-/* Breakpoints below follow the header's width budget: full labels need ~720px,
+/* Breakpoints below follow the header's width budget: full labels need ~830px,
    and the status line needs ~160px on top of that to say anything useful.
    Without it, errors still surface via the terminal and the highlighted line. */
-@media (max-width: 880px) {
+@media (max-width: 990px) {
   #header-status { display: none; }
 }
 
 /* Narrow screens: secondary actions collapse to icons. */
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   header { gap: 12px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
   .header-controls { gap: 6px; }
   header button { height: 34px; }
@@ -1258,6 +1260,414 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 .icon-button:hover { background: var(--close-hover-bg); color: var(--text); }
+
+/* ---- Lessons ----
+   The sidebar that pops up over the editor column (lessons-panel.js): the
+   place in the lessons along the top, the page (or the list of all lessons)
+   scrolling in the middle, and the pager along the bottom. It covers only
+   the editor, so a page's program draws on the canvas beside its text. */
+
+#editor-panel { position: relative; }
+
+#lessons-panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(460px, 100%);
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  box-shadow: 8px 0 28px var(--shadow);
+  font-family: 'IBM Plex Sans', sans-serif;
+  color: var(--text);
+  animation: lessons-in 0.22s var(--ease);
+}
+
+@keyframes lessons-in {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Detached: a window that floats over the page, where floating.js puts
+   it. It is dragged by its header and resized from any edge or corner.
+   Nothing inside it reaches its rounded corners, so it needs no clipping,
+   and its resize handles can sit mostly outside its border, clear of the
+   scrollbar. */
+#lessons-panel.floating {
+  position: fixed;
+  inset: auto;
+  z-index: 30;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 16px 44px var(--shadow), 0 2px 8px var(--shadow);
+  animation: overlay-in 0.2s var(--ease);
+}
+
+#lessons-panel.floating #lessons-header { cursor: grab; touch-action: none; border-radius: 10px 10px 0 0; }
+#lessons-panel.floating #lessons-header button { cursor: pointer; }
+#lessons-panel.floating #lessons-footer { padding-right: 22px; }
+#lessons-panel.moving { user-select: none; }
+#lessons-panel.moving #lessons-header { cursor: grabbing; }
+
+#lessons-detach .icon-dock,
+#lessons-detach[aria-pressed="true"] .icon-detach { display: none; }
+#lessons-detach[aria-pressed="true"] .icon-dock { display: inline; }
+
+/* The handles: a band along each edge and a square at each corner, each
+   8px thick, 6px of it outside the border. */
+#lessons-resize { display: none; }
+#lessons-panel.floating #lessons-resize { display: contents; }
+
+.lessons-edge {
+  position: absolute;
+  z-index: 1;
+  touch-action: none;
+}
+
+.lessons-edge[data-edges="top"],
+.lessons-edge[data-edges="bottom"] { left: 10px; right: 10px; height: 8px; cursor: ns-resize; }
+.lessons-edge[data-edges="left"],
+.lessons-edge[data-edges="right"] { top: 10px; bottom: 10px; width: 8px; cursor: ew-resize; }
+.lessons-edge[data-edges="top"] { top: -6px; }
+.lessons-edge[data-edges="bottom"] { bottom: -6px; }
+.lessons-edge[data-edges="left"] { left: -6px; }
+.lessons-edge[data-edges="right"] { right: -6px; }
+
+.lessons-edge[data-edges~="top"][data-edges~="left"],
+.lessons-edge[data-edges~="top"][data-edges~="right"],
+.lessons-edge[data-edges~="bottom"][data-edges~="left"],
+.lessons-edge[data-edges~="bottom"][data-edges~="right"] { width: 16px; height: 16px; }
+.lessons-edge[data-edges="top left"] { top: -6px; left: -6px; cursor: nwse-resize; }
+.lessons-edge[data-edges="top right"] { top: -6px; right: -6px; cursor: nesw-resize; }
+.lessons-edge[data-edges="bottom left"] { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.lessons-edge[data-edges="bottom right"] { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+/* An edge shows itself on hover: a line along the panel's border. */
+.lessons-edge:not(.lessons-grip):hover { background: var(--accent-dim); background-clip: content-box; }
+.lessons-edge[data-edges="top"]:hover,
+.lessons-edge[data-edges="bottom"]:hover { padding: 3px 0; }
+.lessons-edge[data-edges="left"]:hover,
+.lessons-edge[data-edges="right"]:hover { padding: 0 3px; }
+.lessons-edge[data-edges~="top"][data-edges~="left"]:hover,
+.lessons-edge[data-edges~="top"][data-edges~="right"]:hover,
+.lessons-edge[data-edges="bottom left"]:hover { background: none; }
+
+/* The bottom-right corner is drawn as a grip, so the panel looks resizable. */
+.lessons-grip::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 11px;
+  height: 11px;
+  background: linear-gradient(135deg,
+    transparent 48%, var(--text-muted) 48%, var(--text-muted) 56%,
+    transparent 56%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 78%, transparent 78%);
+  opacity: 0.55;
+}
+
+.lessons-grip:hover::after { opacity: 0.95; }
+
+#lessons-panel[hidden],
+#lessons-loading[hidden],
+#lessons-page[hidden],
+#lessons-problem[hidden],
+#lessons-source[hidden],
+#lessons-toc[hidden],
+#lessons-footer[hidden] { display: none; }
+
+#lessons-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+#lessons-contents[aria-pressed="true"] { background: var(--accent-wash); color: var(--accent); }
+#lessons-contents:disabled { background: none; }
+
+#lessons-crumb {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#lessons-chapter,
+#lessons-lesson {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#lessons-chapter {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#lessons-lesson { font-size: 13px; font-weight: 600; }
+
+/* Positioned, so offsetTop inside it is measured from it. */
+#lessons-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 18px 20px;
+  outline: none;
+}
+
+#lessons-loading { font-size: 13px; color: var(--text-muted); }
+
+/* A pill naming how the page draws its idea. */
+.lessons-kind {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.lessons-kind[data-kind="plane"] { background: var(--plane-wash); color: var(--plane); }
+
+#lessons-title {
+  margin: 8px 0 12px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+#lessons-problem {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent-dim);
+  border-radius: 0 6px 6px 0;
+  background: var(--accent-wash);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+#lessons-text p {
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+#lessons-text code,
+.lessons-step p code,
+.lessons-toc-summary code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--hover-wash);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+}
+
+/* Step by step: each step's label, what it does, and its chunk of code. */
+#lessons-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 18px;
+  list-style: none;
+}
+
+.lessons-step p {
+  margin-bottom: 8px;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+
+.lessons-step p.lessons-step-label {
+  margin-bottom: 4px;
+  color: var(--accent);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lessons-step summary {
+  width: fit-content;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.lessons-step summary:hover { color: var(--accent); }
+.lessons-step details[open] summary { margin-bottom: 6px; }
+
+/* Code with its line numbers. The numbers stay put while the code
+   scrolls sideways under them. */
+.lessons-code {
+  display: flex;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--editor-bg);
+}
+
+.lessons-code pre {
+  padding: 8px 12px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  tab-size: 4;
+  white-space: pre;
+}
+
+.lessons-code pre.cm-s-turtle {
+  flex: 1;
+  color: var(--editor-fg);
+}
+
+.lessons-gutter {
+  position: sticky;
+  left: 0;
+  flex: none;
+  padding-right: 8px;
+  border-right: 1px solid var(--hairline);
+  background: var(--editor-bg);
+  color: var(--editor-linenumber);
+  text-align: right;
+  user-select: none;
+}
+
+#lessons-program-title {
+  margin: 26px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#lessons-program {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--editor-bg);
+}
+
+#lessons-program-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+#lessons-program-bar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11.5px;
+}
+
+#lessons-run .icon { width: 11px; height: 11px; }
+#lessons-copy { margin-left: auto; }
+#lessons-copy .copy-done,
+#lessons-copy.done .copy-idle { display: none; }
+#lessons-copy.done .copy-done { display: inline; }
+#lessons-copy.done { border-color: var(--accent-dim); color: var(--accent); }
+
+#lessons-program .lessons-code {
+  border: none;
+  border-radius: 0;
+}
+
+#lessons-source {
+  margin-top: 10px;
+  font-size: 11.5px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+#lessons-footer {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+#lessons-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px 0 8px;
+}
+
+#lessons-next { padding: 0 8px 0 10px; }
+
+#lessons-position {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* The list of all lessons: chapters, their lessons, and each lesson's pages. */
+.lessons-toc,
+.lessons-toc ol { list-style: none; }
+
+.lessons-toc > li + li { margin-top: 22px; }
+
+.lessons-toc h3 {
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lessons-toc h4 {
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lessons-toc-summary {
+  margin: 2px 0 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.lessons-toc-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.lessons-toc-page:hover { background: var(--hover-wash); color: var(--text); }
+.lessons-toc-page[aria-current="page"] { background: var(--accent-wash); }
+.lessons-toc-page .lessons-kind { flex: none; }
 
 /* ---- Controller ----
    The menu of commands worked with a game controller (gamepad-menu.js), the

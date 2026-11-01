@@ -62,6 +62,15 @@ return {
     ["setundobuffer(n)"]   = "setundobuffer(1)\nforward(80)\nleft(90)\nforward(60)\nundo()\nundo()",
     ["speed(n)"]           = "speed(1)\nforward(40)\nspeed(10)\nforward(60)\nspeed(0)\ncircle(30)",
 
+    -- Graphing
+    ["graph(left, bottom, right, top)"] = "graph(-5, -5, 5, 5)\naxes()\nsetpos(3, 4)",
+    ['graph(left, bottom, right, top, "stretch")'] = 'graph(0, 0, 10, 100, "stretch")\naxes(1, 10)\nsetpos(10, 100)',
+    ["setworldcoordinates(left, bottom, right, top)"] = "setworldcoordinates(-10, -10, 10, 10)\nfor i = 1, 4 do\n    forward(8)\n    left(90)\nend",
+    ["axes()"]             = "graph(-5, -5, 5, 5)\naxes()\nhideturtle()",
+    ["axes(xstep, ystep, xname, yname)"] = 'graph(0, 0, 8, 40, "stretch")\naxes(1, 5, "seconds", "meters")\nhideturtle()',
+    ["plot(f, color)"]     = 'graph(-3, -1, 3, 9)\naxes()\nhideturtle()\nplot(function(x) return x * x end, "royalblue")',
+    ["mark(x, y, color, label)"] = 'graph(-1, -1, 5, 5)\naxes()\nhideturtle()\nmark(2, 3, "crimson", "(2, 3)")',
+
     -- Turtle
     ["hideturtle()"]       = "circle(40)\nhideturtle()",
     ["showturtle()"]       = "hideturtle()\ncircle(40)\nshowturtle()",

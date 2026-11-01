@@ -46,6 +46,11 @@
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
         <span class="btn-label">Export</span>
       </button>
+      <button id="btn-lessons" class="btn-secondary" aria-label="Lessons" aria-expanded="false" aria-controls="lessons-panel">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
+        <span class="btn-label">Lessons</span>
+        <kbd id="lessons-shortcut" class="kbd" aria-hidden="true"></kbd>
+      </button>
       <button id="btn-api" class="btn-secondary" aria-label="Commands" aria-expanded="false" aria-controls="api-overlay">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>
         <span class="btn-label">Commands</span>
@@ -65,6 +70,69 @@
 
   <div id="main">
     <div id="editor-panel">
+      <aside id="lessons-panel" aria-label="Lessons" hidden>
+        <div id="lessons-header">
+          <button id="lessons-contents" class="icon-button quiet" aria-label="All lessons" title="All lessons" aria-pressed="false" aria-controls="lessons-toc">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          </button>
+          <p id="lessons-crumb"><span id="lessons-chapter"></span><span id="lessons-lesson"></span></p>
+          <button id="lessons-detach" class="icon-button quiet" aria-pressed="false">
+            <svg class="icon icon-detach" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+            <svg class="icon icon-dock" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/></svg>
+          </button>
+          <button id="lessons-close" class="icon-button" aria-label="Close lessons" title="Close (Esc)">&times;</button>
+        </div>
+        <div id="lessons-body" tabindex="-1">
+          <p id="lessons-loading">Loading lessons…</p>
+          <article id="lessons-page" hidden>
+            <p id="lessons-kind" class="lessons-kind"></p>
+            <h2 id="lessons-title"></h2>
+            <p id="lessons-problem" hidden></p>
+            <div id="lessons-text"></div>
+            <ol id="lessons-steps" aria-label="Step by step"></ol>
+            <h3 id="lessons-program-title">The whole program</h3>
+            <div id="lessons-program">
+              <div id="lessons-program-bar">
+                <button id="lessons-run" class="primary" title="Run this program on the canvas">
+                  <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
+                  Run
+                </button>
+                <button id="lessons-open" title="Put this program in the editor, to change it">Open in editor</button>
+                <button id="lessons-copy" title="Copy this program">
+                  <span class="copy-idle">Copy</span><span class="copy-done">Copied</span>
+                </button>
+              </div>
+              <div class="lessons-code">
+                <pre id="lessons-code-lines" class="lessons-gutter" aria-hidden="true"></pre>
+                <pre id="lessons-code" class="cm-s-turtle" aria-label="The example's program"></pre>
+              </div>
+            </div>
+            <p id="lessons-source" hidden></p>
+          </article>
+          <nav id="lessons-toc" aria-label="All lessons" hidden></nav>
+        </div>
+        <div id="lessons-footer" hidden>
+          <button id="lessons-prev" aria-label="Previous page">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            Back
+          </button>
+          <span id="lessons-position" aria-live="polite"></span>
+          <button id="lessons-next" aria-label="Next page">
+            Next
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+        <div id="lessons-resize" aria-hidden="true">
+          <div class="lessons-edge" data-edges="top"></div>
+          <div class="lessons-edge" data-edges="right"></div>
+          <div class="lessons-edge" data-edges="bottom"></div>
+          <div class="lessons-edge" data-edges="left"></div>
+          <div class="lessons-edge" data-edges="top left"></div>
+          <div class="lessons-edge" data-edges="top right"></div>
+          <div class="lessons-edge" data-edges="bottom left"></div>
+          <div class="lessons-edge lessons-grip" data-edges="bottom right" title="Drag any edge or corner to resize"></div>
+        </div>
+      </aside>
       <textarea id="editor-textarea"></textarea>
       <section id="reference-panel" class="dock" aria-label="Command reference">
         <div id="reference-header" class="dock-header">
@@ -149,6 +217,18 @@
                   <li><code>undo()</code><span class="api-about">Undo the last command</span></li>
                   <li><code>setundobuffer(n)</code><span class="api-about">Set max undo history length</span></li>
                   <li><code>speed(n)</code><span class="api-about">0=instant, 1=slowest, 10=fastest</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
+                <h2>Graphing</h2>
+                <ul class="api-rows">
+                  <li><code>graph(left, bottom, right, top)</code><span class="api-about">Use graph coordinates: this rectangle, one unit the same length both ways</span></li>
+                  <li><code>graph(left, bottom, right, top, "stretch")</code><span class="api-about">Graph coordinates stretched to fill the canvas</span></li>
+                  <li><code>setworldcoordinates(left, bottom, right, top)</code><span class="api-about">Make the canvas edges these coordinates, as in Python</span></li>
+                  <li><code>axes()</code><span class="api-about">Draw graph paper: grid, axes and numbers</span></li>
+                  <li><code>axes(xstep, ystep, xname, yname)</code><span class="api-about">Grid lines every xstep and ystep; name the axes</span></li>
+                  <li><code>plot(f, color)</code><span class="api-about">Draw the curve y = f(x) across the graph</span></li>
+                  <li><code>mark(x, y, color, label)</code><span class="api-about">Draw a dot at (x, y), with a label</span></li>
                 </ul>
               </section>
               <section class="api-section">

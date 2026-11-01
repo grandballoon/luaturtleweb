@@ -9,9 +9,10 @@
 //            to command-preview.js, and the panel it sits in to dock.js),
 //            the examples under a
 //            misused command's line to usage-popup.js, Cmd/Ctrl+click on a
-//            command to command-lookup.js, and a game controller to
+//            command to command-lookup.js, a game controller to
 //            gamepad-controller.js (given the reference's commands by
-//            command-catalog.js).
+//            command-catalog.js), and the Lessons sidebar to
+//            lessons-panel.js.
 
 import { Renderer }             from './renderer.js';
 import { Terminal }             from './terminal.js';
@@ -24,6 +25,7 @@ import { initCommandLookup }    from './command-lookup.js';
 import { createCommandPreview } from './command-preview.js';
 import { readCommandCatalog }   from './command-catalog.js';
 import { initGamepad }          from './gamepad-controller.js';
+import { createLessonsPanel }   from './lessons-panel.js';
 import { TURTLE_COMMANDS }      from './lua-highlight.js';
 import * as storage             from './storage.js';
 
@@ -33,6 +35,7 @@ const MOD_LABEL    = IS_MAC ? '⌘' : 'Ctrl+';
 const SHIFT_LABEL  = IS_MAC ? '⇧' : 'Shift+';
 const API_SHORTCUT = `${MOD_LABEL}K`;
 const DEMO_SHORTCUT = `${MOD_LABEL}${SHIFT_LABEL}D`;
+const LESSONS_SHORTCUT = `${MOD_LABEL}${SHIFT_LABEL}L`;
 const ARIA_MOD     = IS_MAC ? 'Meta' : 'Control';
 const TERMINAL_SHORTCUT = IS_MAC ? '⌃`' : 'Ctrl+`';   // Control on every platform: macOS keeps ⌘` for switching windows
 const CODE_KEY     = 'luaturtle-code';
@@ -246,6 +249,7 @@ let pendingRun    = initial.shared;   // shared links run as soon as the VM is r
 let stopRequested = false;
 let runStartedAt  = 0;
 let sab, sabI32, worker;
+let runFromEditor = true;   // false while a lesson's program runs: its lines aren't the editor's
 
 function setState(next) {
     state = next;
@@ -261,6 +265,15 @@ function signalStop() {
 }
 
 function runCode() {
+    startRun(editor.getValue(), true);
+}
+
+// Runs a lesson page's program on the canvas, leaving the editor as it is.
+function runLesson(code) {
+    startRun(code, false);
+}
+
+function startRun(code, fromEditor) {
     if (state === 'failed') return;
     if (state === 'loading') {
         pendingRun = true;
@@ -274,14 +287,15 @@ function runCode() {
     runId++;
     stopRequested = false;
     runStartedAt  = performance.now();
+    runFromEditor = fromEditor;
     terminal.clear();
     clearError();
     setState('running');
-    setStatus('Running', 'running');
+    setStatus(fromEditor ? 'Running' : "Running the lesson's program", 'running');
 
     const { width, height } = canvasSize();
     worker.postMessage({
-        type: 'run', runId, code: editor.getValue(), sab,
+        type: 'run', runId, code, sab,
         canvasWidth: width, canvasHeight: height,
     });
 }
@@ -312,6 +326,7 @@ function onWorkerMessage(e) {
     if (msg.type === 'ready') {
         usageCatalog = msg.usage || {};
         commandRef.setDemoPrograms(msg.demos);
+        lessons.setLessons(msg.lessons);
         setState('idle');
         setStatus(`Ready · ${RUN_SHORTCUT} to run`);
         if (pendingRun) { pendingRun = false; runCode(); }
@@ -335,8 +350,14 @@ function onWorkerMessage(e) {
 
     } else if (msg.type === 'error') {
         setState('idle');
-        terminal.error(msg.message, msg.line);
         terminal.open();
+        if (!runFromEditor) {
+            // Its line numbers are the lesson program's, not the editor's.
+            terminal.error(msg.line ? `${msg.message} (line ${msg.line} of the lesson's program)` : msg.message);
+            setStatus("Error in the lesson's program — see terminal", 'error');
+            return;
+        }
+        terminal.error(msg.message, msg.line);
         if (msg.line) markError(msg.line, msg.message, msg.usage);
         setStatus(msg.line ? `Error on line ${msg.line}` : 'Error — see terminal', 'error');
     }
@@ -457,6 +478,56 @@ document.querySelectorAll('.api-section-key').forEach((kbd, i) => {
     kbd.textContent = `${SHIFT_LABEL}${i ? '↓' : '↑'}`;
 });
 
+// ---- Lessons ----
+
+// Opening a lesson's program replaces the learner's, which the editor's
+// undo brings back. The lessons can float beside the editor (see
+// lessons-panel.js), so a learner can also type a program in by hand.
+function openInEditor(code) {
+    editor.setValue(code);
+    editor.focus();
+    setStatus(`Opened the lesson's program · ${MOD_LABEL}Z brings yours back`);
+}
+
+const lessons = createLessonsPanel({
+    els: {
+        panel:          $('lessons-panel'),
+        button:         $('btn-lessons'),
+        header:         $('lessons-header'),
+        detach:         $('lessons-detach'),
+        close:          $('lessons-close'),
+        resize:         $('lessons-resize'),
+        contentsButton: $('lessons-contents'),
+        chapter:        $('lessons-chapter'),
+        lesson:         $('lessons-lesson'),
+        body:           $('lessons-body'),
+        loading:        $('lessons-loading'),
+        page:           $('lessons-page'),
+        kind:           $('lessons-kind'),
+        title:          $('lessons-title'),
+        problem:        $('lessons-problem'),
+        text:           $('lessons-text'),
+        steps:          $('lessons-steps'),
+        codeLines:      $('lessons-code-lines'),
+        code:           $('lessons-code'),
+        run:            $('lessons-run'),
+        open:           $('lessons-open'),
+        copy:           $('lessons-copy'),
+        source:         $('lessons-source'),
+        contents:       $('lessons-toc'),
+        footer:         $('lessons-footer'),
+        prev:           $('lessons-prev'),
+        next:           $('lessons-next'),
+        position:       $('lessons-position'),
+    },
+    headerBottom: () => document.querySelector('header').getBoundingClientRect().bottom,
+    onRun:    (code) => { gamepad.closeMapping(); runLesson(code); },
+    onOpen:   openInEditor,
+    onClose:  () => editor.focus(),
+});
+$('lessons-shortcut').textContent = LESSONS_SHORTCUT;
+$('btn-lessons').title = `Lessons (${LESSONS_SHORTCUT})`;
+
 // ---- Game controller ----
 
 const gamepad = initGamepad({
@@ -496,11 +567,17 @@ document.addEventListener('keydown', (e) => {
     } else if (mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'd') {
         e.preventDefault();   // browsers otherwise bookmark the open tabs
         commandRef.toggleDemos();
+    } else if (mod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();   // Safari otherwise toggles its own sidebar
+        lessons.toggle();
     } else if (e.key === 'Escape') {
         // The reference stays open while the learner works in the editor,
         // so Esc closes it only from inside it, and elsewhere stops a run.
+        // The lessons close the same way.
         if (gamepad.isMappingOpen()) {
             gamepad.closeMapping();
+        } else if (lessons.isOpen() && lessons.hasFocus()) {
+            lessons.close();
         } else if (commandRef.isOpen() && commandRef.hasFocus()) {
             commandRef.close();
         } else if (usagePopup.isOpen()) {
