@@ -593,7 +593,7 @@ A zone Redirect Rule in the Cloudflare dashboard (not in the repo) sends `www` t
 `npx wrangler deploy` publishes production, from the local CLI; Wrangler is a pinned dev dependency.
 A `staging` environment in `wrangler.jsonc` is a separate Worker, `luaturtleweb-staging`, serving the same `public/` at `staging.luaturtle.com`, for trying a branch before it reaches production.
 `npm run deploy:staging` runs the tests and deploys the checked-out tree there; routes are not inherited between environments, so it never touches the production hostnames.
-Staging is public, like production, but linked from nowhere.
+Staging sits behind Cloudflare Access, set up in the Zero Trust dashboard (not in the repo): a self-hosted application for the whole hostname, whose one policy lets in the owner's email with a one-time PIN.
 `public/_headers` sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy:
 require-corp` so the page is cross-origin isolated — a hard requirement for
 `SharedArrayBuffer`, and therefore for the whole animation model. No build step: plain ES
