@@ -1,5 +1,5 @@
 // example-cards.js
-// The cards the browsing pages (/library, /compsci) show for library
+// The cards the browsing pages (/library, /compsci, /creative) show for library
 // examples: a preview video, the example's name and what it shows, and a
 // button that runs it on the page's canvas.
 //

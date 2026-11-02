@@ -1,5 +1,5 @@
 // example-stage.js
-// The stage the browsing pages (/library, /compsci) run library examples
+// The stage the browsing pages (/library, /compsci, /creative) run library examples
 // on: the canvas, the example's code in a collapsible editor beneath it,
 // and the header's Run, Stop and Open in editor controls and status.
 //

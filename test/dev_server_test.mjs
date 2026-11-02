@@ -32,6 +32,7 @@ test('a page is served without its extension, as Cloudflare serves it', () => {
     assert.deepEqual(resolvePath('/library?x=1'), { root: 'public', path: 'library.html' });
     assert.deepEqual(resolvePath('/library/catalog.json'), { root: 'public', path: 'library/catalog.json' });
     assert.deepEqual(resolvePath('/compsci'), { root: 'public', path: 'compsci.html' });
+    assert.deepEqual(resolvePath('/creative'), { root: 'public', path: 'creative.html' });
 });
 
 test('a Range header gets just the bytes it asks for', () => {

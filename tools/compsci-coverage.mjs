@@ -1,13 +1,15 @@
 // tools/compsci-coverage.mjs
 // Reports how much of the /compsci curriculum is filled in: for each
 // course, its concepts and those without an example, a metaphor or an
-// application yet. A report, not a test: a concept may wait for them
-// (spec-compsci.md).
+// application yet; then the /creative works with no turtle version yet.
+// A report, not a test: a concept or a work may wait for them
+// (spec-compsci.md, spec-creative.md).
 //
 // Run from the repo root:  npm run coverage
 
 import { readFile } from 'node:fs/promises';
 import { coursePath, joinCourses, coverage } from '../public/compsci.js';
+import { coverage as creativeCoverage } from '../public/creative.js';
 
 const PUBLIC = new URL('../public/', import.meta.url);
 const json = async (path) => JSON.parse(await readFile(new URL(path, PUBLIC), 'utf8'));
@@ -28,3 +30,7 @@ for (const row of rows) {
     if (row.withoutMetaphors.length) console.log(`    without a metaphor: ${row.withoutMetaphors.join(', ')}`);
     if (row.withoutApplications.length) console.log(`    without an application: ${row.withoutApplications.join(', ')}`);
 }
+
+const creative = creativeCoverage(await json('creative/works.json'));
+console.log(`\n${'Creative coding'.padEnd(54)} ${String(creative.works - creative.withoutExamples.length).padStart(3)} of ${String(creative.works).padEnd(3)} works have a turtle version`);
+if (creative.withoutExamples.length) console.log(`    without one: ${creative.withoutExamples.join(', ')}`);

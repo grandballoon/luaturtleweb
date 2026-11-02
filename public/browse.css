@@ -1,8 +1,8 @@
 /* browse.css
-   The pages that browse example programs (/library, /compsci), on top of
+   The pages that browse example programs (/library, /compsci, /creative), on top of
    styles.css: its palette, header, buttons, editor theme, docks and canvas
    panel are the editor page's. Each page adds its own sidebar and main
-   column in its own stylesheet (library.css, compsci.css).
+   column in its own stylesheet (library.css, compsci.css, creative.css).
    Layout, widest first: sidebar | main column | canvas over code; then the
    sidebar sits over the main column; on a phone the canvas comes first. */
 

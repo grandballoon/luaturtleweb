@@ -26,7 +26,8 @@ Layer boundaries, top to bottom:
 | Editor | `lua-editor.js` | The CodeMirror editor both pages write Lua in |
 | Library page | `library.html`, `library.css`, `library-page.js`, `library.js`, `library/` | `/library`: example programs by concept, with preview videos, run on a canvas with their code beneath (see [The library](#the-library-library)) |
 | Compsci page | `compsci.html`, `compsci.css`, `compsci-page.js`, `compsci.js`, `compsci/` | `/compsci`: the mathematics of a computer science degree, course by course, each concept with its equations and the library examples that show it (see [Computer science](#computer-science-compsci)) |
-| Browsing | `browse.css`, `example-stage.js`, `example-cards.js` | What `/library` and `/compsci` share: their layout, the stage that runs an example with its code beneath, and the example cards with their previews |
+| Creative page | `creative.html`, `creative.css`, `creative-page.js`, `creative.js`, `creative/` | `/creative`: creative coding credited to its artists, each work with the math in its picture and its code, its license, the concepts it draws on, and our turtle versions (see [Creative coding](#creative-coding-creative)) |
+| Browsing | `browse.css`, `example-stage.js`, `example-cards.js` | What `/library`, `/compsci` and `/creative` share: their layout, the stage that runs an example with its code beneath, and the example cards with their previews |
 | UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player (its timing and fit in `recording.js`, pure); a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
 | Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
@@ -405,6 +406,19 @@ An example runs on the same stage as the library's, and a course that is not wri
 `npm run coverage` lists each course's concepts that have no example, metaphor or application yet.
 
 To add a course's concepts: fill `compsci/courses/<id>.json`; an example a concept needs is written for the library first, and may list no library concept.
+
+### Creative coding (`/creative`)
+
+`/creative` is a fourth page: beautiful creative coding, such as flow fields, Truchet tiles, Substrate and Fourier epicycles, each credited to its artist with its context, the math in its picture and in its code, its license, and the library and curriculum concepts it draws on.
+It is kept apart from `/library` and `/compsci`, and ordered by kind of art; [spec-creative.md](spec-creative.md) has the data, the plan for turtle versions, and the cross-page index planned after them.
+The page's link names a group (`/creative#patterns`) or a work (`/creative#substrate`).
+
+- **`creative/works.json` holds the works** in groups, in order.
+- **`creative.js` decides.** Pure functions of the works, the library's catalog and the curriculum: what a link names, each work as shown, whether its license lets us port its code, what a search finds, and coverage.
+- **`creative-page.js` is the shell.** It loads the data, renders what `creative.js` returns, and uses `example-stage.js` and `example-cards.js` as the other pages do.
+
+`test/creative_test.mjs` covers `creative.js` and checks that every work is credited and whole, every license is one the page knows, and every example and concept it names exists.
+`npm run coverage` also lists the works with no turtle version yet.
 
 ### Lessons sidebar
 

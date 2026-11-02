@@ -1,6 +1,6 @@
 // test/index_assets_test.mjs
 //
-// Every page (index.html, library.html, compsci.html) loads every script and
+// Every page (index.html, library.html, compsci.html, creative.html) loads every script and
 // stylesheet from public/ (CodeMirror and KaTeX are vendored in
 // public/vendor/), except
 // the Google Fonts stylesheet, whose loss only changes the typeface. A third-party script is a runtime
@@ -37,8 +37,8 @@ test('assetUrls reads script srcs and stylesheet hrefs only', () => {
 
 const PAGES = readdirSync(PUBLIC).filter((name) => name.endsWith('.html'));
 
-test('the pages are the editor, the library and the computer science curriculum', () => {
-    assert.deepEqual(PAGES.sort(), ['compsci.html', 'index.html', 'library.html']);
+test('the pages are the editor, the library, the computer science curriculum and creative coding', () => {
+    assert.deepEqual(PAGES.sort(), ['compsci.html', 'creative.html', 'index.html', 'library.html']);
 });
 
 for (const page of PAGES) {
