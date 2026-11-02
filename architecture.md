@@ -426,17 +426,18 @@ The Lessons button (⌘⇧L, Ctrl+Shift+L elsewhere) pops a sidebar up over the 
 Each page is one example: what it is about, its program step by step (each step a chunk of the program with its line numbers, and what that chunk does), and then the whole program, which the learner can run on the canvas, open in the editor, or copy.
 The sidebar is docked over the editor column, or detached into a window that floats over the page, so a learner can read it beside the editor while typing a program in by hand.
 The floating window is dragged by its header and resized from any of its edges or corners, so it can be widened leftward to show long lines of code even when it sits against the right of the window.
+A lesson's first page opens with what the lesson is about, everyday things its idea is like ("Think of it as"), and what it is used for ("Used for"), as /compsci does for a concept.
 Every lesson shows its idea both ways: on a Cartesian graph ("On the plane") and as turtle geometry, with headings, walks and vectors ("With the turtle"), and word problems are worked both ways too.
 The pieces, each with one job:
 
-- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples, each example with its text and a whole program.
+- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples; each lesson with its metaphors and applications, `{name, says}` lists, and each example with its text and a whole program.
   Plane examples start with the turtle library's own `graph()` and `axes()`, then draw in the graph's coordinates with `plot`, `mark`, `teleport` and `setpos`, so every program runs on its own and is the code a learner could write.
   A program is written as its own tutorial: `--:` lines at the left edge explain the chunk below them, and `tutorial()` splits each program at those lines into `steps` when the file loads, taking the lines out of the program.
   The explanation sits right above the code it explains, so the two are edited together.
   A step marked `--::` shows folded; no lesson uses that now.
-  `test/lessons_test.lua` checks the shape, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
+  `test/lessons_test.lua` checks the shape, that every lesson has at least two metaphors and two applications, each named and saying something, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
 - **`worker.js` carries them.** `turtle_web.lua`'s `_bridge_get_lessons` loads the data, and the `ready` message sends it once, as it does the demos; the host itself never loads it.
-- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what the contents list, and which parts of a paragraph are `code`.
+- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what a lesson's first page opens with, what the contents list, and which parts of a paragraph are `code`.
   `test/lessons_test.mjs` covers it.
 - **`floating.js` decides where the detached window sits.** Pure functions of the window's size give its first box, and the box after a drag, a resize by any edge or corner, or the window shrinking; every box they return fits the window.
   A resize moves only the edges held, and stops each at the window's margin or where the box would get smaller than its minimum.

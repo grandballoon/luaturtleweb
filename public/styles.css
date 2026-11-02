@@ -1372,6 +1372,7 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 #lessons-panel[hidden],
 #lessons-loading[hidden],
 #lessons-page[hidden],
+#lessons-intro[hidden],
 #lessons-problem[hidden],
 #lessons-source[hidden],
 #lessons-toc[hidden],
@@ -1426,6 +1427,48 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 #lessons-loading { font-size: 13px; color: var(--text-muted); }
 
+/* A lesson's opening, on its first page: its summary, then what the idea
+   is like and what it is used for, side by side when there is room. */
+#lessons-intro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 22px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+#lessons-intro .lessons-intro-summary {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+#lessons-intro h3 {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#lessons-intro ul {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+}
+
+#lessons-intro li {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.lessons-context-name { font-weight: 600; }
+.lessons-context-name::after { content: '.'; }
+
 /* A pill naming how the page draws its idea. */
 .lessons-kind {
   display: inline-block;
@@ -1466,6 +1509,7 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 #lessons-text code,
+#lessons-intro code,
 .lessons-step p code,
 .lessons-toc-summary code {
   padding: 1px 4px;

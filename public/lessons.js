@@ -2,9 +2,10 @@
 // The Lessons sidebar's pure core: the lessons (turtle/lessons.lua, sent by
 // the worker) as a flat list of pages, one per example, and everything the
 // sidebar decides about them: where a page sits in its lesson, which page a
-// move or a key leads to, the table of contents, a paragraph split into
-// prose and `code`, and the line numbers beside a chunk of a program. No DOM, no storage; lessons-panel.js is the shell
-// that shows what these return.
+// move or a key leads to, what a lesson's first page opens with, the table
+// of contents, a paragraph split into prose and `code`, and the line
+// numbers beside a chunk of a program. No DOM, no storage; lessons-panel.js
+// is the shell that shows what these return.
 
 // Accept either a JS array or a key-ordered object (Wasmoon turns an empty
 // Lua table into {}).
@@ -21,11 +22,15 @@ export function lessonPages(chapters) {
     items(chapters).forEach((chapter, c) => {
         items(chapter.lessons).forEach((lesson, l) => {
             const examples = items(lesson.examples);
+            const context = (list) => items(list).map(({ name, says }) => ({ name, says }));
             examples.forEach((example, e) => {
                 pages.push({
                     id: `${lesson.slug}/${example.slug}`,
                     chapter: { index: c, title: chapter.title, summary: chapter.summary },
-                    lesson: { index: l, slug: lesson.slug, title: lesson.title, summary: lesson.summary },
+                    lesson: {
+                        index: l, slug: lesson.slug, title: lesson.title, summary: lesson.summary,
+                        metaphors: context(lesson.metaphors), applications: context(lesson.applications),
+                    },
                     example: e,
                     examples: examples.length,
                     title: example.title,
@@ -72,6 +77,21 @@ export function pagerView(pages, index) {
         hasNext: index < pages.length - 1,
         // "2 of 4": the example's place in its lesson.
         inLesson: `${page.example + 1} of ${page.examples}`,
+    };
+}
+
+// What a lesson's first page opens with, or null on its other pages: the
+// lesson's summary, then what its idea is like and what it is used for,
+// leaving out a list the lesson has none of.
+export function lessonIntro(page) {
+    if (page.example !== 0) return null;
+    const { summary, metaphors, applications } = page.lesson;
+    return {
+        summary,
+        context: [
+            { heading: 'Think of it as', items: metaphors },
+            { heading: 'Used for', items: applications },
+        ].filter((part) => part.items.length > 0),
     };
 }
 

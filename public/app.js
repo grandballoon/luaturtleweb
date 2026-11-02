@@ -441,6 +441,7 @@ const lessons = feature('lessons', $('btn-lessons'), $('lessons-panel')) ? creat
         body:           $('lessons-body'),
         loading:        $('lessons-loading'),
         page:           $('lessons-page'),
+        intro:          $('lessons-intro'),
         kind:           $('lessons-kind'),
         title:          $('lessons-title'),
         problem:        $('lessons-problem'),

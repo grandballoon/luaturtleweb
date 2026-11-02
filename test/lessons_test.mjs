@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 const {
-    lessonPages, pageIndex, movePage, pagerView, contents, paragraphParts, keyAction, pageAfter, KIND_LABELS,
+    lessonPages, pageIndex, movePage, pagerView, lessonIntro, contents, paragraphParts, keyAction, pageAfter, KIND_LABELS,
     lineNumbers, lineRange,
 } = await import('../public/lessons.js');
 
@@ -36,6 +36,8 @@ const chapters = [
         lessons: [
             {
                 slug: 'factor', title: 'Factoring', summary: 'Products.',
+                metaphors: [{ name: 'Fairy lights', says: 'One out, all out.' }],
+                applications: { 1: { name: 'Break-even', says: 'Read off the factors.' } },
                 examples: [{ ...example('d'), problem: 'A garden.', source: 'AoPS 6-2' }, example('e', 'turtle')],
             },
         ],
@@ -50,7 +52,11 @@ test('every example is a page, in reading order, with an id from its slugs', () 
 test('a page knows its chapter, lesson, and place in the lesson', () => {
     const page = lessonPages(chapters)[4];
     assert.deepEqual(page.chapter, { index: 1, title: 'Quadratic', summary: 'Squares.' });
-    assert.deepEqual(page.lesson, { index: 0, slug: 'factor', title: 'Factoring', summary: 'Products.' });
+    assert.deepEqual(page.lesson, {
+        index: 0, slug: 'factor', title: 'Factoring', summary: 'Products.',
+        metaphors: [{ name: 'Fairy lights', says: 'One out, all out.' }],
+        applications: [{ name: 'Break-even', says: 'Read off the factors.' }],
+    });
     assert.equal(page.example, 1);
     assert.equal(page.examples, 2);
     assert.equal(page.kind, 'turtle');
@@ -101,6 +107,20 @@ test('the view says where the page is and which ways it can turn', () => {
     assert.equal(last.hasNext, false);
     assert.equal(last.inLesson, '2 of 2');
     assert.equal(pagerView(pages, 2).inLesson, '1 of 1');
+});
+
+test("a lesson's first page opens with its summary, what it is like, and what it is for", () => {
+    const pages = lessonPages(chapters);
+    assert.deepEqual(lessonIntro(pages[3]), {
+        summary: 'Products.',
+        context: [
+            { heading: 'Think of it as', items: [{ name: 'Fairy lights', says: 'One out, all out.' }] },
+            { heading: 'Used for', items: [{ name: 'Break-even', says: 'Read off the factors.' }] },
+        ],
+    });
+    assert.equal(lessonIntro(pages[4]), null);
+    // A lesson with neither list still opens with its summary.
+    assert.deepEqual(lessonIntro(pages[0]), { summary: 'Both sides.', context: [] });
 });
 
 test('the contents group pages by chapter and lesson, and mark the current page', () => {

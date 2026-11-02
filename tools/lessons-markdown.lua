@@ -1,7 +1,8 @@
 -- tools/lessons-markdown.lua
 --
 -- Prints the Lessons sidebar's lessons (public/turtle/lessons.lua) as one
--- Markdown document: chapters, lessons and examples with their prose, and
+-- Markdown document: chapters, lessons with what their ideas are like and
+-- are used for, and examples with their prose, and
 -- each example's tutorial steps with the code each step explains.
 --
 -- Run from the repo root:  lua tools/lessons-markdown.lua > lessons.md
@@ -32,6 +33,16 @@ local function markdown(chapters)
             add(string.format("### %d.%d %s", c, l, lesson.title))
             add("")
             add(sentences(lesson.summary))
+            for _, part in ipairs({ { "Think of it as", lesson.metaphors }, { "Used for", lesson.applications } }) do
+                if part[2] and #part[2] > 0 then
+                    add("")
+                    add("**" .. part[1] .. "**")
+                    add("")
+                    for _, item in ipairs(part[2]) do
+                        add(string.format("- **%s.** %s", item.name, sentences(item.says):gsub("\n", "\n  ")))
+                    end
+                end
+            end
             for _, example in ipairs(lesson.examples) do
                 add("")
                 add("#### " .. example.title)
