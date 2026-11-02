@@ -15,7 +15,7 @@ The library is a gallery: a learner browses what looks beautiful and finds the m
 ## Principles
 
 - **Concepts, not lectures.**
-  An entry is an idea with a name, a few sentences, its key equations and its applications.
+  An entry is an idea with a name, a few sentences, its key equations, the everyday things it is like, and its applications.
   Lectures, problem sets and exams decide only which ideas are in and in what order.
 - **Our own words and our own equations.**
   Every summary, equation and program is written here.
@@ -28,7 +28,11 @@ The library is a gallery: a learner browses what looks beautiful and finds the m
 - **Every example is a library example.**
   Programs, previews and their tests are the library's own (`library/programs/`, `library/previews/`), so there is one pipeline and an example can appear on both pages.
 - **Unfinished is fine, invisible gaps are not.**
-  A concept may have no example yet, and its applications are filled in later; the page and the tests show what is missing rather than hiding it.
+  A concept may have no example, metaphor or application yet; the page and the coverage report show what is missing rather than hiding it.
+- **Metaphors and applications, both.**
+  A metaphor is something from everyday life the idea behaves like, to help a learner hold it in mind: a recipe for a linear combination, a shadow for a projection.
+  An application is where computer science and engineering actually use it: lighting in a renderer, PageRank, JPEG.
+  Each is a short name and one or two plain sentences, so a learner can scan them.
 
 ## Courses
 
@@ -137,7 +141,12 @@ A concept is:
   ],
   "revisits": [],
   "examples": ["eigenvector-arrows"],
-  "applications": [],
+  "metaphors": [
+    { "name": "A spinning globe", "says": "Everything turns except the axis, which stays on its own line." }
+  ],
+  "applications": [
+    { "name": "PageRank", "says": "Google's first ranking of the web was the leading eigenvector of a matrix of links." }
+  ],
   "checked": ["hefferon-la", "wikipedia"]
 }
 ```
@@ -146,8 +155,9 @@ A concept is:
 - `equations` are TeX, each with one plain sentence saying what it means.
 - `revisits` names concepts from earlier courses that this one builds on, shown as links.
 - `examples` names library examples, in the order they are shown.
-- `applications` is left empty for now; the applications, real-world case studies and other context are filled in after the concepts.
-  The shape of an application is decided then, not now.
+- `metaphors` are everyday things or activities the idea is like, each `{name, says}`, three or so.
+- `applications` are where the idea is used in computer science and engineering, each `{name, says}`, three or four.
+  Both may be empty while a course is being written.
 - `checked` names rows of `sources.json`.
 
 The library's `catalog.json` keeps listing every example, so its tests still cover every program.
@@ -158,9 +168,9 @@ An example made for `/compsci` lists no library concept unless it suits the gall
 `/compsci` is a third page, built like `/library` and, like it, linked from nowhere yet.
 
 - **The sidebar** holds a search bar and the courses in order, each opening to its units.
-- **The main column** shows a course as one scrolling page: each concept with its name, summary, equations, a "builds on" line for its revisits, and its examples as the library's cards, playing on hover and running on the page's canvas.
+- **The main column** shows a course as one scrolling page: each concept with its name, summary, equations, its metaphors ("Think of it as") and applications ("Used for") side by side, a "builds on" line for its revisits, and its examples as the library's cards, playing on hover and running on the page's canvas.
 - **A concept with no example yet** says so in place of its cards.
-- **Search** ranks a word in a concept's name above one in its summary, above one in the course's name, the way the library's search does.
+- **Search** ranks a word in a concept's name above one in its summary, equations, metaphors or applications, above one in the course's name, the way the library's search does.
 - **The link** names the concept (`/compsci#eigenvalues`), or the course (`/compsci#18-06`).
 
 Equations are rendered with KaTeX, vendored under `public/vendor/` as CodeMirror is.
@@ -179,9 +189,10 @@ The pieces follow the library's split:
   - every `revisits` names a concept in an earlier course;
   - every `examples` names an example in the library's catalog;
   - every `checked` and `sources` names a source;
-  - every equation's TeX renders with KaTeX without an error.
+  - every equation's TeX renders with KaTeX without an error;
+  - every metaphor and application has a name and says something.
 - **The programs** are already run by `test/library_test.lua`, and their previews checked by `test/library_test.mjs`, because every example is a library example.
-- **A coverage report,** not a failing test, counts the concepts in each course that have no example yet, so the gaps are visible as the work goes on: `npm run coverage` (`tools/compsci-coverage.mjs`).
+- **A coverage report,** not a failing test, lists the concepts in each course that have no example, metaphor or application yet, so the gaps are visible as the work goes on: `npm run coverage` (`tools/compsci-coverage.mjs`).
 
 ## Plan
 
@@ -196,7 +207,8 @@ The pieces follow the library's split:
    One course per change, reviewed one at a time.
 4. **The examples.**
    Programs for the concepts, course by course in order, existing library examples first where one already fits.
-5. **Applications and context,** after the concepts, in a shape decided then.
+5. **Metaphors and applications,** course by course.
+   Done for 18.06 on 2026-11-02: every concept has three metaphors and four applications.
 
 ## Open questions
 

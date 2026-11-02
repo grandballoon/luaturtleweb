@@ -1,7 +1,8 @@
 // compsci-page.js
 // The /compsci page's shell: the mathematics of a computer science degree,
-// course by course, each concept with its equations and the library
-// examples that show it, and a stage that runs the one picked.
+// course by course, each concept with its equations, what it is like and
+// what it is used for, and the library examples that show it, and a stage
+// that runs the one picked.
 //
 // Owns: loading the curriculum and the library's catalog, rendering the
 // course list and the course or search results that compsci.js decides,
@@ -87,6 +88,24 @@ function conceptArticle(entry, { showCourse = false } = {}) {
         equations.append(figure);
     }
     article.append(equations);
+
+    const context = [['Think of it as', concept.metaphors], ['Used for', concept.applications]]
+        .filter(([, items]) => items.length);
+    if (context.length) {
+        const block = el('div', 'compsci-context');
+        for (const [heading, items] of context) {
+            const section = el('section', 'compsci-context-part');
+            const list = el('ul', 'compsci-context-list');
+            list.append(...items.map((item) => {
+                const li = el('li');
+                li.append(el('span', 'compsci-context-name', item.name), ' ', item.says);
+                return li;
+            }));
+            section.append(el('h5', 'compsci-context-heading', heading), list);
+            block.append(section);
+        }
+        article.append(block);
+    }
 
     if (entry.revisits.length) {
         const builds = el('p', 'compsci-builds-on', 'Builds on ');

@@ -9,7 +9,9 @@
 // syllabus: {label, url}, sources: [source id]}, joined to its file
 // courses/<id>.json, {units: [{id, name, concepts}]}. A concept is {id,
 // name, summary, equations: [{tex, says}], revisits: [concept id],
-// examples: [library example id], applications, checked: [source id]}.
+// examples: [library example id], metaphors: [{name, says}],
+// applications: [{name, says}], checked: [source id]}. Metaphors are
+// everyday things the idea is like; applications are where it is used.
 
 import { normalize, tokens } from './library.js';
 
@@ -86,11 +88,15 @@ export function courseView(courses, catalog, sources, course) {
 }
 
 // How well a concept matches every word: 0 if some word is missing,
-// otherwise higher the more of them hit its name, then its summary and
-// equations, then its course.
+// otherwise higher the more of them hit its name, then its summary,
+// equations, metaphors and applications, then its course.
 export function matchScore({ concept, course }, words) {
     const name = normalize(concept.name);
-    const body = normalize([concept.summary, ...concept.equations.map((e) => e.says)].join(' '));
+    const body = normalize([
+        concept.summary,
+        ...concept.equations.map((e) => e.says),
+        ...[...concept.metaphors, ...concept.applications].flatMap((m) => [m.name, m.says]),
+    ].join(' '));
     const where = normalize(`${course.number} ${course.name} ${concept.id}`);
     let score = 0;
     for (const word of words) {
@@ -114,8 +120,9 @@ export function searchView(courses, catalog, sources, query) {
         .map((hit) => conceptEntry(courses, catalog, sources, hit.entry));
 }
 
-// For each course, how many concepts it has and how many have no example
-// yet: the gaps tools/compsci-coverage.mjs reports.
+// For each course, how many concepts it has and which have no example,
+// no metaphor or no application yet: the gaps tools/compsci-coverage.mjs
+// reports.
 export function coverage(courses) {
     return courses.map((course) => {
         const concepts = course.units.flatMap((unit) => unit.concepts);
@@ -125,6 +132,8 @@ export function coverage(courses) {
             name: course.name,
             concepts: concepts.length,
             withoutExamples: concepts.filter((concept) => concept.examples.length === 0).map((concept) => concept.id),
+            withoutMetaphors: concepts.filter((concept) => concept.metaphors.length === 0).map((concept) => concept.id),
+            withoutApplications: concepts.filter((concept) => concept.applications.length === 0).map((concept) => concept.id),
         };
     });
 }

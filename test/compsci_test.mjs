@@ -27,7 +27,8 @@ const json = (path) => JSON.parse(read(path));
 // ---- compsci.js, on a small curriculum ----
 
 const concept = (id, name, extra = {}) => ({
-    id, name, summary: `${name}, said plainly.`, equations: [], revisits: [], examples: [], applications: [], checked: [],
+    id, name, summary: `${name}, said plainly.`, equations: [], revisits: [], examples: [], metaphors: [], applications: [],
+    checked: [],
     ...extra,
 });
 
@@ -45,6 +46,8 @@ const files = {
                 equations: [{ tex: 'Av = \\lambda v', says: 'A stretches v along its own line.' }],
                 revisits: ['derivative', 'nowhere'],
                 examples: ['arrows'],
+                metaphors: [{ name: 'A spinning globe', says: 'Its axis stays on its own line.' }],
+                applications: [{ name: 'PageRank', says: 'Ranks pages by a leading eigenvector.' }],
                 checked: ['book', 'unknown'],
             }),
         ] },
@@ -105,23 +108,28 @@ test("a course's view has its units in order, each with its concepts", () => {
     assert.deepEqual(courseView(courses, catalog, sources, courses[1]).units, []);
 });
 
-test('a search needs every word, and ranks a name over a summary or equation over the course', () => {
+test('a search needs every word, and ranks a name over a summary, equation, metaphor or application over the course', () => {
     const [derivative, elimination, eigen] = allConcepts(courses);
     assert.equal(matchScore(eigen, ['eigen', 'nothing']), 0);
     assert.ok(matchScore(eigen, ['eigen']) > matchScore(eigen, ['igen']));       // a word's start beats its middle
     assert.ok(matchScore(eigen, ['eigenvalues']) > matchScore(eigen, ['stretches']));   // name beats equation
     assert.ok(matchScore(eigen, ['stretches']) > matchScore(elimination, ['linear']));  // equation beats course
+    assert.equal(matchScore(eigen, ['globe']), matchScore(eigen, ['stretches']));   // a metaphor counts as the body
+    assert.equal(matchScore(eigen, ['pagerank']), matchScore(eigen, ['stretches']));  // so does an application
     assert.equal(matchScore(derivative, ['18.01']), 1);
     assert.deepEqual(searchView(courses, catalog, sources, 'linear').map((e) => e.concept.id), ['elimination', 'eigenvalues']);
     assert.deepEqual(searchView(courses, catalog, sources, 'EIGEN').map((e) => e.concept.id), ['eigenvalues']);
     assert.deepEqual(searchView(courses, catalog, sources, '  '), []);
 });
 
-test('coverage counts each course’s concepts and those without an example', () => {
+test('coverage counts each course’s concepts and those without an example, metaphor or application', () => {
+    const none = { withoutExamples: [], withoutMetaphors: [], withoutApplications: [] };
     assert.deepEqual(coverage(courses), [
-        { id: 'calc', number: '18.01', name: 'Calculus', concepts: 1, withoutExamples: [] },
-        { id: 'empty', number: '6.01', name: 'Not written', concepts: 0, withoutExamples: [] },
-        { id: 'la', number: '18.06', name: 'Linear Algebra', concepts: 2, withoutExamples: ['elimination'] },
+        { id: 'calc', number: '18.01', name: 'Calculus', concepts: 1, ...none,
+            withoutMetaphors: ['derivative'], withoutApplications: ['derivative'] },
+        { id: 'empty', number: '6.01', name: 'Not written', concepts: 0, ...none },
+        { id: 'la', number: '18.06', name: 'Linear Algebra', concepts: 2, withoutExamples: ['elimination'],
+            withoutMetaphors: ['elimination'], withoutApplications: ['elimination'] },
     ]);
 });
 
@@ -192,7 +200,10 @@ test('every concept is whole, and names only things that exist', () => {
                 for (const id of c.revisits) assert.ok(earlier.has(id), `${where} revisits ${id}, which is not in an earlier course`);
                 assert.ok(c.checked.length > 0, `${where} was checked against nothing`);
                 for (const id of c.checked) assert.ok(sourceIds.has(id), `${where} names unknown source ${id}`);
-                assert.ok(Array.isArray(c.applications), `${where} has no applications list`);
+                for (const key of ['metaphors', 'applications']) {
+                    assert.ok(Array.isArray(c[key]), `${where} has no ${key} list`);
+                    for (const m of c[key]) assert.ok(m.name?.trim() && m.says?.trim(), `${where} has one of its ${key} without a name or says`);
+                }
             }
         }
         for (const entry of allConcepts([course])) earlier.add(entry.concept.id);

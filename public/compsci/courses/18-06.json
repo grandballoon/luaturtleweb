@@ -18,7 +18,38 @@
           "examples": [
             "linear-combinations"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A recipe",
+              "says": "The ingredients are the vectors and the amounts are the x. Two cups of one and half a cup of another is a linear combination of the two."
+            },
+            {
+              "name": "Directions on a grid",
+              "says": "\"Three blocks east, two blocks north\" reaches an address by scaling two steps and adding them."
+            },
+            {
+              "name": "A mixing desk",
+              "says": "Each fader scales one track, and the speakers play their sum."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Screen color",
+              "says": "Every pixel is some amount of red, green and blue light added together."
+            },
+            {
+              "name": "Facial animation",
+              "says": "A character's expression is a weighted mix of sculpted blend shapes: so much smile, so much frown."
+            },
+            {
+              "name": "Neural networks",
+              "says": "Each neuron starts by taking a weighted sum of its inputs."
+            },
+            {
+              "name": "Audio mixing",
+              "says": "A mixdown is each channel times its gain, added up."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -42,7 +73,38 @@
           "examples": [
             "linear-combinations"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Clues in a mystery",
+              "says": "Each clue rules out all but a line of suspects; the answer is the one every clue allows. That is the row picture."
+            },
+            {
+              "name": "Making change",
+              "says": "How many quarters and how many dimes make 85 cents? The coins are the columns and the counts are the solution. That is the column picture."
+            },
+            {
+              "name": "One city, two maps",
+              "says": "A street map and a transit map show the same place; each answers different questions more easily."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Positioning",
+              "says": "GPS finds a receiver where the surfaces of equal distance from each satellite cross: the row picture."
+            },
+            {
+              "name": "Collision detection",
+              "says": "Where two lines or planes in a scene meet is the solution of their equations."
+            },
+            {
+              "name": "Blending",
+              "says": "How much of each feed, alloy or fuel to mix to hit a target composition is the column picture."
+            },
+            {
+              "name": "Robot arms",
+              "says": "Which joint speeds combine to move the hand in a given direction."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -64,7 +126,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Solving a logic puzzle",
+              "says": "Use one clue to simplify the others until one of them gives an answer outright."
+            },
+            {
+              "name": "Climbing back up a staircase",
+              "says": "Once the system is triangular, the bottom step names one unknown, which unlocks the step above it, and so on up."
+            },
+            {
+              "name": "Fair trades",
+              "says": "Subtracting a multiple of one equation from another keeps the books balanced, the way adding the same weight to both pans keeps a scale level."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Circuit simulators",
+              "says": "Tools like SPICE turn a circuit into equations for its node voltages and eliminate."
+            },
+            {
+              "name": "Structural engineering",
+              "says": "Finite element models of bridges and buildings are huge linear systems, solved by elimination tuned for sparse matrices."
+            },
+            {
+              "name": "Numerical libraries",
+              "says": "The linear solvers under NumPy, MATLAB and R are elimination at heart."
+            },
+            {
+              "name": "Erasure codes",
+              "says": "Storage systems and QR codes rebuild missing data by eliminating over a finite field."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -86,7 +179,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A bakery's orders",
+              "says": "A table of ingredients per recipe times a table of recipes per day gives ingredients per day: each entry is a row times a column."
+            },
+            {
+              "name": "An assembly line",
+              "says": "Each station does one step; bolting the stations together makes one machine that does all of them."
+            },
+            {
+              "name": "Converting currency twice",
+              "says": "Dollars to euros, then euros to yen, is the same as one rate from dollars to yen."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Graphics pipelines",
+              "says": "Model, camera and projection transforms are multiplied into one matrix, so each vertex is transformed once."
+            },
+            {
+              "name": "Deep learning",
+              "says": "Every layer is a matrix product; GPUs and TPUs are built to do them fast."
+            },
+            {
+              "name": "Counting paths",
+              "says": "The powers of a graph's adjacency matrix count the walks between every pair of nodes."
+            },
+            {
+              "name": "Databases and spreadsheets",
+              "says": "Joining a table of users to items with a table of items to features is a matrix product."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -112,7 +236,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "An undo button",
+              "says": "Do A, then its inverse, and you are back where you started."
+            },
+            {
+              "name": "Socks and shoes",
+              "says": "To undo putting on socks and then shoes, take off the shoes first: the inverse of AB is B⁻¹ then A⁻¹."
+            },
+            {
+              "name": "Scrambled eggs",
+              "says": "A singular matrix is like scrambling an egg: information is lost, and nothing can undo it."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Picking in 3D",
+              "says": "Turning a mouse click back into a ray in the world uses the inverse of the camera's transforms."
+            },
+            {
+              "name": "Robot frames",
+              "says": "Knowing where the camera sits on a robot, the inverse transform takes what the camera sees into the robot's own coordinates."
+            },
+            {
+              "name": "Classical ciphers",
+              "says": "The Hill cipher encrypts letters by a matrix and decrypts by its inverse."
+            },
+            {
+              "name": "Knowing when not to",
+              "says": "Numerical code rarely forms an inverse: solving with elimination is faster and more accurate."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -134,7 +289,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Meal prep",
+              "says": "Do the chopping once on Sunday, and every dinner that week is quick."
+            },
+            {
+              "name": "A stencil",
+              "says": "Cutting the stencil is the slow part; painting with it again is fast."
+            },
+            {
+              "name": "A receipt",
+              "says": "L is the record of every step elimination took, so the work never has to be repeated."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Many loads, one structure",
+              "says": "Engineers test a bridge under many loads; the matrix stays the same, so it is factored once."
+            },
+            {
+              "name": "Simulation time steps",
+              "says": "Implicit physics and circuit solvers often face the same matrix every step and reuse its factors."
+            },
+            {
+              "name": "Determinants",
+              "says": "The determinant is the product of U's diagonal, which is how libraries compute it."
+            },
+            {
+              "name": "Everyday solvers",
+              "says": "NumPy's solve and MATLAB's backslash factor into LU, with row swaps, behind the scenes."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -164,7 +350,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Turning a spreadsheet sideways",
+              "says": "Rows become columns: a table of students by subjects becomes subjects by students."
+            },
+            {
+              "name": "Who sent and who received",
+              "says": "If a table says who emailed whom, its transpose says who was emailed by whom."
+            },
+            {
+              "name": "Shuffling a deck",
+              "says": "A permutation reorders without changing any card, and every shuffle can be undone."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Backpropagation",
+              "says": "Gradients flow backwards through a network's layers by the transposes of their weight matrices."
+            },
+            {
+              "name": "Memory layout",
+              "says": "Row-major and column-major storage are transposes of each other; libraries transpose to keep reads cache-friendly."
+            },
+            {
+              "name": "Pivoting",
+              "says": "Solvers swap rows to put the largest available entry in the pivot position, which keeps rounding errors small."
+            },
+            {
+              "name": "Sorting and shuffling",
+              "says": "A sort finds the permutation that puts data in order; a shuffle applies a random one."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -188,7 +405,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A closed club",
+              "says": "Any mix of members is a member: there is no combination that takes you outside."
+            },
+            {
+              "name": "A sheet of glass through the origin",
+              "says": "Slide and stretch along it however you like and you stay on it. A sheet that misses the origin is not closed: double a point and you fall off."
+            },
+            {
+              "name": "Sounds",
+              "says": "Add two sounds, or turn one up, and you have another sound. Functions are vectors too."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Audio and signals",
+              "says": "Mixing and filtering work because signals can be added and scaled like vectors."
+            },
+            {
+              "name": "Error-correcting codes",
+              "says": "A linear code is a subspace: the sum of two codewords is a codeword, which makes decoding systematic."
+            },
+            {
+              "name": "Embeddings",
+              "says": "Search and language models place words and images in a vector space where directions carry meaning."
+            },
+            {
+              "name": "Superposition",
+              "says": "Solutions of linear circuits and vibrating systems form a vector space, so responses to separate inputs simply add."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -212,7 +460,38 @@
           "examples": [
             "linear-combinations"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "The paints you own",
+              "says": "Every color you can mix from them is in the column space. A color outside it cannot be made, however you mix."
+            },
+            {
+              "name": "A crane on rails",
+              "says": "The rails decide which spots the hook can reach."
+            },
+            {
+              "name": "A projector's screen",
+              "says": "Whatever slide you feed in, the picture lands somewhere on the screen."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Best fits",
+              "says": "When b is out of reach, least squares finds the closest point in the column space."
+            },
+            {
+              "name": "Controllability",
+              "says": "Control engineers ask which states a system's inputs can steer it to: a column space."
+            },
+            {
+              "name": "Recommendations",
+              "says": "If ratings come from a few tastes, the ratings matrix lives in a small column space, which recommenders exploit."
+            },
+            {
+              "name": "Drawing 3D on a screen",
+              "says": "A projection sends every point of a scene into a plane: its column space."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -234,7 +513,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Moves the machine can't see",
+              "says": "Spinning a perfectly round ball changes nothing anyone can see; those moves are in the nullspace."
+            },
+            {
+              "name": "A camera's blind direction",
+              "says": "Every point along a ray from the lens lands on the same pixel. Moving along the ray is invisible to the camera."
+            },
+            {
+              "name": "Balanced trades",
+              "says": "Adding the same weight to both pans of a scale leaves the needle where it was."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Balancing chemical equations",
+              "says": "The coefficients that balance a reaction are a vector in a nullspace."
+            },
+            {
+              "name": "Redundant robots",
+              "says": "An arm with extra joints can move them in the nullspace to dodge obstacles while its hand stays still."
+            },
+            {
+              "name": "Camera geometry",
+              "says": "Computer vision estimates a camera's matrix from point matches by finding a nullspace vector."
+            },
+            {
+              "name": "Circuit loops",
+              "says": "Currents that circulate around loops without piling up at any node form a nullspace."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -256,7 +566,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Independent witnesses",
+              "says": "A witness who repeats another's story adds no information. The rank counts the witnesses worth hearing."
+            },
+            {
+              "name": "Knobs wired together",
+              "says": "A mixing desk with ten knobs, half of them wired to the others, really has five controls."
+            },
+            {
+              "name": "A route plus a round trip",
+              "says": "Any way to the party is one known route plus some loop that brings you back to where you were."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Redundant features",
+              "says": "In statistics a design matrix that isn't full rank means some features repeat others, and the fit is ambiguous."
+            },
+            {
+              "name": "Compression",
+              "says": "A low-rank table is described by far fewer numbers than it has entries."
+            },
+            {
+              "name": "Rigid frames",
+              "says": "The rank of a frame's rigidity matrix says whether it holds its shape or wobbles."
+            },
+            {
+              "name": "Structure from motion",
+              "says": "Tracked points in a video form a matrix of low rank, which recovers the 3D shape and the camera's path."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -274,7 +615,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Primary colors",
+              "says": "A small set that mixes into everything, with none of them a mix of the others."
+            },
+            {
+              "name": "A coordinate system",
+              "says": "East, north and up: three directions, none a combination of the other two, that name every place."
+            },
+            {
+              "name": "Degrees of freedom",
+              "says": "A bead on a wire has one, an ant on a table two, a fly in a room three. That count is the dimension."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Feature selection",
+              "says": "Dropping features that are combinations of others removes redundancy before training a model."
+            },
+            {
+              "name": "Camera frames",
+              "says": "A graphics camera keeps a basis of right, up and forward to place everything it sees."
+            },
+            {
+              "name": "Robot design",
+              "says": "A six-joint arm has six degrees of freedom, just enough to place and orient a hand in space."
+            },
+            {
+              "name": "Model size",
+              "says": "The dimension of a space of curves or signals is how many numbers it takes to describe one."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -300,7 +672,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A camera, fully described",
+              "says": "What parts of a scene it responds to (row space), what motions it can't see (nullspace), what pictures it can take (column space), and what pictures are impossible."
+            },
+            {
+              "name": "Accounting checks",
+              "says": "The left nullspace holds the rules every honest b must pass, like the rule that debits equal credits."
+            },
+            {
+              "name": "Two rooms, two walls",
+              "says": "Each side of the matrix is a room split by a right-angled wall: the part that matters and the part that is lost."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Kirchhoff's laws",
+              "says": "For a circuit's incidence matrix, the subspaces are exactly the voltage law, the current law and the loops."
+            },
+            {
+              "name": "Parity checks",
+              "says": "An error-correcting code checks a message against vectors orthogonal to every codeword; any nonzero check means an error."
+            },
+            {
+              "name": "Least squares and the SVD",
+              "says": "Both are built on splitting each side into these perpendicular pieces."
+            },
+            {
+              "name": "Understanding a model",
+              "says": "The nullspace of a linear model shows which inputs it ignores entirely."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -318,7 +721,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A multiplication table",
+              "says": "Every entry is its row label times its column label: the simplest rank one matrix."
+            },
+            {
+              "name": "Plaid",
+              "says": "One stripe across times one stripe down makes a plaid. Any pattern is a sum of plaids, and the rank is how many it takes."
+            },
+            {
+              "name": "Transparencies",
+              "says": "A picture built from a stack of simple layers, each a column times a row."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Image compression",
+              "says": "Keeping the few strongest rank one layers of an image keeps most of what the eye sees."
+            },
+            {
+              "name": "Recommenders",
+              "says": "The simplest model of ratings is a user's taste times an item's appeal: rank one."
+            },
+            {
+              "name": "Fine-tuning language models",
+              "says": "LoRA adapts a large model by adding low-rank updates instead of changing every weight."
+            },
+            {
+              "name": "Gradients",
+              "says": "For one training example, a layer's weight gradient is a column times a row."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -340,7 +774,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "One-way roads",
+              "says": "Each road leaves one town and enters another: a −1 and a +1 in its row."
+            },
+            {
+              "name": "Water pipes",
+              "says": "At every junction what flows in must flow out. Flows that balance are in the left nullspace."
+            },
+            {
+              "name": "Heights on a hike",
+              "says": "Only differences in height matter to how steep a path is, so lifting every height by the same amount changes nothing."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Circuit analysis",
+              "says": "Kirchhoff's laws are the incidence matrix and its transpose."
+            },
+            {
+              "name": "Network flow",
+              "says": "Shipping, traffic and data routing are flows on a graph, constrained by its incidence matrix."
+            },
+            {
+              "name": "Spectral clustering",
+              "says": "The graph Laplacian AᵀA reveals clusters of tightly connected nodes."
+            },
+            {
+              "name": "Mesh processing",
+              "says": "Graphics computes gradients and smoothing on 3D meshes through their incidence matrices."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -368,7 +833,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "North and east",
+              "says": "Walking east never changes how far north you are."
+            },
+            {
+              "name": "Bass and treble",
+              "says": "Two knobs that don't interfere: turning one leaves the other's effect alone."
+            },
+            {
+              "name": "A noon shadow",
+              "says": "A pole standing straight up casts no shadow on the ground, because it shares nothing with the ground's directions."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Lighting",
+              "says": "Brightness on a surface is the dot product of its normal and the light's direction; at right angles it is dark."
+            },
+            {
+              "name": "Similarity search",
+              "says": "Search engines compare documents and embeddings by the angle between them; orthogonal means unrelated."
+            },
+            {
+              "name": "Shared radio channels",
+              "says": "CDMA gives each phone an orthogonal code so many can talk at once without interfering."
+            },
+            {
+              "name": "Wi-Fi subcarriers",
+              "says": "OFDM packs many orthogonal carriers into one channel."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -394,7 +890,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A shadow at noon",
+              "says": "Light from straight overhead throws each point straight down onto the floor."
+            },
+            {
+              "name": "The nearest point on a road",
+              "says": "Walk straight to the road, at a right angle, and you take the shortest path to it."
+            },
+            {
+              "name": "A headline",
+              "says": "Keeps the part of the story that fits, and drops what doesn't."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Sliding along walls",
+              "says": "Game physics projects out the part of a velocity that points into a wall, so a character slides along it."
+            },
+            {
+              "name": "Shadows and orthographic views",
+              "says": "Graphics flattens objects onto planes for shadows and technical drawings."
+            },
+            {
+              "name": "Denoising",
+              "says": "Projecting a signal onto a space of smooth signals removes much of its noise."
+            },
+            {
+              "name": "Dimensionality reduction",
+              "says": "PCA projects data onto its few most important directions."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -418,7 +945,38 @@
           "examples": [
             "least-squares-line"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Splitting the difference",
+              "says": "Ask five friends the time and average their answers: the average is a least-squares fit."
+            },
+            {
+              "name": "A ruler through dots",
+              "says": "Lay a ruler through scattered dots so that it misses all of them as little as possible."
+            },
+            {
+              "name": "A fair compromise",
+              "says": "No one gets exactly what they asked for, but the total disappointment is as small as it can be."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Regression",
+              "says": "Linear regression in statistics and machine learning is least squares."
+            },
+            {
+              "name": "GPS",
+              "says": "A receiver hears more satellites than it needs and takes the position that fits them all best."
+            },
+            {
+              "name": "Calibration",
+              "says": "Sensors and cameras are calibrated by fitting their parameters to many measurements."
+            },
+            {
+              "name": "Curve fitting",
+              "says": "Drawing apps smooth a shaky stroke by fitting a curve to the points of the mouse."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -444,7 +1002,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Hiring without overlap",
+              "says": "Each new hire is given only the work no one already covers."
+            },
+            {
+              "name": "Squaring a frame",
+              "says": "Fix one side, then make each next side square to all the ones before."
+            },
+            {
+              "name": "Hearing a new voice",
+              "says": "Take away what a new speaker repeats from earlier ones, and what is left is what they add."
+            }
+          ],
+          "applications": [
+            {
+              "name": "QR factorization",
+              "says": "The orthonormal Q from Gram–Schmidt solves least-squares problems stably."
+            },
+            {
+              "name": "Camera look-at",
+              "says": "A graphics camera builds its right and up directions perpendicular to the way it faces."
+            },
+            {
+              "name": "Large eigenproblems",
+              "says": "Krylov methods such as Arnoldi and Lanczos orthogonalize as they go to find eigenvalues of huge sparse matrices."
+            },
+            {
+              "name": "Signal bases",
+              "says": "Orthogonal sets of signals let a receiver pull each one out of a mix with a dot product."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -482,7 +1071,38 @@
           "examples": [
             "linear-map-grid"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A photocopier's area dial",
+              "says": "A determinant of 2 doubles every area; 0 squashes the page flat, and nothing can unsquash it."
+            },
+            {
+              "name": "A mirror",
+              "says": "A negative determinant flips orientation, the way a mirror turns a left hand into a right one."
+            },
+            {
+              "name": "A volume knob for space",
+              "says": "One number says how much a transformation grows or shrinks everything it touches."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Is it invertible?",
+              "says": "A zero determinant flags a system with no unique solution."
+            },
+            {
+              "name": "Mirrored models",
+              "says": "Game engines check the sign of a transform's determinant to flip triangle winding when a model is mirrored."
+            },
+            {
+              "name": "Change of variables",
+              "says": "The Jacobian determinant rescales areas in integrals and probability densities, as normalizing flows do in machine learning."
+            },
+            {
+              "name": "Orientation tests",
+              "says": "The sign of a small determinant says whether a point is left or right of a line, the basic test of convex hulls and triangulations."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -508,7 +1128,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Rooks on a board",
+              "says": "Each term of the big formula places one rook in every row and every column, none attacking another."
+            },
+            {
+              "name": "Breaking a big decision into cases",
+              "says": "Pick the first row's entry, and what is left is a smaller version of the same problem."
+            },
+            {
+              "name": "Nesting dolls",
+              "says": "Every cofactor holds a smaller determinant, which holds smaller ones still."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Small inverses in games",
+              "says": "Engines invert 3×3 and 4×4 matrices with cofactors, which suits fixed sizes and fast hardware."
+            },
+            {
+              "name": "The cross product",
+              "says": "The cross product is a cofactor expansion along a row of unit vectors."
+            },
+            {
+              "name": "Closed forms",
+              "says": "Computer algebra systems use cofactors to give exact formulas in symbols."
+            },
+            {
+              "name": "A lesson in growth",
+              "says": "The big formula has n! terms, so for large matrices elimination wins by a wide margin."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -536,7 +1187,38 @@
           "examples": [
             "linear-map-grid"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A pushed deck of cards",
+              "says": "Slide a deck sideways into a slant and its volume doesn't change: a shear keeps the determinant."
+            },
+            {
+              "name": "A slanted garden plot",
+              "says": "The area of a parallelogram is the determinant of its two edges."
+            },
+            {
+              "name": "Swapping a column",
+              "says": "To find one unknown, put the answer in place of its column and compare volumes."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Ray–triangle hits",
+              "says": "Ray tracers find where a ray meets a triangle by solving a 3×3 system with Cramer's rule."
+            },
+            {
+              "name": "Inside the triangle?",
+              "says": "Rasterizers decide whether a pixel is inside a triangle from the signs of three small determinants."
+            },
+            {
+              "name": "Mesh volume",
+              "says": "Slicers for 3D printing sum signed volumes of tetrahedra to find how much material a model needs."
+            },
+            {
+              "name": "Barycentric coordinates",
+              "says": "Blending colors and textures across a triangle uses ratios of areas, which are determinants."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -570,7 +1252,38 @@
           "examples": [
             "eigenvector-arrows"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A spinning globe",
+              "says": "Everything turns except the axis, which stays on its own line: an eigenvector with eigenvalue 1."
+            },
+            {
+              "name": "Stretching dough",
+              "says": "Roll dough one way and some directions only get longer, without turning."
+            },
+            {
+              "name": "A bridge's natural sway",
+              "says": "A structure has its own ways of vibrating, each at its own rate; push it at one and it responds strongly."
+            }
+          ],
+          "applications": [
+            {
+              "name": "PageRank",
+              "says": "Google's first ranking of the web was the leading eigenvector of a matrix of links."
+            },
+            {
+              "name": "Vibration analysis",
+              "says": "Engineers find the eigenvalues of a building or an engine to keep its natural frequencies away from the ones it will meet."
+            },
+            {
+              "name": "PCA",
+              "says": "The eigenvectors of a covariance matrix are the directions in which data varies most."
+            },
+            {
+              "name": "Stability",
+              "says": "A linear system settles when every eigenvalue shrinks it, and blows up when one grows it."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -598,7 +1311,38 @@
           "examples": [
             "fibonacci-spiral"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "The right coordinates",
+              "says": "A problem tangled in one set of axes is a list of separate, simple ones in the eigenvector axes."
+            },
+            {
+              "name": "Separate savings accounts",
+              "says": "Each account grows by its own interest rate, and none affects the others."
+            },
+            {
+              "name": "Untangling a knot of strings",
+              "says": "Once each string is on its own, pulling one doesn't move the rest."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Recurrences",
+              "says": "Fibonacci-like sequences get closed forms, and their growth rates, from eigenvalues."
+            },
+            {
+              "name": "Population models",
+              "says": "The long-run age mix of a population is read from the leading eigenvector of its growth matrix."
+            },
+            {
+              "name": "Decoupled simulation",
+              "says": "Splitting a vibrating structure into its modes turns one big system into many small ones."
+            },
+            {
+              "name": "Fast powers",
+              "says": "A high power of a matrix is just each eigenvalue raised to that power."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -626,7 +1370,38 @@
           "examples": [
             "damped-oscillation"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Continuous compound interest",
+              "says": "Each eigen-direction grows like money compounded every instant, at its own rate."
+            },
+            {
+              "name": "Heat between rooms",
+              "says": "Warm and cold rooms trade heat; the pattern of temperatures settles along the eigenvectors."
+            },
+            {
+              "name": "A swing slowing down",
+              "says": "Friction makes each mode of motion fade at its own rate."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Control systems",
+              "says": "Autopilots and cruise control model a vehicle as x' = Ax and predict it with the matrix exponential."
+            },
+            {
+              "name": "Rotations",
+              "says": "The exponential of a skew-symmetric matrix is a rotation, the basis of how robotics and animation interpolate orientations."
+            },
+            {
+              "name": "Reliability and queues",
+              "says": "Continuous-time Markov models of servers and machines evolve by an exponential of their rate matrix."
+            },
+            {
+              "name": "Exact physics steps",
+              "says": "Simulations of linear springs and dampers can step exactly instead of approximating."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -652,7 +1427,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A board game with dice",
+              "says": "Snakes and Ladders is a Markov chain: where you go next depends only on where you are."
+            },
+            {
+              "name": "Tomorrow's weather",
+              "says": "If tomorrow depends only on today, the long-run share of sunny days is the steady state."
+            },
+            {
+              "name": "Shuffling a deck",
+              "says": "Each riffle shuffle is a step; after enough of them every order is about equally likely."
+            }
+          ],
+          "applications": [
+            {
+              "name": "PageRank",
+              "says": "A random surfer clicking links spends time on each page in proportion to its rank."
+            },
+            {
+              "name": "Text prediction",
+              "says": "Early autocomplete and text generators chose each next word from the one before it."
+            },
+            {
+              "name": "Sampling",
+              "says": "Markov chain Monte Carlo explores probability distributions too complex to sample directly."
+            },
+            {
+              "name": "Speech and biology",
+              "says": "Hidden Markov models recognize speech and find genes in DNA."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -676,7 +1482,38 @@
           "examples": [
             "fourier-square-wave"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Hearing a chord",
+              "says": "Your ear splits a sound into its notes and how loud each is."
+            },
+            {
+              "name": "A graphic equalizer",
+              "says": "Each slider is one coefficient, how much of one frequency is in the sound."
+            },
+            {
+              "name": "Ocean swells",
+              "says": "A choppy sea is many smooth waves of different lengths added together."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Audio compression",
+              "says": "MP3 and AAC store a sound by its frequencies and spend fewest bits on the ones the ear notices least."
+            },
+            {
+              "name": "Image compression",
+              "says": "JPEG writes each block of an image in a basis of cosines."
+            },
+            {
+              "name": "Heat and waves",
+              "says": "Fourier invented the series to solve how heat spreads; physics simulations still do."
+            },
+            {
+              "name": "Synthesizers",
+              "says": "Additive synthesis builds a sound from sines, one coefficient at a time."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -704,7 +1541,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A mileage chart",
+              "says": "Boston to New York is as far as New York to Boston."
+            },
+            {
+              "name": "Mutual friendship",
+              "says": "Friends on a network are friends both ways; followers are not, and that matrix is not symmetric."
+            },
+            {
+              "name": "A squeezed ball",
+              "says": "Press a rubber ball and it stretches along perpendicular directions, with no twist."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Covariance",
+              "says": "How features vary together is a symmetric matrix, and PCA reads it through its perpendicular eigenvectors."
+            },
+            {
+              "name": "Undirected networks",
+              "says": "Graph Laplacians are symmetric, which makes spectral clustering and graph drawing work."
+            },
+            {
+              "name": "Optimization",
+              "says": "The Hessian of second derivatives is symmetric and describes the shape of a function near a point."
+            },
+            {
+              "name": "Physics simulation",
+              "says": "Springs pull equally both ways, so stiffness matrices are symmetric, and faster solvers apply."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -730,7 +1598,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Hands on a clock",
+              "says": "The powers of a root of 1 are evenly spaced points around a circle, like the hours."
+            },
+            {
+              "name": "Divide and conquer",
+              "says": "Like sorting a deck by splitting it in halves, the FFT splits a signal into evens and odds and reuses the work."
+            },
+            {
+              "name": "A prism",
+              "says": "White light goes in, and its colors fan out: a signal goes in, and its frequencies come out."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Wireless",
+              "says": "Wi-Fi, 4G and 5G send data on many frequencies at once and separate them with an FFT."
+            },
+            {
+              "name": "Multiplying huge numbers",
+              "says": "Fast multiplication of polynomials and big integers, as in computer algebra, runs through the FFT."
+            },
+            {
+              "name": "Fast blurs and filters",
+              "says": "Image and audio filters convolve by multiplying spectra, which is quick for big kernels."
+            },
+            {
+              "name": "Medical imaging",
+              "says": "MRI scanners measure frequencies, and an inverse FFT turns them into a picture."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -756,7 +1655,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "A bowl",
+              "says": "A marble dropped anywhere rolls to the one lowest point."
+            },
+            {
+              "name": "A spring",
+              "says": "Pull it any way and it stores energy and pushes back."
+            },
+            {
+              "name": "A valley, not a mountain pass",
+              "says": "At a pass the ground rises one way and falls another; that is indefinite."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Optimization",
+              "says": "A positive definite Hessian means a true minimum; Newton's method and convex optimization rely on it."
+            },
+            {
+              "name": "Kernel methods",
+              "says": "Support vector machines and Gaussian processes need positive (semi)definite kernel matrices."
+            },
+            {
+              "name": "Cholesky factorization",
+              "says": "Solves positive definite systems about twice as fast as LU, and is used throughout simulation."
+            },
+            {
+              "name": "Correlated randomness",
+              "says": "Simulations draw correlated random numbers by multiplying independent ones by a Cholesky factor."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -778,7 +1708,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "One song, two keys",
+              "says": "Transposed to another key, every interval stays the same."
+            },
+            {
+              "name": "Two languages",
+              "says": "The same sentence in French and English: different words, the same meaning."
+            },
+            {
+              "name": "Lowest terms",
+              "says": "The Jordan form is to similar matrices what 1/2 is to 2/4, 3/6 and 50/100."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Rotating about an object's center",
+              "says": "Graphics moves the object to the origin, rotates, and moves it back: B⁻¹AB."
+            },
+            {
+              "name": "Control design",
+              "says": "Engineers change a system's coordinates to a standard form where the controller is easy to design."
+            },
+            {
+              "name": "Same system, new labels",
+              "says": "Matrices with different eigenvalues can't be the same system relabeled, a quick first check."
+            },
+            {
+              "name": "Resonance",
+              "says": "A Jordan block explains why some systems grow like t·e^{λt} instead of a plain exponential."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -812,7 +1773,38 @@
           "examples": [
             "svd-circle"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Pressing clay",
+              "says": "Any press of a ball of clay is a turn, a squash along the axes, and another turn."
+            },
+            {
+              "name": "Layers by importance",
+              "says": "A table broken into simple layers, the strongest first, like summarizing a book by its biggest themes."
+            },
+            {
+              "name": "A dance step",
+              "says": "Rotate, stretch, rotate: every matrix does the same three moves."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Image compression",
+              "says": "Keeping the largest singular values keeps the picture, with a fraction of the numbers."
+            },
+            {
+              "name": "Recommenders",
+              "says": "Matrix factorization of ratings was central to the Netflix Prize."
+            },
+            {
+              "name": "Search by meaning",
+              "says": "Latent semantic analysis finds documents about the same topic even when they share no words."
+            },
+            {
+              "name": "Aligning shapes",
+              "says": "The Kabsch algorithm aligns two point clouds, as in 3D scanning and comparing protein structures, with one SVD."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -836,7 +1828,38 @@
           "examples": [
             "linear-map-grid"
           ],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Graph paper on a rubber sheet",
+              "says": "Stretch the sheet so grid lines stay straight, evenly spaced, and through the same center."
+            },
+            {
+              "name": "Where your hands go",
+              "says": "Know where east and north land and you know where everything lands."
+            },
+            {
+              "name": "A tidy funhouse mirror",
+              "says": "It may stretch or tilt, but never bends a straight line."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Every graphics transform",
+              "says": "Rotation, scaling and shear are matrices, and with homogeneous coordinates so is moving."
+            },
+            {
+              "name": "Photo editing",
+              "says": "Skew, scale and perspective tools warp an image by a transformation."
+            },
+            {
+              "name": "Automatic differentiation",
+              "says": "A derivative is the best linear map near a point, and autodiff composes them."
+            },
+            {
+              "name": "Neural network layers",
+              "says": "Each layer is a linear transformation followed by a bend."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -858,7 +1881,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Currencies",
+              "says": "One price in dollars and in euros: the value is the same and only the numbers change."
+            },
+            {
+              "name": "Address or coordinates",
+              "says": "A street address and a latitude and longitude name the same house."
+            },
+            {
+              "name": "Sheet music",
+              "says": "Writing a tune as notes needs far fewer numbers than writing down the air pressure at every instant."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Compression",
+              "says": "JPEG uses cosines, JPEG 2000 wavelets and MP3 frequencies, keeping only the big coordinates."
+            },
+            {
+              "name": "Video color",
+              "says": "Video moves RGB into brightness and color (YCbCr) and keeps more detail in brightness, which the eye sees best."
+            },
+            {
+              "name": "Frames in graphics",
+              "says": "Every object, the world and the camera each have a basis, and rendering moves between them."
+            },
+            {
+              "name": "PCA",
+              "says": "Rewriting data in the basis of its principal directions puts most of the variation in a few coordinates."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"
@@ -880,7 +1934,38 @@
           ],
           "revisits": [],
           "examples": [],
-          "applications": [],
+          "metaphors": [
+            {
+              "name": "Undoing a shadow",
+              "says": "A shadow can't tell you an object's height, so pick the simplest object that would cast it."
+            },
+            {
+              "name": "Least effort",
+              "says": "Among all the ways to reach a spot, take the one that moves the least."
+            },
+            {
+              "name": "A careful translator",
+              "says": "Some words have no equivalent, so give the closest meaning and leave out what can't be said."
+            }
+          ],
+          "applications": [
+            {
+              "name": "Regression",
+              "says": "The pseudoinverse gives the least-squares fit, even when the data has redundant features."
+            },
+            {
+              "name": "Inverse kinematics",
+              "says": "Robots and animated characters find the smallest joint motions that move a hand where it should go."
+            },
+            {
+              "name": "Drones and spacecraft",
+              "says": "Control allocation splits a desired force among many thrusters or rotors."
+            },
+            {
+              "name": "Underdetermined problems",
+              "says": "With fewer equations than unknowns, it picks the solution of least length."
+            }
+          ],
           "checked": [
             "hefferon-la",
             "wikipedia"

@@ -1,7 +1,8 @@
 /* compsci.css
    The /compsci page, on top of browse.css: the course list in the
    sidebar, and the main column's course: its header, units, and each
-   concept with its equations (KaTeX, vendor/katex/) and example cards. */
+   concept with its equations (KaTeX, vendor/katex/), its metaphors and
+   applications, and example cards. */
 
 /* ---- Courses ---- */
 
@@ -201,6 +202,41 @@
   color: var(--text-muted);
   text-align: center;
 }
+
+/* What the idea is like and what it is used for, side by side. */
+.compsci-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px 24px;
+  margin-top: 14px;
+}
+
+.compsci-context-heading {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.compsci-context-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compsci-context-list li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.compsci-context-name { font-weight: 600; }
+.compsci-context-name::after { content: '.'; }
 
 .compsci-builds-on { margin-top: 10px; }
 

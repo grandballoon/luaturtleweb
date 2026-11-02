@@ -389,7 +389,7 @@ To add an example: write `library/programs/<id>.lua`, add it to the catalog with
 ### Computer science (`/compsci`)
 
 `/compsci` is a third page: the mathematics of a computer science degree, laid out along the math and computer science courses of Scott H. Young's MIT Challenge, in its order.
-It covers concepts, not lectures: each concept has a plain summary, its key equations (each with what it says), the earlier concepts it builds on, the library examples that show it, and the open sources it was checked against.
+It covers concepts, not lectures: each concept has a plain summary, its key equations (each with what it says), everyday metaphors for it and where it is used, the earlier concepts it builds on, the library examples that show it, and the open sources it was checked against.
 Nothing is copied from any course or book; [spec-compsci.md](spec-compsci.md) has the courses, the sources and their licenses, and the plan.
 The page's link names a course (`/compsci#18-06`) or a concept (`/compsci#eigenvalues`).
 
@@ -402,7 +402,7 @@ An example runs on the same stage as the library's, and a course that is not wri
 - **`compsci-page.js` is the shell.** It loads the data, renders what `compsci.js` returns, renders each equation with KaTeX, and uses `example-stage.js` and `example-cards.js` as the library does.
 
 `test/compsci_test.mjs` covers `compsci.js`, keeps the courses in their order, checks that every id is unique and every reference names something that exists (a concept builds only on concepts in earlier courses), and renders every equation with the page's KaTeX.
-`npm run coverage` lists each course's concepts that have no example yet.
+`npm run coverage` lists each course's concepts that have no example, metaphor or application yet.
 
 To add a course's concepts: fill `compsci/courses/<id>.json`; an example a concept needs is written for the library first, and may list no library concept.
 
