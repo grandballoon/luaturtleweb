@@ -19,5 +19,16 @@
   },
   "compatibility_flags": [
     "nodejs_compat"
-  ]
+  ],
+  // staging is a separate Worker, luaturtleweb-staging, serving the same
+  // ./public at staging.luaturtle.com, for trying a branch before it goes to
+  // production: npm run deploy:staging. Routes are not inherited, so it never
+  // touches the production hostnames.
+  "env": {
+    "staging": {
+      "routes": [
+        { "pattern": "staging.luaturtle.com", "custom_domain": true }
+      ]
+    }
+  }
 }

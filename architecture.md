@@ -590,6 +590,10 @@ it and so cannot be served by accident.
 Pointing `assets.directory` back at the repo root would publish all of them — it previously did.
 The Worker serves `luaturtle.com` and `www.luaturtle.com` as custom domains declared in `wrangler.jsonc`, so deploying creates their DNS records.
 A zone Redirect Rule in the Cloudflare dashboard (not in the repo) sends `www` to the apex with a 301.
+`npx wrangler deploy` publishes production, from the local CLI; Wrangler is a pinned dev dependency.
+A `staging` environment in `wrangler.jsonc` is a separate Worker, `luaturtleweb-staging`, serving the same `public/` at `staging.luaturtle.com`, for trying a branch before it reaches production.
+`npm run deploy:staging` runs the tests and deploys the checked-out tree there; routes are not inherited between environments, so it never touches the production hostnames.
+Staging is public, like production, but linked from nowhere.
 `public/_headers` sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy:
 require-corp` so the page is cross-origin isolated — a hard requirement for
 `SharedArrayBuffer`, and therefore for the whole animation model. No build step: plain ES
@@ -600,4 +604,4 @@ CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs bu
 Google Fonts is the only third-party origin the pages load from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet each page names exists.
 Cloudflare serves `library.html` at `/library` and `compsci.html` at `/compsci`, without their extensions.
 The library's previews are committed media files, made ahead of time by a dev tool (see [The library](#the-library-library)), so deploying still needs no build step.
-`package.json` lists only dev tools (Playwright, for that tool) and is never part of the site.
+`package.json` lists only dev tools (Playwright, for that tool, and Wrangler) and is never part of the site.
