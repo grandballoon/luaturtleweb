@@ -479,6 +479,7 @@ Where the implementation settled what this spec left open, or departed from it:
 ## Nested blocks, if they come
 
 Only if the deck leaves the mouse wanting (plan step 3 in the parent spec).
+[spec-blocks-nested.md](spec-blocks-nested.md) drafts them, together with value blocks in slots and a palette drawer.
 They would be a second view over the same rows and the same `edit.lua`: Scratch-style shapes with notches, a C-shaped mouth for each compound, and slots as rounded wells, drawn by a `blocks_view.lua` with its own layout and hit testing.
 Selection, the hand, slots, errors and the trace work as in the deck; only the drawing and the drop targets differ.
 Because the edits are shared, the only new tests would be layout and hit testing.
@@ -486,7 +487,7 @@ Because the edits are shared, the only new tests would be layout and hit testing
 ## Open questions
 
 - Whether to run the program continuously while scrubbing, when the last run finished within a frame or two, or only on release as the right stick does now.
-- Whether `if`'s condition and `while`'s deserve richer slots (a comparison with two sides and an operator) or stay expressions typed as text.
+- Whether `if`'s condition and `while`'s deserve richer slots (a comparison with two sides and an operator) or stay expressions typed as text; [spec-blocks-nested.md](spec-blocks-nested.md) proposes boolean value blocks.
 - Whether a card for a call should show its result when it returns one (`local d = distance(0, 0)`), which the trace's locals level could fill.
 - Whether the hand bar should show Favorites instead of Recent when the learner has some.
 - Whether collapse state should survive a restart, saved beside the program rather than in it.
