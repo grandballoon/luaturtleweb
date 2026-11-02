@@ -20,6 +20,7 @@
 <script src="vendor/codemirror/mode/lua/lua.min.js"></script>
 
 <link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="browse.css">
 <link rel="stylesheet" href="library.css">
 </head>
 <body>
@@ -29,7 +30,7 @@
   Check the <code>_headers</code> file and your server configuration.
 </div>
 
-<div id="app" class="library-app">
+<div id="app">
   <header>
     <div class="header-brand">
       <h1>
@@ -58,23 +59,23 @@
     </div>
   </header>
 
-  <div id="library">
-    <div id="library-browse">
-      <aside id="library-sidebar" aria-label="Find an example">
-        <label id="library-search-field">
+  <div id="browse">
+    <div id="browse-column">
+      <aside id="browse-sidebar" aria-label="Find an example">
+        <label id="browse-search-field">
           <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-          <input id="library-search" type="search" placeholder="Search examples" aria-label="Search examples" aria-controls="library-gallery" autocomplete="off" spellcheck="false">
-          <kbd id="library-search-key" class="kbd" aria-hidden="true">/</kbd>
+          <input id="browse-search" type="search" placeholder="Search examples" aria-label="Search examples" aria-controls="browse-main" autocomplete="off" spellcheck="false">
+          <kbd id="browse-search-key" class="kbd" aria-hidden="true">/</kbd>
         </label>
         <nav id="library-concepts" aria-label="Concepts">
-          <h2 class="library-concepts-title">Concepts</h2>
+          <h2 class="browse-list-title">Concepts</h2>
           <ul id="library-concept-list"></ul>
         </nav>
       </aside>
 
-      <main id="library-gallery" tabindex="-1" aria-live="polite">
-        <p id="library-loading">Loading the library…</p>
-        <p id="library-empty" hidden>No examples match <q id="library-empty-query"></q></p>
+      <main id="browse-main" tabindex="-1" aria-live="polite">
+        <p id="browse-loading">Loading the library…</p>
+        <p id="browse-empty" hidden>No examples match <q id="browse-empty-query"></q></p>
       </main>
     </div>
 
@@ -89,40 +90,24 @@
             <button id="btn-grid" title="Toggle grid" aria-pressed="false">Grid</button>
           </div>
         </div>
-        <p id="library-canvas-hint">Pick an example to draw it here.</p>
+        <p id="stage-canvas-hint">Pick an example to draw it here.</p>
         <canvas id="turtle-canvas" aria-label="Turtle drawing"></canvas>
       </div>
 
-      <section id="library-editor-panel" class="dock" aria-label="Code">
-        <div id="library-editor-header" class="dock-header">
-          <button id="library-editor-caret" class="dock-caret" aria-label="Toggle code" aria-controls="library-editor-body"><span class="dock-caret-icon">&#9660;</span></button>
-          <h2 id="library-editor-title" class="dock-title">Code</h2>
-          <span id="library-editor-error" class="dock-hint" hidden></span>
-          <button id="library-editor-reset" class="dock-toggle-plain" title="Put the example's own program back" hidden>Revert</button>
+      <section id="stage-editor-panel" class="dock" aria-label="Code">
+        <div id="stage-editor-header" class="dock-header">
+          <button id="stage-editor-caret" class="dock-caret" aria-label="Toggle code" aria-controls="stage-editor-body"><span class="dock-caret-icon">&#9660;</span></button>
+          <h2 id="stage-editor-title" class="dock-title">Code</h2>
+          <span id="stage-editor-error" class="dock-hint" hidden></span>
+          <button id="stage-editor-reset" class="dock-toggle-plain" title="Put the example's own program back" hidden>Revert</button>
         </div>
-        <div id="library-editor-body">
-          <textarea id="library-editor-textarea"></textarea>
+        <div id="stage-editor-body">
+          <textarea id="stage-editor-textarea"></textarea>
         </div>
       </section>
     </section>
   </div>
 </div>
-
-<template id="library-card-template">
-  <li class="library-card">
-    <div class="library-card-preview">
-      <video muted loop playsinline preload="none" disablepictureinpicture aria-hidden="true"></video>
-    </div>
-    <div class="library-card-body">
-      <h3 class="library-card-name"></h3>
-      <p class="library-card-about"></p>
-      <button class="library-card-run" type="button">
-        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
-        <span>Run on canvas</span>
-      </button>
-    </div>
-  </li>
-</template>
 
 <script type="module" src="library-page.js"></script>
 

@@ -27,5 +27,10 @@
   "mandelbrot-set": "35a6a43f0ed7ebeb",
   "julia-set": "5836f6c858dba22e",
   "star-polygons": "fd94441f24b7b840",
-  "rosette": "7968525f989b7d74"
+  "rosette": "7968525f989b7d74",
+  "linear-combinations": "d1984b43f0aca394",
+  "linear-map-grid": "5bfdf8defd9211bc",
+  "eigenvector-arrows": "dfd247757df6d22f",
+  "least-squares-line": "fc36ada314d0e5c1",
+  "svd-circle": "c710983f73c63bbf"
 }

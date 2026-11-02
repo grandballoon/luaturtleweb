@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node tools/dev-server.mjs",
     "test": "node --test test/*.mjs && sh test/run.sh",
-    "previews": "node tools/library-previews.mjs"
+    "previews": "node tools/library-previews.mjs",
+    "coverage": "node tools/compsci-coverage.mjs"
   },
   "devDependencies": {
     "playwright": "1.64.1"

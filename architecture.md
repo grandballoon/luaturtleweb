@@ -25,6 +25,8 @@ Layer boundaries, top to bottom:
 | Runs | `runner.js` | The main thread's half of the frame protocol: the worker, the run state machine, run ids, frame ack, Stop; shared by both pages |
 | Editor | `lua-editor.js` | The CodeMirror editor both pages write Lua in |
 | Library page | `library.html`, `library.css`, `library-page.js`, `library.js`, `library/` | `/library`: example programs by concept, with preview videos, run on a canvas with their code beneath (see [The library](#the-library-library)) |
+| Compsci page | `compsci.html`, `compsci.css`, `compsci-page.js`, `compsci.js`, `compsci/` | `/compsci`: the mathematics of a computer science degree, course by course, each concept with its equations and the library examples that show it (see [Computer science](#computer-science-compsci)) |
+| Browsing | `browse.css`, `example-stage.js`, `example-cards.js` | What `/library` and `/compsci` share: their layout, the stage that runs an example with its code beneath, and the example cards with their previews |
 | UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player (its timing and fit in `recording.js`, pure); a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
 | Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
@@ -362,8 +364,11 @@ The pieces, each with one job:
 - **`library/previews/` holds each example's preview,** `<id>.mp4` (a few seconds of H.264, 480×360) and `<id>.webp` (the finished drawing, shown until the video plays), and `manifest.json`, which records the hash each was made from.
   They are made by `tools/library-previews.mjs` (below), never by hand.
 - **`library.js` decides.** Pure functions of the catalog: the gallery's sections for a search and a concept, the concepts' counts, the example a link names, and where an example's files are.
-- **`library-page.js` is the shell.** It renders what `library.js` returns, shows each card's poster as it nears the view and plays its video, loaded then, only while the mouse is over the card or it has keyboard focus (one at a time, and none under `prefers-reduced-motion`), so a page of cards decodes no video until one is pointed at, runs the chosen program through `runner.js`, and keeps the link and the editor's dock (`dock.js`).
-  Cards are kept across renders, so a search never reloads a video.
+- **`library-page.js` is the shell.** It renders what `library.js` returns, keeps the search and the link, and hands the rest to two modules it shares with `/compsci`.
+- **`example-cards.js` makes the cards.** It shows each card's poster as it nears the view and plays its video, loaded then, only while the mouse is over the card or it has keyboard focus (one at a time, and none under `prefers-reduced-motion`), so a page of cards decodes no video until one is pointed at.
+  Cards are kept across renders by a key the page gives them, so a search never reloads a video.
+- **`example-stage.js` runs them.** The canvas, the program in its collapsible editor (its dock, `dock.js`), the header's Run, Stop and Open in editor controls and status, and running through `runner.js`; the page hears of each example shown through `onShow`.
+- **`browse.css` lays both pages out:** sidebar, main column, and the stage; `library.css` adds the concept list and the gallery's sections.
 
 The previews are made faithfully, the way the command reference's demos are played.
 `tools/library-previews.mjs` starts the dev server and loads its dev-only recorder page, `dev/library-recorder/`, in headless Chromium through Playwright.
@@ -375,9 +380,31 @@ A program that posts more frames than a recording keeps (`MAX_RECORDED_FRAMES`) 
 It needs `npm install` (Playwright and its Chromium) and `ffmpeg` on the `PATH`.
 
 `test/library_test.lua` runs every program on the host at two canvas sizes, checking that it draws inside the canvas, like the Lessons' test (both use `test/program_check.lua`).
+An example that lists no concept is in the catalog for `/compsci` but left out of the gallery.
+
 `test/library_test.mjs` covers `library.js`, checks that the catalog's concepts and examples are consistent and that its examples and the program files match both ways, and fails while any preview is missing or stale.
 
 To add an example: write `library/programs/<id>.lua`, add it to the catalog with its concepts, and run `npm run previews`.
+
+### Computer science (`/compsci`)
+
+`/compsci` is a third page: the mathematics of a computer science degree, laid out along the math and computer science courses of Scott H. Young's MIT Challenge, in its order.
+It covers concepts, not lectures: each concept has a plain summary, its key equations (each with what it says), the earlier concepts it builds on, the library examples that show it, and the open sources it was checked against.
+Nothing is copied from any course or book; [spec-compsci.md](spec-compsci.md) has the courses, the sources and their licenses, and the plan.
+The page's link names a course (`/compsci#18-06`) or a concept (`/compsci#eigenvalues`).
+
+The sidebar lists the courses, with the selected course's units under it; the main column shows that course, unit by unit, or a search's results across every course.
+An example runs on the same stage as the library's, and a course that is not written yet says so.
+
+- **`compsci/courses.json` lists the courses** in order, `{id, number, name, about, syllabus: {label, url}, sources}`, and **`compsci/courses/<id>.json` holds each course's units and concepts** (`{"units": []}` until it is written).
+  **`compsci/sources.json`** lists the references with their licenses.
+- **`compsci.js` decides.** Pure functions of those and the library's catalog: what a link names, a course's view, what a search finds and how it ranks, and each course's coverage.
+- **`compsci-page.js` is the shell.** It loads the data, renders what `compsci.js` returns, renders each equation with KaTeX, and uses `example-stage.js` and `example-cards.js` as the library does.
+
+`test/compsci_test.mjs` covers `compsci.js`, keeps the courses in their order, checks that every id is unique and every reference names something that exists (a concept builds only on concepts in earlier courses), and renders every equation with the page's KaTeX.
+`npm run coverage` lists each course's concepts that have no example yet.
+
+To add a course's concepts: fill `compsci/courses/<id>.json`; an example a concept needs is written for the library first, and may list no library concept.
 
 ### Lessons sidebar
 
@@ -569,8 +596,8 @@ require-corp` so the page is cross-origin isolated — a hard requirement for
 modules, CodeMirror from static include, `wasmoon.js` and its `glue.wasm` binary vendored.
 Both come from wasmoon 1.16.0 and must be replaced together; `worker.js` passes the local
 `glue.wasm` URL to `LuaFactory` because the default is a runtime fetch from unpkg.com.
-CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license).
+CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license), and KaTeX 0.19.0, which `/compsci` renders equations with, in `public/vendor/katex/` (its UMD build, stylesheet and woff2 fonts, with its MIT license).
 Google Fonts is the only third-party origin the pages load from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet each page names exists.
-Cloudflare serves `library.html` at `/library`, without its extension.
+Cloudflare serves `library.html` at `/library` and `compsci.html` at `/compsci`, without their extensions.
 The library's previews are committed media files, made ahead of time by a dev tool (see [The library](#the-library-library)), so deploying still needs no build step.
 `package.json` lists only dev tools (Playwright, for that tool) and is never part of the site.

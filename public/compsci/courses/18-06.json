@@ -1,0 +1,892 @@
+{
+  "units": [
+    {
+      "id": "solving-linear-equations",
+      "name": "Solving linear equations",
+      "concepts": [
+        {
+          "id": "linear-combinations",
+          "name": "Linear combinations",
+          "summary": "Scale some vectors and add them up. Multiplying a matrix by a vector does exactly this to the matrix's columns.",
+          "equations": [
+            {
+              "tex": "A\\mathbf{x} = x_1\\mathbf{a}_1 + x_2\\mathbf{a}_2 + \\cdots + x_n\\mathbf{a}_n",
+              "says": "A times x adds up the columns of A, each scaled by an entry of x."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-combinations"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "row-and-column-pictures",
+          "name": "Row and column pictures",
+          "summary": "Two ways to see a system of equations. Each row is a line (or a plane) and the solution is where they all cross; or the right side is a combination of the columns, and the solution says how much of each.",
+          "equations": [
+            {
+              "tex": "\\begin{aligned} 2x - y &= 1 \\\\ x + y &= 5 \\end{aligned}",
+              "says": "Row picture: two lines that cross at (2, 3)."
+            },
+            {
+              "tex": "x\\begin{bmatrix} 2 \\\\ 1 \\end{bmatrix} + y\\begin{bmatrix} -1 \\\\ 1 \\end{bmatrix} = \\begin{bmatrix} 1 \\\\ 5 \\end{bmatrix}",
+              "says": "Column picture: 2 of the first column plus 3 of the second make the right side."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-combinations"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "elimination",
+          "name": "Elimination",
+          "summary": "Subtract multiples of one equation from the ones below it until the system is triangular, then solve from the bottom up. The first nonzero entry left in each row is a pivot.",
+          "equations": [
+            {
+              "tex": "\\ell_{ij} = \\frac{a_{ij}}{a_{jj}}",
+              "says": "The multiplier: how many of the pivot row j to subtract from row i to put a zero under the pivot."
+            },
+            {
+              "tex": "A\\mathbf{x} = \\mathbf{b} \\;\\longrightarrow\\; U\\mathbf{x} = \\mathbf{c}",
+              "says": "Elimination turns A into an upper triangular U, and b into c, without changing the solution."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "matrix-multiplication",
+          "name": "Matrix multiplication",
+          "summary": "Each entry of a product is a row of the first matrix times a column of the second. Doing B and then A to a vector is the same as doing AB once.",
+          "equations": [
+            {
+              "tex": "(AB)_{ij} = \\sum_{k} a_{ik}\\, b_{kj}",
+              "says": "Entry i, j of AB is row i of A dotted with column j of B."
+            },
+            {
+              "tex": "(AB)\\mathbf{x} = A(B\\mathbf{x})",
+              "says": "Multiplying is associative, so a product of matrices is one step that does all of theirs."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "inverse-matrices",
+          "name": "Inverse matrices",
+          "summary": "The inverse undoes what a matrix does. A square matrix has one exactly when elimination finds a full set of pivots; Gauss–Jordan elimination finds it.",
+          "equations": [
+            {
+              "tex": "A^{-1}A = I = AA^{-1}",
+              "says": "The inverse undoes A, from either side."
+            },
+            {
+              "tex": "(AB)^{-1} = B^{-1}A^{-1}",
+              "says": "To undo two steps, undo the last one first."
+            },
+            {
+              "tex": "\\left[\\, A \\mid I \\,\\right] \\longrightarrow \\left[\\, I \\mid A^{-1} \\,\\right]",
+              "says": "Gauss–Jordan: the row operations that turn A into I turn I into the inverse."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "lu-factorization",
+          "name": "LU factorization",
+          "summary": "Elimination, recorded. The multipliers fill a lower triangular L, and what elimination leaves is an upper triangular U, so solving with a new right side is two quick triangular solves.",
+          "equations": [
+            {
+              "tex": "A = LU",
+              "says": "L holds the multipliers under ones on its diagonal; U holds the pivots on its diagonal."
+            },
+            {
+              "tex": "L\\mathbf{c} = \\mathbf{b}, \\quad U\\mathbf{x} = \\mathbf{c}",
+              "says": "Solve forward for c, then back for x."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "transposes-and-permutations",
+          "name": "Transposes and permutations",
+          "summary": "The transpose flips a matrix across its diagonal, so rows become columns. A permutation matrix reorders rows; it is what elimination needs when a zero sits where a pivot should be.",
+          "equations": [
+            {
+              "tex": "(A^{\\mathsf T})_{ij} = A_{ji}",
+              "says": "The transpose swaps rows for columns."
+            },
+            {
+              "tex": "(AB)^{\\mathsf T} = B^{\\mathsf T}A^{\\mathsf T}",
+              "says": "Transposing a product reverses its order."
+            },
+            {
+              "tex": "PA = LU",
+              "says": "With rows exchanged first, every invertible matrix has an LU factorization."
+            },
+            {
+              "tex": "P^{-1} = P^{\\mathsf T}",
+              "says": "Undoing a reordering is reordering back."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "vector-spaces",
+      "name": "Vector spaces and subspaces",
+      "concepts": [
+        {
+          "id": "vector-spaces",
+          "name": "Vector spaces and subspaces",
+          "summary": "A set of vectors you can't leave by adding or scaling. A subspace is one inside another: a line or a plane through the origin, never one that misses it.",
+          "equations": [
+            {
+              "tex": "\\mathbf{v}, \\mathbf{w} \\in V \\;\\Rightarrow\\; c\\mathbf{v} + d\\mathbf{w} \\in V",
+              "says": "Every combination of vectors in the space is in the space too."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "column-space",
+          "name": "Column space",
+          "summary": "All the combinations of a matrix's columns: every vector A can reach. Ax = b has a solution exactly when b is in it.",
+          "equations": [
+            {
+              "tex": "C(A) = \\{\\, A\\mathbf{x} : \\mathbf{x} \\in \\mathbb{R}^n \\,\\}",
+              "says": "The column space is everything A times a vector can be."
+            },
+            {
+              "tex": "A\\mathbf{x} = \\mathbf{b} \\text{ is solvable} \\iff \\mathbf{b} \\in C(A)",
+              "says": "A right side outside it has no solution."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-combinations"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "nullspace",
+          "name": "Nullspace",
+          "summary": "Every x that A sends to zero. Elimination finds it: each free column gives one special solution, and their combinations are the whole nullspace.",
+          "equations": [
+            {
+              "tex": "N(A) = \\{\\, \\mathbf{x} : A\\mathbf{x} = \\mathbf{0} \\,\\}",
+              "says": "The nullspace is what A flattens to zero."
+            },
+            {
+              "tex": "\\dim N(A) = n - r",
+              "says": "One special solution for each of the n − r free variables."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "rank-and-complete-solution",
+          "name": "Rank and the complete solution",
+          "summary": "The rank is the number of pivots: how many independent rows, and as many independent columns. Every solution of Ax = b is one particular solution plus something from the nullspace.",
+          "equations": [
+            {
+              "tex": "r = \\text{number of pivots}",
+              "says": "Rank counts the equations that really say something new."
+            },
+            {
+              "tex": "\\mathbf{x} = \\mathbf{x}_p + \\mathbf{x}_n",
+              "says": "A particular solution, plus any vector A sends to zero."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "independence-basis-dimension",
+          "name": "Independence, basis and dimension",
+          "summary": "Vectors are independent when none is a combination of the others. A basis is an independent set that spans the space, and every basis of a space has the same number of vectors: its dimension.",
+          "equations": [
+            {
+              "tex": "c_1\\mathbf{v}_1 + \\cdots + c_k\\mathbf{v}_k = \\mathbf{0} \\;\\Rightarrow\\; c_1 = \\cdots = c_k = 0",
+              "says": "Independent: the only combination that gives zero is the one with nothing in it."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "four-fundamental-subspaces",
+          "name": "The four fundamental subspaces",
+          "summary": "An m by n matrix has four subspaces: its column space and left nullspace in m dimensions, its row space and nullspace in n. Their dimensions are fixed by the rank, and each pair meets at right angles.",
+          "equations": [
+            {
+              "tex": "\\dim C(A) = \\dim C(A^{\\mathsf T}) = r",
+              "says": "The column space and the row space have the same dimension: the rank."
+            },
+            {
+              "tex": "\\dim N(A) = n - r, \\qquad \\dim N(A^{\\mathsf T}) = m - r",
+              "says": "The nullspaces fill out the rest of each side."
+            },
+            {
+              "tex": "N(A) \\perp C(A^{\\mathsf T}), \\qquad N(A^{\\mathsf T}) \\perp C(A)",
+              "says": "Each nullspace is perpendicular to the space beside it."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "rank-one-matrices",
+          "name": "Rank one matrices",
+          "summary": "A column times a row. Every one of its columns is a multiple of the same vector, and any matrix of rank r is a sum of r of them.",
+          "equations": [
+            {
+              "tex": "A = \\mathbf{u}\\mathbf{v}^{\\mathsf T}",
+              "says": "Rank one: the column u, scaled by each entry of the row v."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "incidence-matrices",
+          "name": "Graphs and incidence matrices",
+          "summary": "A graph of nodes and edges as a matrix: a row per edge, with −1 where it leaves and +1 where it arrives. Its subspaces are the graph's own facts: potentials, currents that balance, and loops.",
+          "equations": [
+            {
+              "tex": "A^{\\mathsf T}\\mathbf{y} = \\mathbf{0}",
+              "says": "Kirchhoff's current law: the flow into each node is the flow out."
+            },
+            {
+              "tex": "\\text{nodes} - \\text{edges} + \\text{loops} = 1",
+              "says": "Euler's formula for a connected graph, from the dimensions of the subspaces."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "orthogonality",
+      "name": "Orthogonality",
+      "concepts": [
+        {
+          "id": "orthogonal-vectors",
+          "name": "Orthogonal vectors and subspaces",
+          "summary": "Two vectors are orthogonal when their dot product is zero: they meet at a right angle. Two subspaces are orthogonal when every vector of one is orthogonal to every vector of the other.",
+          "equations": [
+            {
+              "tex": "\\mathbf{x}^{\\mathsf T}\\mathbf{y} = 0",
+              "says": "Orthogonal: the dot product is zero."
+            },
+            {
+              "tex": "\\|\\mathbf{x}\\|^2 + \\|\\mathbf{y}\\|^2 = \\|\\mathbf{x} + \\mathbf{y}\\|^2",
+              "says": "Pythagoras holds exactly when x and y are orthogonal."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "projections",
+          "name": "Projections",
+          "summary": "The closest point to b on a line or a subspace, found by dropping a perpendicular. The error left over is orthogonal to the subspace.",
+          "equations": [
+            {
+              "tex": "\\mathbf{p} = \\frac{\\mathbf{a}^{\\mathsf T}\\mathbf{b}}{\\mathbf{a}^{\\mathsf T}\\mathbf{a}}\\,\\mathbf{a}",
+              "says": "Projecting b onto the line through a."
+            },
+            {
+              "tex": "P = A(A^{\\mathsf T}A)^{-1}A^{\\mathsf T}",
+              "says": "The matrix that projects onto the column space of A."
+            },
+            {
+              "tex": "P^2 = P",
+              "says": "Projecting twice changes nothing more."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "least-squares",
+          "name": "Least squares",
+          "summary": "When Ax = b has no solution, solve for the x that comes closest: the one whose error is orthogonal to the column space. Fitting a line to scattered points is the classic case.",
+          "equations": [
+            {
+              "tex": "A^{\\mathsf T}A\\,\\hat{\\mathbf{x}} = A^{\\mathsf T}\\mathbf{b}",
+              "says": "The normal equations: the best x makes the error orthogonal to every column."
+            },
+            {
+              "tex": "\\min_{\\mathbf{x}} \\|A\\mathbf{x} - \\mathbf{b}\\|^2",
+              "says": "Best means the sum of squared errors is as small as it can be."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "least-squares-line"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "gram-schmidt",
+          "name": "Orthonormal bases and Gram–Schmidt",
+          "summary": "Vectors of length one at right angles to each other are the easiest basis to work in. Gram–Schmidt makes one from any basis, by subtracting from each vector its projections onto the ones before.",
+          "equations": [
+            {
+              "tex": "Q^{\\mathsf T}Q = I",
+              "says": "The columns of Q are orthonormal."
+            },
+            {
+              "tex": "\\mathbf{w} = \\mathbf{b} - (\\mathbf{q}_1^{\\mathsf T}\\mathbf{b})\\,\\mathbf{q}_1 - \\cdots, \\qquad \\mathbf{q} = \\frac{\\mathbf{w}}{\\|\\mathbf{w}\\|}",
+              "says": "Take away what b has along the earlier directions, then scale what is left to length one."
+            },
+            {
+              "tex": "A = QR",
+              "says": "Gram–Schmidt as a factorization: R is upper triangular."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "determinants",
+      "name": "Determinants",
+      "concepts": [
+        {
+          "id": "determinant-properties",
+          "name": "Properties of the determinant",
+          "summary": "One number for a square matrix that says whether it is invertible, and by how much it scales area or volume. Three properties define it, and every other rule follows from them.",
+          "equations": [
+            {
+              "tex": "\\det I = 1",
+              "says": "The identity scales nothing."
+            },
+            {
+              "tex": "\\text{exchanging two rows flips the sign of } \\det A",
+              "says": "Order matters, up to sign."
+            },
+            {
+              "tex": "\\det AB = \\det A \\,\\det B, \\qquad \\det A^{\\mathsf T} = \\det A",
+              "says": "Determinants multiply, and ignore transposing."
+            },
+            {
+              "tex": "\\det A = 0 \\iff A \\text{ is not invertible}",
+              "says": "A zero determinant means a flattened space."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-map-grid"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "cofactors",
+          "name": "Determinant formulas and cofactors",
+          "summary": "The determinant as a sum over one choice of entry from each row and column. Along any row it splits into entries times cofactors: smaller determinants with signs.",
+          "equations": [
+            {
+              "tex": "\\det \\begin{bmatrix} a & b \\\\ c & d \\end{bmatrix} = ad - bc",
+              "says": "The two by two case."
+            },
+            {
+              "tex": "\\det A = a_{11}C_{11} + a_{12}C_{12} + \\cdots + a_{1n}C_{1n}",
+              "says": "Cofactor expansion along the first row."
+            },
+            {
+              "tex": "C_{ij} = (-1)^{i+j}\\det M_{ij}",
+              "says": "A cofactor: the determinant with row i and column j removed, with a sign."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "cramers-rule-and-volume",
+          "name": "Cramer's rule, inverses and volume",
+          "summary": "Determinants solve equations and invert matrices in closed form, and measure volume: the box a matrix's rows span has the determinant's size as its volume.",
+          "equations": [
+            {
+              "tex": "x_j = \\frac{\\det B_j}{\\det A}",
+              "says": "Cramer's rule: B_j is A with column j replaced by b."
+            },
+            {
+              "tex": "A^{-1} = \\frac{C^{\\mathsf T}}{\\det A}",
+              "says": "The inverse from the cofactors."
+            },
+            {
+              "tex": "\\text{area of the parallelogram} = |ad - bc|",
+              "says": "In the plane, the determinant is the area the unit square becomes."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-map-grid"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "eigenvalues",
+      "name": "Eigenvalues and eigenvectors",
+      "concepts": [
+        {
+          "id": "eigenvalues",
+          "name": "Eigenvalues and eigenvectors",
+          "summary": "A direction a matrix only stretches, and how much it stretches it. Most vectors turn when multiplied by A; an eigenvector stays on its own line.",
+          "equations": [
+            {
+              "tex": "A\\mathbf{v} = \\lambda\\mathbf{v}",
+              "says": "A moves v along its own line, scaled by λ."
+            },
+            {
+              "tex": "\\det(A - \\lambda I) = 0",
+              "says": "The λ that make this true are the eigenvalues."
+            },
+            {
+              "tex": "\\lambda_1 + \\cdots + \\lambda_n = \\operatorname{trace} A, \\qquad \\lambda_1 \\cdots \\lambda_n = \\det A",
+              "says": "The eigenvalues add up to the diagonal's sum and multiply to the determinant."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "eigenvector-arrows"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "diagonalization",
+          "name": "Diagonalization and powers",
+          "summary": "With a full set of eigenvectors, a matrix is just stretching along them. Powers are then easy: each eigenvalue is raised to the power. The Fibonacci numbers grow by the golden ratio this way.",
+          "equations": [
+            {
+              "tex": "A = X\\Lambda X^{-1}",
+              "says": "X holds the eigenvectors, Λ the eigenvalues on its diagonal."
+            },
+            {
+              "tex": "A^k = X\\Lambda^k X^{-1}",
+              "says": "Multiplying by A k times raises each eigenvalue to the k."
+            },
+            {
+              "tex": "F_k \\approx \\frac{1}{\\sqrt{5}}\\left(\\frac{1 + \\sqrt{5}}{2}\\right)^k",
+              "says": "Fibonacci: the larger eigenvalue of [[1, 1], [1, 0]] takes over."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "fibonacci-spiral"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "matrix-exponential",
+          "name": "Differential equations and the matrix exponential",
+          "summary": "A system of linear differential equations moves along the eigenvectors, each part growing or decaying at the rate its eigenvalue sets. The solution is the matrix exponential.",
+          "equations": [
+            {
+              "tex": "\\frac{d\\mathbf{u}}{dt} = A\\mathbf{u}",
+              "says": "The system: the rate of change depends linearly on where you are."
+            },
+            {
+              "tex": "\\mathbf{u}(t) = e^{At}\\mathbf{u}(0) = Xe^{\\Lambda t}X^{-1}\\mathbf{u}(0)",
+              "says": "Each eigen-direction grows like e to its eigenvalue times t."
+            },
+            {
+              "tex": "\\operatorname{Re}\\lambda < 0 \\text{ for every } \\lambda \\;\\Rightarrow\\; \\mathbf{u}(t) \\to \\mathbf{0}",
+              "says": "Stable: every part decays."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "damped-oscillation"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "markov-matrices",
+          "name": "Markov matrices",
+          "summary": "Columns of nonnegative numbers that each add to 1: the chances of moving from one state to another. Repeated steps settle into a steady state, the eigenvector for eigenvalue 1.",
+          "equations": [
+            {
+              "tex": "\\mathbf{u}_{k+1} = A\\mathbf{u}_k",
+              "says": "One step of the chain."
+            },
+            {
+              "tex": "A\\mathbf{s} = \\mathbf{s}",
+              "says": "The steady state: eigenvalue 1."
+            },
+            {
+              "tex": "|\\lambda| \\le 1",
+              "says": "No eigenvalue is larger, so the other parts fade."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "fourier-series",
+          "name": "Fourier series",
+          "summary": "A function written as a sum of sines and cosines, which are orthogonal to each other just as the axes are. Each coefficient is a projection onto one of them.",
+          "equations": [
+            {
+              "tex": "f(x) = a_0 + a_1\\cos x + b_1\\sin x + a_2\\cos 2x + b_2\\sin 2x + \\cdots",
+              "says": "A function as a combination of waves."
+            },
+            {
+              "tex": "b_k = \\frac{1}{\\pi}\\int_{0}^{2\\pi} f(x)\\sin kx\\,dx",
+              "says": "The coefficient is the projection of f onto sin kx."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "fourier-square-wave"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "symmetric-and-positive-definite",
+      "name": "Symmetric and positive definite matrices",
+      "concepts": [
+        {
+          "id": "symmetric-matrices",
+          "name": "Symmetric matrices",
+          "summary": "A matrix equal to its transpose. Its eigenvalues are real and its eigenvectors can be chosen at right angles, so it is a sum of stretches along perpendicular directions.",
+          "equations": [
+            {
+              "tex": "S = S^{\\mathsf T}",
+              "says": "Symmetric."
+            },
+            {
+              "tex": "S = Q\\Lambda Q^{\\mathsf T}",
+              "says": "The spectral theorem: orthonormal eigenvectors in Q, real eigenvalues in Λ."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "complex-matrices-and-fft",
+          "name": "Complex matrices and the fast Fourier transform",
+          "summary": "With complex numbers, transposing comes with conjugating. The Fourier matrix is built from powers of a complex root of 1, and the FFT multiplies by it in n log n steps instead of n².",
+          "equations": [
+            {
+              "tex": "A^{\\mathsf H} = \\overline{A}^{\\mathsf T}",
+              "says": "The conjugate transpose, which takes the transpose's place."
+            },
+            {
+              "tex": "(F_n)_{jk} = w^{jk}, \\qquad w = e^{2\\pi i/n}",
+              "says": "The Fourier matrix: powers of the n-th root of 1."
+            },
+            {
+              "tex": "\\tfrac{1}{2}\\, n\\log_2 n \\text{ multiplications}",
+              "says": "The FFT splits F_n into two copies of F_{n/2}, again and again."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "positive-definite",
+          "name": "Positive definite matrices",
+          "summary": "A symmetric matrix whose energy is positive for every nonzero vector. Its graph is a bowl, so it has a minimum, and every test agrees: positive eigenvalues, pivots and leading determinants.",
+          "equations": [
+            {
+              "tex": "\\mathbf{x}^{\\mathsf T}S\\mathbf{x} > 0 \\text{ for every } \\mathbf{x} \\ne \\mathbf{0}",
+              "says": "Positive energy."
+            },
+            {
+              "tex": "\\lambda_i > 0",
+              "says": "Equivalently, every eigenvalue is positive."
+            },
+            {
+              "tex": "S = A^{\\mathsf T}A",
+              "says": "Every positive definite matrix is one, with A's columns independent."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "similar-matrices",
+          "name": "Similar matrices and Jordan form",
+          "summary": "Two matrices are similar when one is the other seen in a different basis. They share eigenvalues; the Jordan form is the simplest matrix in each family.",
+          "equations": [
+            {
+              "tex": "B = M^{-1}AM",
+              "says": "Similar: A, seen through the change of basis M."
+            },
+            {
+              "tex": "B\\,(M^{-1}\\mathbf{v}) = \\lambda\\,(M^{-1}\\mathbf{v})",
+              "says": "The same eigenvalues, with the eigenvectors changed by M."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "singular-values-and-transformations",
+      "name": "Singular values and linear transformations",
+      "concepts": [
+        {
+          "id": "singular-value-decomposition",
+          "name": "The singular value decomposition",
+          "summary": "Every matrix, square or not, turns a set of perpendicular directions into another set of perpendicular directions, stretched. It rotates, stretches along the axes, and rotates again.",
+          "equations": [
+            {
+              "tex": "A = U\\Sigma V^{\\mathsf T}",
+              "says": "Orthonormal V and U, with the singular values on Σ's diagonal."
+            },
+            {
+              "tex": "A\\mathbf{v}_i = \\sigma_i\\mathbf{u}_i",
+              "says": "Each right singular vector lands on a left one, stretched by σ_i."
+            },
+            {
+              "tex": "A = \\sigma_1\\mathbf{u}_1\\mathbf{v}_1^{\\mathsf T} + \\cdots + \\sigma_r\\mathbf{u}_r\\mathbf{v}_r^{\\mathsf T}",
+              "says": "A sum of rank one pieces, largest first."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "svd-circle"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "linear-transformations",
+          "name": "Linear transformations",
+          "summary": "A map that respects combinations: the image of a combination is the same combination of the images. Every one is a matrix, whose columns are where the basis vectors go.",
+          "equations": [
+            {
+              "tex": "T(c\\mathbf{v} + d\\mathbf{w}) = c\\,T(\\mathbf{v}) + d\\,T(\\mathbf{w})",
+              "says": "Linear: it keeps lines straight and the origin fixed."
+            },
+            {
+              "tex": "A = \\left[\\, T(\\mathbf{e}_1) \\;\\; T(\\mathbf{e}_2) \\;\\; \\cdots \\;\\; T(\\mathbf{e}_n) \\,\\right]",
+              "says": "The matrix's columns are the images of the basis."
+            }
+          ],
+          "revisits": [],
+          "examples": [
+            "linear-map-grid"
+          ],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "change-of-basis",
+          "name": "Change of basis and compression",
+          "summary": "The same vector has different coordinates in different bases. Image compression changes to a basis, like waves or wavelets, where most coordinates are small, and keeps only the large ones.",
+          "equations": [
+            {
+              "tex": "\\mathbf{x} = W\\mathbf{c}",
+              "says": "c holds the coordinates of x in the basis of W's columns."
+            },
+            {
+              "tex": "B = W^{-1}AW",
+              "says": "The same transformation, written in the new basis."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        },
+        {
+          "id": "pseudoinverse",
+          "name": "Left, right and pseudoinverses",
+          "summary": "A matrix that isn't square still has inverses from one side when its rank is full. The pseudoinverse inverts what can be inverted: it maps the column space back to the row space.",
+          "equations": [
+            {
+              "tex": "(A^{\\mathsf T}A)^{-1}A^{\\mathsf T}A = I",
+              "says": "A left inverse, when the columns are independent."
+            },
+            {
+              "tex": "A^{+} = V\\Sigma^{+}U^{\\mathsf T}",
+              "says": "The pseudoinverse: invert each nonzero singular value."
+            }
+          ],
+          "revisits": [],
+          "examples": [],
+          "applications": [],
+          "checked": [
+            "hefferon-la",
+            "wikipedia"
+          ]
+        }
+      ]
+    }
+  ]
+}

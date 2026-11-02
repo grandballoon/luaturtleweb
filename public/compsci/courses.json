@@ -1,0 +1,134 @@
+[
+  {
+    "id": "18-01", "number": "18.01", "name": "Single Variable Calculus",
+    "about": "Limits, derivatives and integrals of functions of one variable, and the series that build them.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2006", "url": "https://ocw.mit.edu/courses/18-01-single-variable-calculus-fall-2006/" },
+    "sources": ["openstax-calculus", "wikipedia"]
+  },
+  {
+    "id": "18-02", "number": "18.02", "name": "Multivariable Calculus",
+    "about": "Vectors, partial derivatives, multiple integrals, and calculus on curves and surfaces.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2007", "url": "https://ocw.mit.edu/courses/18-02-multivariable-calculus-fall-2007/" },
+    "sources": ["openstax-calculus", "wikipedia"]
+  },
+  {
+    "id": "6-01", "number": "6.01", "name": "Introduction to EECS I",
+    "about": "Programs, state machines, signals and systems, circuits, and estimating state from noisy evidence.",
+    "syllabus": { "label": "MIT OpenCourseWare, 6.01SC Spring 2011", "url": "https://ocw.mit.edu/courses/6-01sc-introduction-to-electrical-engineering-and-computer-science-i-spring-2011/" },
+    "sources": ["johnson-fee", "grinstead-snell", "erickson-algorithms", "wikipedia"]
+  },
+  {
+    "id": "18-03", "number": "18.03", "name": "Differential Equations",
+    "about": "Equations about rates of change: first and second order, oscillators, Laplace transforms and systems.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2010", "url": "https://ocw.mit.edu/courses/18-03-differential-equations-spring-2010/" },
+    "sources": ["lebl-diffyqs", "wikipedia"]
+  },
+  {
+    "id": "6-02", "number": "6.02", "name": "Introduction to EECS II",
+    "about": "Digital communication: noise, error-correcting codes, modulation, and packet networks.",
+    "syllabus": { "label": "6.02 course site, Spring 2009", "url": "http://web.mit.edu/6.02/www/s2009/calendar.html" },
+    "sources": ["johnson-fee", "bonaventure-networking", "wikipedia"]
+  },
+  {
+    "id": "6-042j", "number": "6.042J", "name": "Mathematics for Computer Science",
+    "about": "Proofs, induction, graphs, counting and discrete probability.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2010 (archived)", "url": "https://web.archive.org/web/2012/http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-042j-mathematics-for-computer-science-spring-2010/calendar/" },
+    "sources": ["lehman-mcs", "wikipedia"]
+  },
+  {
+    "id": "6-006", "number": "6.006", "name": "Introduction to Algorithms",
+    "about": "Sorting, hashing, search trees, graph search, shortest paths and dynamic programming.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2008", "url": "https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2008/" },
+    "sources": ["erickson-algorithms", "wikipedia"]
+  },
+  {
+    "id": "18-06", "number": "18.06", "name": "Linear Algebra",
+    "about": "Systems of linear equations, the four subspaces of a matrix, orthogonality, determinants, eigenvalues and the singular value decomposition.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2010", "url": "https://ocw.mit.edu/courses/18-06-linear-algebra-spring-2010/" },
+    "sources": ["hefferon-la", "wikipedia"]
+  },
+  {
+    "id": "6-041", "number": "6.041", "name": "Probabilistic Systems Analysis",
+    "about": "Probability models, random variables, limit theorems, Markov chains and inference.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2006", "url": "https://ocw.mit.edu/courses/6-041-probabilistic-systems-analysis-and-applied-probability-spring-2006/" },
+    "sources": ["grinstead-snell", "wikipedia"]
+  },
+  {
+    "id": "6-002", "number": "6.002", "name": "Circuits and Electronics",
+    "about": "Circuit laws, the digital abstraction, transistors, energy storage, filters and operational amplifiers.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2007", "url": "https://ocw.mit.edu/courses/6-002-circuits-and-electronics-spring-2007/" },
+    "sources": ["johnson-fee", "wikipedia"]
+  },
+  {
+    "id": "6-046j", "number": "6.046J", "name": "Design and Analysis of Algorithms",
+    "about": "Divide and conquer, randomization, amortization, network flow, approximation and complexity.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2015", "url": "https://ocw.mit.edu/courses/6-046j-design-and-analysis-of-algorithms-spring-2015/" },
+    "sources": ["erickson-algorithms", "wikipedia"]
+  },
+  {
+    "id": "6-034", "number": "6.034", "name": "Artificial Intelligence",
+    "about": "Search, games, constraints, and learning from examples: trees, neighbors, neural networks and boosting.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2010", "url": "https://ocw.mit.edu/courses/6-034-artificial-intelligence-fall-2010/" },
+    "sources": ["poole-mackworth", "wikipedia"]
+  },
+  {
+    "id": "6-003", "number": "6.003", "name": "Signals and Systems",
+    "about": "Linear time-invariant systems, feedback, and the Laplace, Z and Fourier transforms.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2010 (archived)", "url": "https://web.archive.org/web/2012/http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-003-signals-and-systems-spring-2010/calendar/" },
+    "sources": ["baraniuk-signals", "wikipedia"]
+  },
+  {
+    "id": "6-004", "number": "6.004", "name": "Computation Structures",
+    "about": "How a computer is built: information, logic gates, sequential logic, processors, pipelines and memory.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2009", "url": "https://ocw.mit.edu/courses/6-004-computation-structures-spring-2009/" },
+    "sources": ["carpinelli-logic", "wikipedia"]
+  },
+  {
+    "id": "24-241", "number": "24.241", "name": "Logic I",
+    "about": "Truth-functional and first-order logic: what follows from what, and how to prove it.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2009", "url": "https://ocw.mit.edu/courses/24-241-logic-i-fall-2009/" },
+    "sources": ["forallx-calgary", "wikipedia"]
+  },
+  {
+    "id": "6-033", "number": "6.033", "name": "Computer System Engineering",
+    "about": "Naming, modularity, performance, networks, reliability, atomicity and security in large systems.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2009 (archived)", "url": "https://web.archive.org/web/2010/http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-033-computer-system-engineering-spring-2009/lecture-notes/" },
+    "sources": ["bonaventure-networking", "wikipedia"]
+  },
+  {
+    "id": "24-242", "number": "24.242", "name": "Logic II",
+    "about": "Logic about logic: completeness, computability, and Gödel's incompleteness theorems.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2004", "url": "https://ocw.mit.edu/courses/24-242-logic-ii-spring-2004/" },
+    "sources": ["zach-slc", "zach-ic", "wikipedia"]
+  },
+  {
+    "id": "6-011", "number": "6.011", "name": "Communication, Control and Signal Processing",
+    "about": "State-space models, random signals, and estimation and detection in noise.",
+    "syllabus": { "label": "MIT OpenCourseWare, Spring 2010", "url": "https://ocw.mit.edu/courses/6-011-introduction-to-communication-control-and-signal-processing-spring-2010/" },
+    "sources": ["baraniuk-signals", "grinstead-snell", "wikipedia"]
+  },
+  {
+    "id": "6-005", "number": "6.005", "name": "Elements of Software Construction",
+    "about": "State machines, grammars, abstract data types, invariants and concurrency, for software that is correct and stays so.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2008", "url": "https://ocw.mit.edu/courses/6-005-elements-of-software-construction-fall-2008/" },
+    "sources": ["wikipedia"]
+  },
+  {
+    "id": "6-801", "number": "6.801", "name": "Machine Vision",
+    "about": "How images form, and how to recover shape, motion and position from them.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2004", "url": "https://ocw.mit.edu/courses/6-801-machine-vision-fall-2004/" },
+    "sources": ["torralba-vision", "wikipedia"]
+  },
+  {
+    "id": "6-837", "number": "6.837", "name": "Computer Graphics",
+    "about": "Ray tracing, transformations, curves and surfaces, animation, shading and the graphics pipeline.",
+    "syllabus": { "label": "MIT OpenCourseWare, Fall 2003 (archived)", "url": "https://web.archive.org/web/2010/http://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-837-computer-graphics-fall-2003/calendar/" },
+    "sources": ["kennesaw-graphics", "wikipedia"]
+  },
+  {
+    "id": "cosc-545", "number": "COSC 545", "name": "Theory of Computation",
+    "about": "Automata, grammars, Turing machines, decidability and complexity.",
+    "syllabus": { "label": "Georgetown University, Spring 2012 (archived)", "url": "https://web.archive.org/web/20140131080651/http://cs.georgetown.edu/~cnewport/teaching/cosc545-spring12/" },
+    "sources": ["hefferon-toc", "wikipedia"]
+  }
+]
