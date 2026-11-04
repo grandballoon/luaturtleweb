@@ -548,13 +548,15 @@ Production and staging serve the same `public/`, so the page tells them apart by
 - **`flags.js` decides.** Pure functions read the file, apply a tab's `?flags=` overrides, and make the edits the CLI asks for.
   A flag is on unless something turns it off, so a missing or unreadable file leaves every feature on.
   `test/flags_test.mjs` covers it.
-- **`app.js` is the shell.** It fetches the file before anything else, and its `feature(name, ...elements)` removes a feature's elements when it is off and tells the caller to skip wiring it.
+- **`index.html` says which elements are a feature's.** Each has `data-feature="<name>"`, and `styles.css` hides every such element until the page is marked ready, so a feature that is off never shows, not even while `flags.json` loads.
+- **`app.js` is the shell.** It fetches the file before anything else, removes the elements of every feature that is off, and then marks the page ready (`<html data-flags="ready">`), which shows the rest.
+  Its `feature(name)` tells the wiring that follows whether to set a feature up.
   Removed elements leave no gap in the header's flex row, and a feature that is off also loses its shortcut (the Lessons' ⌘⇧L).
 - **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>`, `off <name>` or `staging <name>` rewrites the file; it refuses a name the file does not have.
 
 The site is static, so a change goes live on the next deploy, and in the dev server on the next page load.
 `?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have, and never turns a `"staging"` flag on in production.
-Adding a flag means adding it to `flags.json` and guarding the feature's wiring in `app.js` with `feature()`.
+Adding a flag means adding it to `flags.json`, marking the feature's elements in `index.html` with `data-feature`, and guarding its wiring in `app.js` with `feature()`; `test/flags_test.mjs` checks the three agree.
 
 ### Zoom about a point (`zoomAt`)
 

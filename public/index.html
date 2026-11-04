@@ -38,20 +38,20 @@
     </div>
     <div class="header-controls">
       <span id="header-status" role="status" aria-live="polite"></span>
-      <button id="btn-share" class="btn-secondary" title="Copy a link to this program" aria-label="Share">
+      <button id="btn-share" data-feature="share" class="btn-secondary" title="Copy a link to this program" aria-label="Share">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path class="icon-idle" d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path class="icon-idle" d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/><path class="icon-done" d="M20 6 9 17l-5-5"/></svg>
         <span class="btn-label">Share</span>
       </button>
-      <button id="btn-export" class="btn-secondary" title="Save drawing as PNG" aria-label="Export PNG">
+      <button id="btn-export" data-feature="export" class="btn-secondary" title="Save drawing as PNG" aria-label="Export PNG">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
         <span class="btn-label">Export</span>
       </button>
-      <button id="btn-lessons" class="btn-secondary" aria-label="Lessons" aria-expanded="false" aria-controls="lessons-panel">
+      <button id="btn-lessons" data-feature="lessons" class="btn-secondary" aria-label="Lessons" aria-expanded="false" aria-controls="lessons-panel">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.92a1 1 0 0 0-.02-1.84L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.83l8.57 3.91a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg>
         <span class="btn-label">Lessons</span>
         <kbd id="lessons-shortcut" class="kbd" aria-hidden="true"></kbd>
       </button>
-      <button id="btn-transcribe" class="btn-secondary" aria-label="Transcribe" aria-expanded="false" aria-controls="transcribe-panel" title="Type a sample program in by hand, checked as you go">
+      <button id="btn-transcribe" data-feature="transcribe" class="btn-secondary" aria-label="Transcribe" aria-expanded="false" aria-controls="transcribe-panel" title="Type a sample program in by hand, checked as you go">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01"/><path d="M10 9h.01"/><path d="M14 9h.01"/><path d="M18 9h.01"/><path d="M6 13h.01"/><path d="M18 13h.01"/><path d="M9 15h6"/></svg>
         <span class="btn-label">Transcribe</span>
       </button>
@@ -74,7 +74,7 @@
 
   <div id="main">
     <div id="editor-panel">
-      <aside id="lessons-panel" aria-label="Lessons" hidden>
+      <aside id="lessons-panel" data-feature="lessons" aria-label="Lessons" hidden>
         <div id="lessons-header">
           <button id="lessons-contents" class="icon-button quiet" aria-label="All lessons" title="All lessons" aria-pressed="false" aria-controls="lessons-toc">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
@@ -282,7 +282,7 @@
       <div id="splitter-grip"><span></span><span></span><span></span></div>
     </div>
     <div id="stage">
-      <aside id="transcribe-panel" aria-label="Transcribe a sample" hidden>
+      <aside id="transcribe-panel" data-feature="transcribe" aria-label="Transcribe a sample" hidden>
         <div id="transcribe-header">
           <button id="transcribe-back" class="icon-button quiet" aria-label="All samples" title="All samples" aria-controls="transcribe-picker">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>

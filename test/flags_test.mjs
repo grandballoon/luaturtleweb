@@ -114,3 +114,22 @@ test("production's hostnames are wrangler.jsonc's production routes", () => {
     assert.deepEqual(routes, PRODUCTION_HOSTS);
     assert.equal(isProduction('staging.luaturtle.com'), false);
 });
+
+// The flags file, the page's data-feature markup, app.js's feature() calls
+// and the stylesheet's hiding rule have to agree, or a feature that is off
+// shows while flags.json loads, or a flag switches nothing off.
+const read = (path) => readFileSync(new URL(`../public/${path}`, import.meta.url), 'utf8');
+const unique = (names) => [...new Set(names)].sort();
+
+test('every flag marks its elements on the page and guards its wiring', () => {
+    const flagNames = unique(Object.keys(JSON.parse(read('flags.json'))));
+    const marked = unique([...read('index.html').matchAll(/\bdata-feature="([^"]+)"/g)].map(m => m[1]));
+    const guarded = unique([...read('app.js').matchAll(/\bfeature\('([^']+)'\)/g)].map(m => m[1]));
+    assert.deepEqual(marked, flagNames);
+    assert.deepEqual(guarded, flagNames);
+});
+
+test('the stylesheet hides flagged elements until the flags are decided', () => {
+    assert.match(read('styles.css'), /:root:not\(\[data-flags\]\) \[data-feature\] \{ display: none !important; \}/);
+    assert.match(read('app.js'), /document\.documentElement\.dataset\.flags = 'ready'/);
+});
