@@ -1372,6 +1372,7 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 #lessons-panel[hidden],
 #lessons-loading[hidden],
 #lessons-page[hidden],
+#lessons-intro[hidden],
 #lessons-problem[hidden],
 #lessons-source[hidden],
 #lessons-toc[hidden],
@@ -1426,6 +1427,48 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 #lessons-loading { font-size: 13px; color: var(--text-muted); }
 
+/* A lesson's opening, on its first page: its summary, then what the idea
+   is like and what it is used for, side by side when there is room. */
+#lessons-intro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px 22px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+#lessons-intro .lessons-intro-summary {
+  grid-column: 1 / -1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.55;
+}
+
+#lessons-intro h3 {
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#lessons-intro ul {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+}
+
+#lessons-intro li {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.lessons-context-name { font-weight: 600; }
+.lessons-context-name::after { content: '.'; }
+
 /* A pill naming how the page draws its idea. */
 .lessons-kind {
   display: inline-block;
@@ -1466,6 +1509,7 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 }
 
 #lessons-text code,
+#lessons-intro code,
 .lessons-step p code,
 .lessons-toc-summary code {
   padding: 1px 4px;
@@ -1668,6 +1712,300 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 .lessons-toc-page:hover { background: var(--hover-wash); color: var(--text); }
 .lessons-toc-page[aria-current="page"] { background: var(--accent-wash); }
 .lessons-toc-page .lessons-kind { flex: none; }
+
+/* ---- Transcribe ----
+   The panel that pops up over the canvas column (transcribe-panel.js), so a
+   sample sits beside the editor it is typed into: the sample's name along
+   the top, then either the list of samples or the sample itself, line by
+   line, under how the typing is going. Lines typed are ticked, the line to
+   type now is tinted, and the first mistake turns its line red here and its
+   code red in the editor. */
+
+#stage { position: relative; }
+
+#transcribe-panel {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 100%);
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 28px var(--shadow);
+  color: var(--text);
+  animation: transcribe-in 0.22s var(--ease);
+}
+
+@keyframes transcribe-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to   { opacity: 1; transform: none; }
+}
+
+#transcribe-panel[hidden],
+#transcribe-picker[hidden],
+#transcribe-sample[hidden],
+#transcribe-run[hidden] { display: none; }
+
+#transcribe-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+#transcribe-back[aria-pressed="true"] { background: var(--accent-wash); color: var(--accent); }
+#transcribe-back:disabled { background: none; opacity: 0.4; cursor: default; }
+
+#transcribe-crumb {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+#transcribe-group,
+#transcribe-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#transcribe-group {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#transcribe-title { font-size: 13px; font-weight: 600; }
+
+/* The list of samples, under its search bar. */
+#transcribe-picker {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#transcribe-search-field {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 14px 4px;
+  padding: 0 10px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--editor-bg);
+  color: var(--text-muted);
+}
+
+#transcribe-search-field:focus-within { border-color: var(--accent-dim); box-shadow: 0 0 0 3px var(--accent-wash); }
+#transcribe-search-field .icon { flex: none; width: 15px; height: 15px; }
+
+#transcribe-search {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+}
+
+#transcribe-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 14px 18px;
+  outline: none;
+}
+
+#transcribe-list section + section { margin-top: 16px; }
+
+#transcribe-list h3 {
+  margin: 0 0 4px 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+#transcribe-list ol { list-style: none; }
+
+.transcribe-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  width: 100%;
+  height: auto;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-family: 'IBM Plex Sans', sans-serif;
+  text-align: left;
+}
+
+.transcribe-pick:hover { background: var(--hover-wash); color: var(--text); }
+.transcribe-pick[aria-current] { background: var(--accent-wash); }
+.transcribe-pick-title { font-size: 13px; font-weight: 500; line-height: 1.35; }
+
+.transcribe-pick-detail {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.transcribe-empty {
+  padding: 24px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* The sample, under how the typing is going. */
+#transcribe-sample {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+#transcribe-status {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 14px 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+#transcribe-message {
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+#transcribe-status[data-state="error"] #transcribe-message { color: var(--error); }
+#transcribe-status[data-state="done"] #transcribe-message { color: var(--accent); }
+#transcribe-status[data-state="empty"] #transcribe-message,
+#transcribe-status[data-state="loading"] #transcribe-message { color: var(--text-muted); font-weight: 400; }
+
+#transcribe-actions {
+  display: flex;
+  gap: 6px;
+}
+
+#transcribe-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 11.5px;
+}
+
+#transcribe-run .icon { width: 11px; height: 11px; }
+
+#transcribe-meter {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--hairline);
+  overflow: hidden;
+}
+
+#transcribe-meter-fill {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.2s var(--ease);
+}
+
+#transcribe-status[data-state="error"] #transcribe-meter-fill { background: var(--error); }
+
+#transcribe-note {
+  flex: none;
+  padding: 8px 14px 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+#transcribe-code-scroll {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 14px 18px;
+  outline: none;
+}
+
+/* The program with a row behind each line, tinted by how far it is typed.
+   Rows and lines share one line height, so they stay level. */
+#transcribe-code { align-items: flex-start; }
+
+#transcribe-gutter,
+#transcribe-text pre { line-height: 1.6; font-size: 12px; }
+
+#transcribe-gutter { padding: 8px 6px 8px 8px; font-family: 'IBM Plex Mono', monospace; }
+#transcribe-gutter > div { height: 1.6em; padding-left: 14px; position: relative; }
+
+#transcribe-gutter > div[data-state="done"] { color: var(--accent); }
+#transcribe-gutter > div[data-state="done"]::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  font-family: 'IBM Plex Sans', sans-serif;
+}
+#transcribe-gutter > div[data-state="current"] { color: var(--text); font-weight: 600; }
+#transcribe-gutter > div[data-state="error"] { color: var(--error); font-weight: 600; }
+
+#transcribe-text {
+  position: relative;
+  flex: 1;
+  min-width: max-content;
+}
+
+#transcribe-rows {
+  position: absolute;
+  inset: 8px 0;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+#transcribe-rows > div { height: 1.6em; }
+#transcribe-rows > div[data-state="current"] { background: var(--accent-wash); box-shadow: inset 2px 0 0 var(--accent); }
+#transcribe-rows > div[data-state="error"] { background: var(--error-bg); box-shadow: inset 2px 0 0 var(--error); }
+
+#transcribe-text pre { position: relative; }
+
+/* The editor's side of the check: the mistake's code, and the numbers of
+   the lines that are typed right. */
+.cm-transcribe-error {
+  background: var(--editor-error-bg);
+  box-shadow: inset 0 -2px 0 var(--editor-error-line);
+}
+
+.cm-s-turtle .transcribe-ok .CodeMirror-linenumber { color: var(--accent); opacity: 1; }
+.cm-s-turtle .transcribe-wrong .CodeMirror-linenumber { color: var(--error); opacity: 1; font-weight: 600; }
 
 /* ---- Controller ----
    The menu of commands worked with a game controller (gamepad-menu.js), the

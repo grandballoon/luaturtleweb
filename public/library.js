@@ -6,7 +6,9 @@
 //
 // The catalog is {concepts: [{id, name, about}], examples: [{id, name,
 // about, concepts: [concept id]}]}: concepts and examples are many to many,
-// so an example shows under every concept it lists.
+// so an example shows under every concept it lists. An example that lists
+// none is not in the gallery: it was made for another page (/compsci), and
+// is in the catalog so the library's tools and tests cover it.
 
 // Lowercase and without accents, so "Lissajous" finds "lissajous" and
 // "Sierpiński" finds "sierpinski".
@@ -34,6 +36,11 @@ export function matchScore(example, conceptsById, words) {
     return score;
 }
 
+// The examples the gallery shows: those that list a concept.
+export function galleryExamples(catalog) {
+    return catalog.examples.filter((example) => example.concepts.length > 0);
+}
+
 // What the gallery shows for a query and a selected concept (an id, or null
 // for all of them), as {sections: [{id, title, about, examples}], count}.
 // count is how many different examples are shown.
@@ -47,7 +54,7 @@ export function libraryView(catalog, { query = '', concept = null } = {}) {
     const words = tokens(query);
 
     if (words.length) {
-        const found = catalog.examples
+        const found = galleryExamples(catalog)
             .filter(inConcept)
             .map((example, order) => ({ example, order, score: matchScore(example, conceptsById, words) }))
             .filter((hit) => hit.score > 0)

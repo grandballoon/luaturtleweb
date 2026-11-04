@@ -11,6 +11,24 @@ Solve for one unknown by doing the same to both sides, for two by substitution o
 
 One unknown: do the same thing to both sides until the unknown stands alone.
 
+**Think of it as**
+
+- **A balance scale.** Two pans hold equal weights.
+  Take the same weight off both pans, or halve what is on each, and the scale stays level, which is why every move must happen to both sides.
+- **Taking off shoes and socks.** Socks go on before shoes, so shoes come off first.
+  In 3x + 5 the x was tripled and then had 5 added, so solving undoes them in reverse: take away 5, then divide by 3.
+- **Counting back change.** A cashier checks change by counting it back up to what was paid.
+  Putting an answer back into the equation is the same check: both sides should come out equal.
+
+**Used for**
+
+- **Splitting a bill.** Four friends share a bill and add a $6 tip, and the total is $46.
+  That is 4x + 6 = 46: take off the tip, divide by 4, and each pays $10.
+- **Converting temperatures.** F = 1.8C + 32 turns Celsius into Fahrenheit.
+  To go back, take 32 from both sides and divide by 1.8: 77°F is 25°C.
+- **Centering a picture.** To center a box w wide on a canvas W wide, the margins on each side, x, must satisfy x + w + x = W.
+  So x = (W - w) / 2, which is how programs center things on screen.
+
 #### Each side is a line
 
 *Source:* AoPS Vol. 1, Example 3-2 · *Drawn as:* plane
@@ -255,6 +273,23 @@ Gina is 5 and Johnny is 10.
 An equation is linear when its unknowns are only scaled and added.
 Its solutions then line up.
 
+**Think of it as**
+
+- **A taxi meter.** A fixed fee, then the same charge for every mile.
+  Each extra mile adds the same amount, so the fare against the distance is a straight line.
+- **Trading with a fixed budget.** With $3 to spend on $1 apples and $1 pears, every apple more is a pear less.
+  All the ways to spend it lie on the line x + y = 3.
+- **Directions with a heading.** "Start at the station and keep walking north-east" names a whole path: a start, plus any amount of one direction.
+  That is all a line is.
+
+**Used for**
+
+- **Budget lines.** With $60 to spend on $12 books and $5 movies, 12b + 5m = 60 holds every way to spend it all, from 5 books to 12 movies.
+  Economists draw this as a budget line.
+- **Road grades.** A sign warning of a 6% grade means the road rises 6 meters for every 100 across: a slope, which a driver feels as the road's heading uphill.
+- **Drawing lines on a screen.** A program draws a line by starting at one point and stepping in a fixed direction, pixel by pixel.
+  The turtle's `forward` works the same way: a start plus a heading.
+
 #### The solutions line up
 
 *Source:* AoPS Vol. 1, Section 3.3 · *Drawn as:* plane
@@ -490,6 +525,24 @@ Slope and heading are two names for the same direction.
 
 Two unknowns, two equations: solve one equation for an unknown, and put that into the other.
 
+**Think of it as**
+
+- **A recipe step that points back.** When a recipe says "add the sauce from step 2", you could write step 2's ingredients there instead.
+  Substitution writes what an unknown equals in its place.
+- **Changing money.** If a euro is 1.1 dollars, a bill in euros and dollars can be rewritten all in dollars.
+  Then there is one kind of money to count, as substitution leaves one unknown.
+- **Walking one street to the cross street.** Walk along one street, checking each corner's sign, until you reach the street you want.
+  You never leave the first line, and stop where the second one holds.
+
+**Used for**
+
+- **Comparing phone plans.** Plan A costs $20 a month plus 10 cents a minute; plan B is $35 flat.
+  Put y = 20 + 0.1m into y = 35, and at 150 minutes the two cost the same.
+- **Mixing solutions.** To make 20 liters of 25% juice from 10% and 30% juice, the amounts x and y satisfy x + y = 20 and 0.1x + 0.3y = 5.
+  Substituting y = 20 - x gives 5 liters of the 10% juice and 15 of the 30%.
+- **Inlining a variable.** If a program says `w = 2 * h`, every later `w` can be replaced with `2 * h`.
+  Compilers make this substitution to simplify code, just as algebra does to simplify equations.
+
 #### Try the first line's points in the second
 
 *Source:* AoPS Vol. 1, Section 3.3 · *Drawn as:* plane
@@ -712,6 +765,23 @@ So 225 adults came, and 1125 students.
 ### 1.4 Elimination
 
 Add multiples of the two equations so that one unknown cancels.
+
+**Think of it as**
+
+- **Two receipts side by side.** One receipt says 2 coffees and 3 muffins cost $13; another says 2 coffees and 1 muffin cost $7.
+  The coffees match, so the difference, 2 muffins for $6, is all muffins: $3 each.
+- **Noise-cancelling headphones.** They play an upside-down copy of the noise, so the noise and its copy add up to nothing and only the music is left.
+  Elimination adds a multiple of one equation chosen so that one unknown cancels.
+- **Getting there with two kinds of move.** Like a city walk of blocks east and blocks north, the column picture asks how many of each move land you on the target.
+  A negative number of moves just walks backwards.
+
+**Used for**
+
+- **Balancing chemical equations.** Hydrogen and oxygen make water: 2H₂ + O₂ → 2H₂O.
+  Finding those counts means solving linear equations, one for each kind of atom, so that every atom is on both sides.
+- **Planning a diet.** How many servings of two foods give exactly 60 grams of protein and 30 grams of fat?
+  Each nutrient is an equation, and elimination finds the servings.
+- **Solving huge systems.** Gaussian elimination, the same canceling done row after row, is how computers solve systems with thousands of unknowns in circuit simulators, bridge designs and 3D graphics.
 
 #### Every sum passes through the crossing
 
@@ -946,6 +1016,23 @@ So there are 5 dimes and 11 nickels: 11 nickel steps (blue), then 5 dime steps (
 
 Rate × time = distance.
 Name the unknowns, write the equations, and solve.
+
+**Think of it as**
+
+- **A moving walkway.** Walk along an airport's moving walkway and your speed and the walkway's add; walk back against it and they subtract.
+  That is the frog swimming with the current and against it.
+- **Catching up with a friend.** A friend walks off at 4 miles an hour, and an hour later you follow at 6.
+  The 4-mile gap shrinks by 2 miles every hour, like a debt paid off at a fixed amount a month, so you meet after 2 hours.
+- **A grade weighted by time.** An average speed counts each part of the trip by how long it took, as a final grade counts each test by its weight.
+  The slow leg takes longer, so it counts for more.
+
+**Used for**
+
+- **Arrival times.** A map app's arrival time adds up distance ÷ speed for every stretch of road, using how fast traffic is moving on each one.
+- **Moving things in a game.** Every frame of a game moves each object by its velocity times the frame's time: position plus velocity × dt.
+  Rate × time, a sliver at a time, is how the turtle's animations move too.
+- **Download times.** A 600 MB file at 20 MB a second takes 30 seconds.
+  Start a second download and the two share the line's rate, so each takes longer.
 
 #### Word problem: the overtaking car
 
@@ -1253,6 +1340,22 @@ The legs, added up, come to the same answer.
 
 Work problems are rate problems: a rate is the fraction of the job done in one unit of time, and rates add.
 
+**Think of it as**
+
+- **Sharing a pizza.** If you take 30 minutes to eat a pizza and so does a friend, together you take 15 minutes, not 60.
+  Rates add; times don't.
+- **Opening another checkout.** A second checkout lane makes the line move at the speed of both cashiers together, so it clears in less time than either would alone.
+- **A bath with a leak.** A tap fills a bath in 4 hours, and a leak would empty it in 12.
+  Its rate counts as negative: 1/4 - 1/12 = 1/6 of the bath an hour, so it fills in 6 hours.
+
+**Used for**
+
+- **Splitting work across processors.** Two processor cores that do 1/4 and 1/6 of a job each second together do 5/12 of it, so the job takes 2.4 seconds.
+  This is how to estimate what adding a core will save.
+- **Scheduling a crew.** If one painter takes 9 hours and another 6, a manager can work out that together they finish in 3.6 hours, and plan the day around it.
+- **Resistors side by side.** Electric current through resistors side by side adds like work: 1/R = 1/R₁ + 1/R₂.
+  A 6-ohm and a 3-ohm resistor together act like 2 ohms, the same arithmetic as two pipes.
+
 #### Word problem: two pipes
 
 *Source:* AoPS Vol. 1, Example 3-14 · *Drawn as:* plane
@@ -1427,6 +1530,22 @@ Factor them, complete the square, or use the quadratic formula, and check for an
 ### 2.1 Why Squares Appear
 
 A steady change in speed makes the distance grow with the square of the time.
+
+**Think of it as**
+
+- **Rolling down a hill.** On a bike coasting downhill, each second you are going faster than the last, so each second covers more ground.
+  The distance grows faster than the time does.
+- **Stacking cans.** A pyramid of cans with rows of 1, 2, 3 and so on holds about half a square of cans. 10 rows hold 55 cans, and 20 rows hold 210: twice the height, about four times the cans.
+- **A triangle that grows both ways.** The area under a steadily rising speed is a triangle that gets both wider and taller as time goes on.
+  Double the time and it doubles both ways: four times the area.
+
+**Used for**
+
+- **Braking distance.** A car going twice as fast needs about four times as much road to stop.
+  That square is why speed limits near schools are low.
+- **Jumping in a game.** A platform game adds gravity to a character's velocity every frame, and the velocity to its position.
+  The jump comes out as a parabola without anyone writing one down.
+- **Measuring a well.** Drop a stone down a well: if it takes 2 seconds to hit the water, it fell about 16 × 2² = 64 feet, ignoring the time the sound takes to come back.
 
 #### Word problem: a rock off a tower
 
@@ -1675,6 +1794,22 @@ The turtle draws the throw with a little sideways drift so the way up and the wa
 A product is zero only when a factor is.
 Factor a quadratic, and its roots can be read off.
 
+**Think of it as**
+
+- **A string of old fairy lights.** In some old strings of lights, if any one bulb goes out the whole string goes dark.
+  A product is zero the same way: one zero factor is enough.
+- **Packing chocolates into a tray.** Factoring is finding the rectangle that a pile of tiles will make, the way a box of 24 chocolates can be packed in a 4 by 6 tray.
+- **A two-clue number puzzle.** "Two numbers multiply to 12 and add to 7" is a little puzzle, and the answer is 3 and 4.
+  Factoring x² + bx + c is solving that puzzle for b and c.
+
+**Used for**
+
+- **Break-even points.** If a shop's profit from selling x items is -(x - 20)(x - 80), it breaks even at 20 items and at 80, read straight off the factors, and makes money in between.
+- **Sizing a print.** A photo print 3 inches longer than it is wide, with an area of 28 square inches, has w² + 3w - 28 = (w + 7)(w - 4) = 0.
+  It is 4 by 7.
+- **Fixing scratched discs and QR codes.** Reed-Solomon codes, used on CDs and in QR codes, find the damaged parts of the data by finding the roots of a polynomial.
+  Knowing the roots is knowing where the errors are.
+
 #### A parabola from two lines
 
 *Source:* AoPS Vol. 1, Section 6.2 · *Drawn as:* plane
@@ -1891,6 +2026,22 @@ The turtle lays it out in square meters: 40 of them.
 
 Add what is missing to make a perfect square, then take a square root.
 
+**Think of it as**
+
+- **The missing jigsaw corner.** Al-Khwarizmi's picture is a square with one corner piece missing.
+  Completing the square is seeing the gap, and adding the same piece to both sides to fill it.
+- **A stencil slid across a page.** Every parabola y = x² + bx + c is the same stencil as y = x², slid to a new place.
+  Vertex form says exactly how far it slid.
+- **Centering the camera.** Rewriting in vertex form moves your point of view to the parabola's lowest point, where the picture is easy to read: the same shape on either side.
+
+**Used for**
+
+- **Finding the best price.** If a shop's profit at price p is -(p - 15)² + 400, the square can't help being zero or more, so the profit is greatest, $400, at $15.
+- **Finding a circle's center.** x² + y² - 6x + 4y = 3, completed twice, becomes (x - 3)² + (y + 2)² = 16: a circle of radius 4 around (3, -2).
+  Programs do this to find where a circle is.
+- **The best guess for some data.** The number closest to a set of measurements, in the sense of the smallest total squared error, is their average.
+  Completing the square on the total error shows it.
+
 #### Word problem: a square and ten roots
 
 *Drawn as:* turtle
@@ -2061,6 +2212,23 @@ Check one point: (1, 1) slides to (3, -8), and 3² - 4 × 3 - 5 = -8.
 ### 2.4 The Quadratic Formula
 
 Completing the square once, for every quadratic, gives x = (-b ± √(b² - 4ac)) / 2a.
+
+**Think of it as**
+
+- **A doorway and two people.** Two people stand the same distance either side of a doorway.
+  The formula gives the doorway, -b/2a, and how far each person stands from it.
+- **A master key.** Factoring is trying keys one by one.
+  The quadratic formula opens every quadratic, whether its roots are whole numbers or not.
+- **A glance at the map.** The discriminant says, before any other work, whether to expect two answers, one or none, as a glance at a map says whether two roads meet at all.
+
+**Used for**
+
+- **Ray tracing.** A ray-traced picture asks, for every pixel, where a ray of light meets a sphere.
+  That is the lesson's walk meeting a circle: a quadratic, whose discriminant says hit or miss.
+- **Collisions in games.** Will two moving objects come within some distance of each other, and when?
+  A game asks the same quadratic as the two ships, many times a second.
+- **Clearing a fence.** Set a ball's height equal to a fence's height.
+  If the discriminant is negative, the ball never reaches that height, and it can't clear the fence at all.
 
 #### A mirror line and a reach
 
@@ -2326,6 +2494,23 @@ The closest they come is at the mirror line, t = 240/200 = 1.2 hours, 16 km apar
 
 Squaring both sides can bring in answers that don't solve the original equation, so check every one.
 
+**Think of it as**
+
+- **Distance from home.** "3 km from home" could mean 3 km east or 3 km west.
+  Squaring forgets the direction the same way, so going back you have to check which way is right.
+- **A hand shadow.** A shadow of a bird on the wall might be a bird or a pair of hands.
+  Working back from the shadow gives both, and only looking at the real thing tells which it was.
+- **A summary that loses detail.** Two different stories can have the same one-line summary.
+  Squaring is a summary, so an answer rebuilt from it has to be checked against the original.
+
+**Used for**
+
+- **Finding a position from distances.** A GPS receiver works out where it is from its distances to satellites.
+  Squaring away the square roots leaves two candidate places, and it keeps the one on the Earth's surface.
+- **Testing a program.** A unit test puts a program's answer back into the question and checks it, just as you check each candidate in the original equation.
+- **Speed from energy.** Kinetic energy is ½mv², so solving for v gives two answers, a speed forward and a speed backward.
+  Which one is real depends on which way the thing is going.
+
 #### A square root meets a line
 
 *Drawn as:* plane
@@ -2474,6 +2659,23 @@ The line y = x meets the walk twice: on the green half at (2, 2), the real answe
 ### 2.6 Hidden Quadratics
 
 When an equation holds some expression and its square, rename the expression and solve a quadratic.
+
+**Think of it as**
+
+- **Nesting dolls.** Open the outer doll first, then the one inside it.
+  Solve the quadratic for z, then solve z = x² for x.
+- **Counting in thousands.** Saying "73 thousand" and doing the sum in thousands, then turning the answer back into plain numbers.
+  Renaming 2ⁿ as x is a change of units for the problem.
+- **Packing a suitcase in a box.** Move a whole suitcase as one item, and unpack it later.
+  Treating x² as one thing, z, lets it move through the algebra like a single unknown.
+
+**Used for**
+
+- **Working out an interest rate.** $1000 grows to $1210 in two years.
+  With x = 1 + r, that is 1000x² = 1210, so x = 1.1 and the rate is 10%; the other root, -1.1, makes no sense for money.
+- **Naming a part of a program.** A program that writes `local s = x * x` and then works with `s` is making the same move as z = x²: shorter code, and the work done once.
+- **Fencing a pen.** With 26 meters of fence and 40 square meters to enclose, a pen's sides add to 13 and multiply to 40.
+  They are the roots of z² - 13z + 40 = 0: 5 and 8 meters.
 
 #### x⁴ is (x²)²
 
@@ -2663,6 +2865,22 @@ The turtle measures it with `distance()`. (The book's x² + x - 1 = 0 is a cousi
 ### 2.7 Beyond Quadratics
 
 Higher-degree polynomials also come from their roots, and also lose real roots when lifted off the axis.
+
+**Think of it as**
+
+- **Puddles drying up.** After rain, a bumpy road holds a puddle in each dip, and each puddle has two edges.
+  As the water level drops, the shallowest puddle dries first, its two edges meeting and vanishing together, as a curve lifted off the axis loses its roots in pairs.
+- **A rollercoaster ride.** A track that rises and falls several times passes the same height at several points along the ride, as a cubic or a quartic can hit the same value several times.
+- **Folding a paper box.** Deeper cuts make a taller box with a smaller base, so its volume rises and then falls again.
+  So most volumes are reached by two different cuts, one on the way up and one on the way down.
+
+**Used for**
+
+- **Making boxes.** Packaging designers choose how much to cut from a sheet so a box holds what it must, and the cubic says which cuts work and which one holds the most.
+- **Drawing letters.** Fonts and vector drawings are made of cubic Bézier curves.
+  Filling in a letter means finding where its curves cross each line of pixels, which is solving a cubic.
+- **Smooth animation.** An animation that eases in and out often follows the cubic 3t² - 2t³.
+  Finding when it reaches a given point means solving a cubic for t.
 
 #### Four roots, then fewer
 

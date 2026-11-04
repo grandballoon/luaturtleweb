@@ -13,7 +13,8 @@
 //            command to command-lookup.js, a game controller to
 //            gamepad-controller.js (given the reference's commands by
 //            command-catalog.js), and the Lessons sidebar to
-//            lessons-panel.js. Feature flags (flags.js) say which of
+//            lessons-panel.js, and typing a sample in by hand to
+//            transcribe-panel.js. Feature flags (flags.js) say which of
 //            those features the page shows.
 
 import { Renderer }             from './renderer.js';
@@ -28,6 +29,7 @@ import { createCommandPreview } from './command-preview.js';
 import { readCommandCatalog }   from './command-catalog.js';
 import { initGamepad }          from './gamepad-controller.js';
 import { createLessonsPanel }   from './lessons-panel.js';
+import { createTranscribePanel } from './transcribe-panel.js';
 import { createRunner }         from './runner.js';
 import { createLuaEditor }      from './lua-editor.js';
 import * as storage             from './storage.js';
@@ -63,11 +65,12 @@ const $ = (id) => document.getElementById(id);
 
 // ---- Feature flags ----
 
-// public/flags.json, with this tab's ?flags= overrides. An unreadable file
-// leaves every feature on.
+// public/flags.json, at this host, with this tab's ?flags= overrides. An
+// unreadable file leaves every feature on.
 const flags = resolveFlags(
     await fetch(new URL('flags.json', import.meta.url)).then(r => r.ok ? r.json() : {}).catch(() => ({})),
     location.search,
+    location.hostname,
 );
 
 // Whether a feature is on. When it is off, its elements leave the page, so
@@ -268,6 +271,7 @@ const runner = createRunner({
         usageCatalog = msg.usage || {};
         commandRef.setDemoPrograms(msg.demos);
         lessons?.setLessons(msg.lessons);
+        transcribe?.setLessons(msg.lessons);
         setStatus(`Ready · ${RUN_SHORTCUT} to run`);   // a waiting run's status follows at once
     },
     onFail(detail) {
@@ -297,7 +301,9 @@ const runner = createRunner({
     },
 });
 
+// The Transcribe panel covers the canvas, so it steps aside for a run.
 function runCode() {
+    transcribe?.close();
     startRun(editor.getValue(), true);
 }
 
@@ -441,6 +447,7 @@ const lessons = feature('lessons', $('btn-lessons'), $('lessons-panel')) ? creat
         body:           $('lessons-body'),
         loading:        $('lessons-loading'),
         page:           $('lessons-page'),
+        intro:          $('lessons-intro'),
         kind:           $('lessons-kind'),
         title:          $('lessons-title'),
         problem:        $('lessons-problem'),
@@ -466,6 +473,50 @@ const lessons = feature('lessons', $('btn-lessons'), $('lessons-panel')) ? creat
 if (lessons) {
     $('lessons-shortcut').textContent = LESSONS_SHORTCUT;
     $('btn-lessons').title = `Lessons (${LESSONS_SHORTCUT})`;
+}
+
+// ---- Transcribe ----
+
+// Typing a sample in starts from an empty editor; the editor's undo brings
+// the learner's program back.
+function startTranscribing(sample) {
+    editor.setValue('');
+    editor.focus();
+    setStatus(`Type “${sample.title}” in · ${MOD_LABEL}Z brings your program back`);
+}
+
+const transcribe = feature('transcribe', $('btn-transcribe'), $('transcribe-panel')) ? createTranscribePanel({
+    els: {
+        panel:     $('transcribe-panel'),
+        button:    $('btn-transcribe'),
+        back:      $('transcribe-back'),
+        close:     $('transcribe-close'),
+        group:     $('transcribe-group'),
+        title:     $('transcribe-title'),
+        picker:    $('transcribe-picker'),
+        search:    $('transcribe-search'),
+        list:      $('transcribe-list'),
+        sample:    $('transcribe-sample'),
+        status:    $('transcribe-status'),
+        message:   $('transcribe-message'),
+        meterFill: $('transcribe-meter-fill'),
+        run:       $('transcribe-run'),
+        restart:   $('transcribe-restart'),
+        scroll:    $('transcribe-code-scroll'),
+        gutter:    $('transcribe-gutter'),
+        rows:      $('transcribe-rows'),
+        program:   $('transcribe-program'),
+    },
+    editor,
+    onStart:     startTranscribing,
+    onRun:       () => { gamepad.closeMapping(); runCode(); },
+    focusEditor: () => editor.focus(),
+}) : null;
+if (transcribe) {
+    fetch(new URL('library/catalog.json', import.meta.url))
+        .then((r) => (r.ok ? r.json() : null))
+        .then((catalog) => catalog && transcribe.setCatalog(catalog))
+        .catch((err) => console.warn('Could not load the library catalog:', err));
 }
 
 // ---- Game controller ----
@@ -518,6 +569,8 @@ document.addEventListener('keydown', (e) => {
             gamepad.closeMapping();
         } else if (lessons?.isOpen() && lessons.hasFocus()) {
             lessons.close();
+        } else if (transcribe?.isOpen() && transcribe.hasFocus()) {
+            transcribe.close();
         } else if (commandRef.isOpen() && commandRef.hasFocus()) {
             commandRef.close();
         } else if (usagePopup.isOpen()) {

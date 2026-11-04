@@ -17,8 +17,8 @@
 // (app.js), through onRun and onOpen.
 
 import {
-    lessonPages, pageIndex, pagerView, contents, paragraphParts, keyAction, pageAfter, movePage, KIND_LABELS,
-    lineNumbers, lineRange,
+    lessonPages, pageIndex, pagerView, lessonIntro, contents, paragraphParts, keyAction, pageAfter, movePage,
+    KIND_LABELS, lineNumbers, lineRange,
 } from './lessons.js';
 import { clampRect, defaultRect, dragRect, resizeRect, edgesOf, readRect } from './floating.js';
 import { highlightLua } from './lua-highlight.js';
@@ -40,19 +40,21 @@ export function createLessonsPanel({ els, headerBottom, onRun, onOpen, onClose }
 
     // ---- Rendering ----
 
-    // A paragraph element with `code` runs as <code>.
+    // Text with its `code` runs as <code>, as nodes to append.
+    function prose(text) {
+        return paragraphParts(text).map((part) => {
+            if (!part.code) return part.text;
+            const code = document.createElement('code');
+            code.textContent = part.text;
+            return code;
+        });
+    }
+
+    // A paragraph element of such text.
     function paragraph(text, className) {
         const p = document.createElement('p');
         if (className) p.className = className;
-        for (const part of paragraphParts(text)) {
-            if (part.code) {
-                const code = document.createElement('code');
-                code.textContent = part.text;
-                p.append(code);
-            } else {
-                p.append(part.text);
-            }
-        }
+        p.append(...prose(text));
         return p;
     }
 
@@ -95,10 +97,39 @@ export function createLessonsPanel({ els, headerBottom, onRun, onOpen, onClose }
         return item;
     }
 
+    // A lesson's opening on its first page: its summary, then what its idea
+    // is like and what it is used for, each item a name and a sentence or
+    // three.
+    function renderIntro(intro) {
+        els.intro.hidden = !intro;
+        if (!intro) {
+            els.intro.replaceChildren();
+            return;
+        }
+        const parts = intro.context.map(({ heading, items }) => {
+            const section = document.createElement('section');
+            const title = document.createElement('h3');
+            title.textContent = heading;
+            const list = document.createElement('ul');
+            list.append(...items.map((item) => {
+                const li = document.createElement('li');
+                const name = document.createElement('span');
+                name.className = 'lessons-context-name';
+                name.textContent = item.name;
+                li.append(name, ' ', ...prose(item.says));
+                return li;
+            }));
+            section.append(title, list);
+            return section;
+        });
+        els.intro.replaceChildren(paragraph(intro.summary, 'lessons-intro-summary'), ...parts);
+    }
+
     function renderPage() {
         const { page, number, count, hasPrev, hasNext, inLesson } = pagerView(pages, index);
         els.chapter.textContent = page.chapter.title;
         els.lesson.textContent = `${page.lesson.title} · ${inLesson}`;
+        renderIntro(lessonIntro(page));
         els.kind.textContent = KIND_LABELS[page.kind] ?? page.kind;
         els.kind.dataset.kind = page.kind;
         els.title.textContent = page.title;

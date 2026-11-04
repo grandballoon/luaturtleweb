@@ -5,6 +5,11 @@
 -- 3 and 6 of The Art of Problem Solving, Volume 1. Chapters hold lessons,
 -- and lessons hold examples; the sidebar shows one example per page.
 --
+-- A lesson is { slug, title, summary, metaphors, applications, examples }.
+-- `metaphors` are everyday things the lesson's idea is like, and
+-- `applications` are what it is used for, each a list of { name, says }
+-- where `says` is a sentence or three; the lesson's first page shows them.
+--
 -- Each example is { slug, title, kind, text, code }, plus `problem` and
 -- `source` for a word problem. `kind` says how the example draws its idea:
 --   "plane"   on a Cartesian graph, the usual picture;
@@ -38,6 +43,16 @@ local linear = {
             slug = "linear-balance",
             title = "Keep It Balanced",
             summary = "One unknown: do the same thing to both sides until the unknown stands alone.",
+            metaphors = {
+                { name = "A balance scale", says = "Two pans hold equal weights. Take the same weight off both pans, or halve what is on each, and the scale stays level, which is why every move must happen to both sides." },
+                { name = "Taking off shoes and socks", says = "Socks go on before shoes, so shoes come off first. In 3x + 5 the x was tripled and then had 5 added, so solving undoes them in reverse: take away 5, then divide by 3." },
+                { name = "Counting back change", says = "A cashier checks change by counting it back up to what was paid. Putting an answer back into the equation is the same check: both sides should come out equal." },
+            },
+            applications = {
+                { name = "Splitting a bill", says = "Four friends share a bill and add a $6 tip, and the total is $46. That is 4x + 6 = 46: take off the tip, divide by 4, and each pays $10." },
+                { name = "Converting temperatures", says = "F = 1.8C + 32 turns Celsius into Fahrenheit. To go back, take 32 from both sides and divide by 1.8: 77°F is 25°C." },
+                { name = "Centering a picture", says = "To center a box w wide on a canvas W wide, the margins on each side, x, must satisfy x + w + x = W. So x = (W - w) / 2, which is how programs center things on screen." },
+            },
             examples = {
                 {
                     slug = "two-lines",
@@ -237,6 +252,16 @@ print(string.format("Gina is %d and Johnny is %d", G, J))
             slug = "linear-solution-sets",
             title = "What Makes It Linear",
             summary = "An equation is linear when its unknowns are only scaled and added. Its solutions then line up.",
+            metaphors = {
+                { name = "A taxi meter", says = "A fixed fee, then the same charge for every mile. Each extra mile adds the same amount, so the fare against the distance is a straight line." },
+                { name = "Trading with a fixed budget", says = "With $3 to spend on $1 apples and $1 pears, every apple more is a pear less. All the ways to spend it lie on the line x + y = 3." },
+                { name = "Directions with a heading", says = "\"Start at the station and keep walking north-east\" names a whole path: a start, plus any amount of one direction. That is all a line is." },
+            },
+            applications = {
+                { name = "Budget lines", says = "With $60 to spend on $12 books and $5 movies, 12b + 5m = 60 holds every way to spend it all, from 5 books to 12 movies. Economists draw this as a budget line." },
+                { name = "Road grades", says = "A sign warning of a 6% grade means the road rises 6 meters for every 100 across: a slope, which a driver feels as the road's heading uphill." },
+                { name = "Drawing lines on a screen", says = "A program draws a line by starting at one point and stepping in a fixed direction, pixel by pixel. The turtle's `forward` works the same way: a start plus a heading." },
+            },
             examples = {
                 {
                     slug = "solutions-line-up",
@@ -420,6 +445,16 @@ print(string.format("ends at (%g, %g)", round(xcor() / U), round(ycor() / U)))
             slug = "linear-substitution",
             title = "Substitution",
             summary = "Two unknowns, two equations: solve one equation for an unknown, and put that into the other.",
+            metaphors = {
+                { name = "A recipe step that points back", says = "When a recipe says \"add the sauce from step 2\", you could write step 2's ingredients there instead. Substitution writes what an unknown equals in its place." },
+                { name = "Changing money", says = "If a euro is 1.1 dollars, a bill in euros and dollars can be rewritten all in dollars. Then there is one kind of money to count, as substitution leaves one unknown." },
+                { name = "Walking one street to the cross street", says = "Walk along one street, checking each corner's sign, until you reach the street you want. You never leave the first line, and stop where the second one holds." },
+            },
+            applications = {
+                { name = "Comparing phone plans", says = "Plan A costs $20 a month plus 10 cents a minute; plan B is $35 flat. Put y = 20 + 0.1m into y = 35, and at 150 minutes the two cost the same." },
+                { name = "Mixing solutions", says = "To make 20 liters of 25% juice from 10% and 30% juice, the amounts x and y satisfy x + y = 20 and 0.1x + 0.3y = 5. Substituting y = 20 - x gives 5 liters of the 10% juice and 15 of the 30%." },
+                { name = "Inlining a variable", says = "If a program says `w = 2 * h`, every later `w` can be replaced with `2 * h`. Compilers make this substitution to simplify code, just as algebra does to simplify equations." },
+            },
             examples = {
                 {
                     slug = "try-points-of-one-line",
@@ -594,6 +629,16 @@ print(string.format("check: $%.2f + $%.2f = $%.2f", 3.25 * a, 1.75 * s, 3.25 * a
             slug = "linear-elimination",
             title = "Elimination",
             summary = "Add multiples of the two equations so that one unknown cancels.",
+            metaphors = {
+                { name = "Two receipts side by side", says = "One receipt says 2 coffees and 3 muffins cost $13; another says 2 coffees and 1 muffin cost $7. The coffees match, so the difference, 2 muffins for $6, is all muffins: $3 each." },
+                { name = "Noise-cancelling headphones", says = "They play an upside-down copy of the noise, so the noise and its copy add up to nothing and only the music is left. Elimination adds a multiple of one equation chosen so that one unknown cancels." },
+                { name = "Getting there with two kinds of move", says = "Like a city walk of blocks east and blocks north, the column picture asks how many of each move land you on the target. A negative number of moves just walks backwards." },
+            },
+            applications = {
+                { name = "Balancing chemical equations", says = "Hydrogen and oxygen make water: 2H₂ + O₂ → 2H₂O. Finding those counts means solving linear equations, one for each kind of atom, so that every atom is on both sides." },
+                { name = "Planning a diet", says = "How many servings of two foods give exactly 60 grams of protein and 30 grams of fat? Each nutrient is an equation, and elimination finds the servings." },
+                { name = "Solving huge systems", says = "Gaussian elimination, the same canceling done row after row, is how computers solve systems with thousands of unknowns in circuit simulators, bridge designs and 3D graphics." },
+            },
             examples = {
                 {
                     slug = "sums-through-the-crossing",
@@ -779,6 +824,16 @@ print(string.format("%d nickels and %d dimes: %d cents", n, d, 5 * n + 10 * d))
             slug = "catching-up",
             title = "Rate Times Time",
             summary = "Rate × time = distance. Name the unknowns, write the equations, and solve.",
+            metaphors = {
+                { name = "A moving walkway", says = "Walk along an airport's moving walkway and your speed and the walkway's add; walk back against it and they subtract. That is the frog swimming with the current and against it." },
+                { name = "Catching up with a friend", says = "A friend walks off at 4 miles an hour, and an hour later you follow at 6. The 4-mile gap shrinks by 2 miles every hour, like a debt paid off at a fixed amount a month, so you meet after 2 hours." },
+                { name = "A grade weighted by time", says = "An average speed counts each part of the trip by how long it took, as a final grade counts each test by its weight. The slow leg takes longer, so it counts for more." },
+            },
+            applications = {
+                { name = "Arrival times", says = "A map app's arrival time adds up distance ÷ speed for every stretch of road, using how fast traffic is moving on each one." },
+                { name = "Moving things in a game", says = "Every frame of a game moves each object by its velocity times the frame's time: position plus velocity × dt. Rate × time, a sliver at a time, is how the turtle's animations move too." },
+                { name = "Download times", says = "A 600 MB file at 20 MB a second takes 30 seconds. Start a second download and the two share the line's rate, so each takes longer." },
+            },
             examples = {
                 {
                     slug = "overtaking-graph",
@@ -1019,6 +1074,16 @@ print(string.format("rate x time: %g seconds x 25 feet a second = %g feet", 500 
             slug = "work-rates",
             title = "Working Together",
             summary = "Work problems are rate problems: a rate is the fraction of the job done in one unit of time, and rates add.",
+            metaphors = {
+                { name = "Sharing a pizza", says = "If you take 30 minutes to eat a pizza and so does a friend, together you take 15 minutes, not 60. Rates add; times don't." },
+                { name = "Opening another checkout", says = "A second checkout lane makes the line move at the speed of both cashiers together, so it clears in less time than either would alone." },
+                { name = "A bath with a leak", says = "A tap fills a bath in 4 hours, and a leak would empty it in 12. Its rate counts as negative: 1/4 - 1/12 = 1/6 of the bath an hour, so it fills in 6 hours." },
+            },
+            applications = {
+                { name = "Splitting work across processors", says = "Two processor cores that do 1/4 and 1/6 of a job each second together do 5/12 of it, so the job takes 2.4 seconds. This is how to estimate what adding a core will save." },
+                { name = "Scheduling a crew", says = "If one painter takes 9 hours and another 6, a manager can work out that together they finish in 3.6 hours, and plan the day around it." },
+                { name = "Resistors side by side", says = "Electric current through resistors side by side adds like work: 1/R = 1/R₁ + 1/R₂. A 6-ohm and a 3-ohm resistor together act like 2 ohms, the same arithmetic as two pipes." },
+            },
             examples = {
                 {
                     slug = "pipes-graph",
@@ -1169,6 +1234,16 @@ local quadratic = {
             slug = "quadratic-falling-rock",
             title = "Why Squares Appear",
             summary = "A steady change in speed makes the distance grow with the square of the time.",
+            metaphors = {
+                { name = "Rolling down a hill", says = "On a bike coasting downhill, each second you are going faster than the last, so each second covers more ground. The distance grows faster than the time does." },
+                { name = "Stacking cans", says = "A pyramid of cans with rows of 1, 2, 3 and so on holds about half a square of cans. 10 rows hold 55 cans, and 20 rows hold 210: twice the height, about four times the cans." },
+                { name = "A triangle that grows both ways", says = "The area under a steadily rising speed is a triangle that gets both wider and taller as time goes on. Double the time and it doubles both ways: four times the area." },
+            },
+            applications = {
+                { name = "Braking distance", says = "A car going twice as fast needs about four times as much road to stop. That square is why speed limits near schools are low." },
+                { name = "Jumping in a game", says = "A platform game adds gravity to a character's velocity every frame, and the velocity to its position. The jump comes out as a parabola without anyone writing one down." },
+                { name = "Measuring a well", says = "Drop a stone down a well: if it takes 2 seconds to hit the water, it fell about 16 × 2² = 64 feet, ignoring the time the sound takes to come back." },
+            },
             examples = {
                 {
                     slug = "rock-graph",
@@ -1364,6 +1439,16 @@ for t = 0, 5 do print(string.format("t = %d s: %d feet up", t, height(t))) end
             slug = "quadratic-factoring",
             title = "Roots From Factors",
             summary = "A product is zero only when a factor is. Factor a quadratic, and its roots can be read off.",
+            metaphors = {
+                { name = "A string of old fairy lights", says = "In some old strings of lights, if any one bulb goes out the whole string goes dark. A product is zero the same way: one zero factor is enough." },
+                { name = "Packing chocolates into a tray", says = "Factoring is finding the rectangle that a pile of tiles will make, the way a box of 24 chocolates can be packed in a 4 by 6 tray." },
+                { name = "A two-clue number puzzle", says = "\"Two numbers multiply to 12 and add to 7\" is a little puzzle, and the answer is 3 and 4. Factoring x² + bx + c is solving that puzzle for b and c." },
+            },
+            applications = {
+                { name = "Break-even points", says = "If a shop's profit from selling x items is -(x - 20)(x - 80), it breaks even at 20 items and at 80, read straight off the factors, and makes money in between." },
+                { name = "Sizing a print", says = "A photo print 3 inches longer than it is wide, with an area of 28 square inches, has w² + 3w - 28 = (w + 7)(w - 4) = 0. It is 4 by 7." },
+                { name = "Fixing scratched discs and QR codes", says = "Reed-Solomon codes, used on CDs and in QR codes, find the damaged parts of the data by finding the roots of a polynomial. Knowing the roots is knowing where the errors are." },
+            },
             examples = {
                 {
                     slug = "product-of-lines",
@@ -1538,6 +1623,16 @@ print(string.format("the other root, w = -8, gives %d too, but no garden", -8 * 
             slug = "completing-the-square",
             title = "Completing the Square",
             summary = "Add what is missing to make a perfect square, then take a square root.",
+            metaphors = {
+                { name = "The missing jigsaw corner", says = "Al-Khwarizmi's picture is a square with one corner piece missing. Completing the square is seeing the gap, and adding the same piece to both sides to fill it." },
+                { name = "A stencil slid across a page", says = "Every parabola y = x² + bx + c is the same stencil as y = x², slid to a new place. Vertex form says exactly how far it slid." },
+                { name = "Centering the camera", says = "Rewriting in vertex form moves your point of view to the parabola's lowest point, where the picture is easy to read: the same shape on either side." },
+            },
+            applications = {
+                { name = "Finding the best price", says = "If a shop's profit at price p is -(p - 15)² + 400, the square can't help being zero or more, so the profit is greatest, $400, at $15." },
+                { name = "Finding a circle's center", says = "x² + y² - 6x + 4y = 3, completed twice, becomes (x - 3)² + (y + 2)² = 16: a circle of radius 4 around (3, -2). Programs do this to find where a circle is." },
+                { name = "The best guess for some data", says = "The number closest to a set of measurements, in the sense of the smallest total squared error, is their average. Completing the square on the total error shows it." },
+            },
             examples = {
                 {
                     slug = "al-khwarizmi",
@@ -1681,6 +1776,16 @@ hideturtle()
             slug = "quadratic-formula",
             title = "The Quadratic Formula",
             summary = "Completing the square once, for every quadratic, gives x = (-b ± √(b² - 4ac)) / 2a.",
+            metaphors = {
+                { name = "A doorway and two people", says = "Two people stand the same distance either side of a doorway. The formula gives the doorway, -b/2a, and how far each person stands from it." },
+                { name = "A master key", says = "Factoring is trying keys one by one. The quadratic formula opens every quadratic, whether its roots are whole numbers or not." },
+                { name = "A glance at the map", says = "The discriminant says, before any other work, whether to expect two answers, one or none, as a glance at a map says whether two roads meet at all." },
+            },
+            applications = {
+                { name = "Ray tracing", says = "A ray-traced picture asks, for every pixel, where a ray of light meets a sphere. That is the lesson's walk meeting a circle: a quadratic, whose discriminant says hit or miss." },
+                { name = "Collisions in games", says = "Will two moving objects come within some distance of each other, and when? A game asks the same quadratic as the two ships, many times a second." },
+                { name = "Clearing a fence", says = "Set a ball's height equal to a fence's height. If the discriminant is negative, the ball never reaches that height, and it can't clear the fence at all." },
+            },
             examples = {
                 {
                     slug = "mirror-and-reach",
@@ -1893,6 +1998,16 @@ print(string.format("closest at t = %g hours: %g km", t, math.sqrt(100 * t * t -
             slug = "extraneous-roots",
             title = "Squaring Adds Answers",
             summary = "Squaring both sides can bring in answers that don't solve the original equation, so check every one.",
+            metaphors = {
+                { name = "Distance from home", says = "\"3 km from home\" could mean 3 km east or 3 km west. Squaring forgets the direction the same way, so going back you have to check which way is right." },
+                { name = "A hand shadow", says = "A shadow of a bird on the wall might be a bird or a pair of hands. Working back from the shadow gives both, and only looking at the real thing tells which it was." },
+                { name = "A summary that loses detail", says = "Two different stories can have the same one-line summary. Squaring is a summary, so an answer rebuilt from it has to be checked against the original." },
+            },
+            applications = {
+                { name = "Finding a position from distances", says = "A GPS receiver works out where it is from its distances to satellites. Squaring away the square roots leaves two candidate places, and it keeps the one on the Earth's surface." },
+                { name = "Testing a program", says = "A unit test puts a program's answer back into the question and checks it, just as you check each candidate in the original equation." },
+                { name = "Speed from energy", says = "Kinetic energy is ½mv², so solving for v gives two answers, a speed forward and a speed backward. Which one is real depends on which way the thing is going." },
+            },
             examples = {
                 {
                     slug = "square-root-and-line",
@@ -2009,6 +2124,16 @@ print("(-1, -1): on the bottom half, y = -√(x + 2): extraneous")
             slug = "hidden-quadratics",
             title = "Hidden Quadratics",
             summary = "When an equation holds some expression and its square, rename the expression and solve a quadratic.",
+            metaphors = {
+                { name = "Nesting dolls", says = "Open the outer doll first, then the one inside it. Solve the quadratic for z, then solve z = x² for x." },
+                { name = "Counting in thousands", says = "Saying \"73 thousand\" and doing the sum in thousands, then turning the answer back into plain numbers. Renaming 2ⁿ as x is a change of units for the problem." },
+                { name = "Packing a suitcase in a box", says = "Move a whole suitcase as one item, and unpack it later. Treating x² as one thing, z, lets it move through the algebra like a single unknown." },
+            },
+            applications = {
+                { name = "Working out an interest rate", says = "$1000 grows to $1210 in two years. With x = 1 + r, that is 1000x² = 1210, so x = 1.1 and the rate is 10%; the other root, -1.1, makes no sense for money." },
+                { name = "Naming a part of a program", says = "A program that writes `local s = x * x` and then works with `s` is making the same move as z = x²: shorter code, and the work done once." },
+                { name = "Fencing a pen", says = "With 26 meters of fence and 40 square meters to enclose, a pen's sides add to 13 and multiply to 40. They are the roots of z² - 13z + 40 = 0: 5 and 8 meters." },
+            },
             examples = {
                 {
                     slug = "quartic",
@@ -2162,6 +2287,16 @@ print(string.format("phi^2 - phi - 1 = %.4f", phi * phi - phi - 1))
             slug = "polynomial-roots",
             title = "Beyond Quadratics",
             summary = "Higher-degree polynomials also come from their roots, and also lose real roots when lifted off the axis.",
+            metaphors = {
+                { name = "Puddles drying up", says = "After rain, a bumpy road holds a puddle in each dip, and each puddle has two edges. As the water level drops, the shallowest puddle dries first, its two edges meeting and vanishing together, as a curve lifted off the axis loses its roots in pairs." },
+                { name = "A rollercoaster ride", says = "A track that rises and falls several times passes the same height at several points along the ride, as a cubic or a quartic can hit the same value several times." },
+                { name = "Folding a paper box", says = "Deeper cuts make a taller box with a smaller base, so its volume rises and then falls again. So most volumes are reached by two different cuts, one on the way up and one on the way down." },
+            },
+            applications = {
+                { name = "Making boxes", says = "Packaging designers choose how much to cut from a sheet so a box holds what it must, and the cubic says which cuts work and which one holds the most." },
+                { name = "Drawing letters", says = "Fonts and vector drawings are made of cubic Bézier curves. Filling in a letter means finding where its curves cross each line of pixels, which is solving a cubic." },
+                { name = "Smooth animation", says = "An animation that eases in and out often follows the cubic 3t² - 2t³. Finding when it reaches a given point means solving a cubic for t." },
+            },
             examples = {
                 {
                     slug = "four-roots",

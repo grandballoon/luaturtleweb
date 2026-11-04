@@ -84,6 +84,7 @@ Hovering a card highlights every segment its statement drew and dims the rest.
 2. **The deck-of-cards view**, behind a setting, with mouse and controller input.
    Done, on desktop.
 3. **Nested blocks**, only if the deck leaves the mouse wanting.
+   Drafted in [spec-blocks-nested.md](spec-blocks-nested.md), in three stages: value blocks in slots, a palette drawer, and a Scratch-like blocks look.
 
 ## Success criteria
 

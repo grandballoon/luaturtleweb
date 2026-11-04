@@ -2,7 +2,8 @@
 --
 -- The Lessons sidebar's lessons (public/turtle/lessons.lua): every chapter,
 -- lesson and example has what the sidebar shows, slugs are unique where
--- the sidebar uses them as ids, every example's steps are chunks of its
+-- the sidebar uses them as ids, every lesson says what it is like and
+-- what it is for, every example's steps are chunks of its
 -- program that together cover it, and every program runs on the host
 -- without an error and draws inside the canvas, on a wide canvas and on a
 -- small square one.
@@ -49,6 +50,18 @@ for c, chapter in ipairs(lessons) do
         check(nonempty(lesson.title), lwhere .. " has no title")
         check(nonempty(lesson.summary), lwhere .. " has no summary")
         check(type(lesson.examples) == "table" and #lesson.examples > 0, lwhere .. " has no examples")
+        -- What the idea is like and what it is for: a few of each, each
+        -- named and saying something.
+        for _, key in ipairs({ "metaphors", "applications" }) do
+            local list = lesson[key]
+            check(type(list) == "table" and #list >= 2, lwhere .. " has fewer than 2 " .. key)
+            for i, item in ipairs(list or {}) do
+                local iwhere = lwhere .. " " .. key .. " " .. i
+                check(nonempty(item.name), iwhere .. " has no name")
+                check(nonempty(item.says), iwhere .. " says nothing")
+                check(select(2, tostring(item.says):gsub("`", "")) % 2 == 0, iwhere .. " has an unclosed `")
+            end
+        end
         local kinds = {}
         for _, example in ipairs(lesson.examples or {}) do
             local id = tostring(lesson.slug) .. "/" .. tostring(example.slug)

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Computer science — Lua Turtle</title>
+<meta name="theme-color" content="#f6f2eb">
+<meta name="description" content="The mathematics of a computer science degree, course by course: each idea with its equations, drawn by short Lua programs you can run and change.">
+<meta name="robots" content="noindex">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><polygon points='24,16 10,24 10,8' fill='%23237a69'/></svg>">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+
+<!-- KaTeX 0.19.0, vendored: see vendor/katex/ -->
+<link rel="stylesheet" href="vendor/katex/katex.min.css">
+<script src="vendor/katex/katex.min.js"></script>
+
+<!-- CodeMirror 5.65.16, vendored: see vendor/codemirror/ -->
+<link rel="stylesheet" href="vendor/codemirror/codemirror.min.css">
+<script src="vendor/codemirror/codemirror.min.js"></script>
+<script src="vendor/codemirror/mode/lua/lua.min.js"></script>
+
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="browse.css">
+<link rel="stylesheet" href="compsci.css">
+</head>
+<body>
+
+<div id="sab-warning" role="alert" hidden>
+  ⚠ SharedArrayBuffer is not available. Animation requires the COOP/COEP headers to be set.
+  Check the <code>_headers</code> file and your server configuration.
+</div>
+
+<div id="app">
+  <header>
+    <div class="header-brand">
+      <h1>
+        <a class="brand-link" href="./">
+          <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><polygon points="24,16 10,24 10,8" fill="currentColor"/></svg>
+          <span class="brand-text">LUA TURTLE</span>
+        </a>
+        <span class="brand-page">Computer science</span>
+      </h1>
+    </div>
+    <div class="header-controls">
+      <span id="header-status" role="status" aria-live="polite"></span>
+      <a id="btn-open-editor" class="button btn-secondary" href="./" aria-disabled="true" title="Open this program in the full editor" aria-label="Open in editor">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+        <span class="btn-label">Open in editor</span>
+      </a>
+      <button id="btn-stop" class="btn-secondary" aria-label="Stop" disabled>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" stroke="none"/></svg>
+        <span class="btn-label">Stop</span>
+      </button>
+      <button id="btn-run" class="primary" aria-label="Run" disabled>
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
+        <span class="btn-label">Run</span>
+        <kbd id="run-shortcut" class="kbd" aria-hidden="true"></kbd>
+      </button>
+    </div>
+  </header>
+
+  <div id="browse">
+    <div id="browse-column">
+      <aside id="browse-sidebar" aria-label="Find a concept">
+        <label id="browse-search-field">
+          <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="browse-search" type="search" placeholder="Search concepts" aria-label="Search concepts" aria-controls="browse-main" autocomplete="off" spellcheck="false">
+          <kbd id="browse-search-key" class="kbd" aria-hidden="true">/</kbd>
+        </label>
+        <nav id="compsci-courses" aria-label="Courses">
+          <h2 class="browse-list-title">Courses</h2>
+          <ul id="compsci-course-list"></ul>
+        </nav>
+      </aside>
+
+      <main id="browse-main" tabindex="-1" aria-live="polite">
+        <p id="browse-loading">Loading the curriculum…</p>
+        <p id="browse-empty" hidden>No concepts match <q id="browse-empty-query"></q></p>
+      </main>
+    </div>
+
+    <section id="stage" aria-label="Canvas and code">
+      <div id="canvas-panel">
+        <div id="canvas-controls">
+          <div id="canvas-toolbar">
+            <button id="btn-zoom-in" title="Zoom in" aria-label="Zoom in">+</button>
+            <button id="btn-zoom-out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+            <button id="btn-zoom-reset" title="Reset view">Reset</button>
+            <span id="zoom-label" aria-live="polite">100%</span>
+            <button id="btn-grid" title="Toggle grid" aria-pressed="false">Grid</button>
+          </div>
+        </div>
+        <p id="stage-canvas-hint">Pick an example to draw it here.</p>
+        <canvas id="turtle-canvas" aria-label="Turtle drawing"></canvas>
+      </div>
+
+      <section id="stage-editor-panel" class="dock" aria-label="Code">
+        <div id="stage-editor-header" class="dock-header">
+          <button id="stage-editor-caret" class="dock-caret" aria-label="Toggle code" aria-controls="stage-editor-body"><span class="dock-caret-icon">&#9660;</span></button>
+          <h2 id="stage-editor-title" class="dock-title">Code</h2>
+          <span id="stage-editor-error" class="dock-hint" hidden></span>
+          <button id="stage-editor-reset" class="dock-toggle-plain" title="Put the example's own program back" hidden>Revert</button>
+        </div>
+        <div id="stage-editor-body">
+          <textarea id="stage-editor-textarea"></textarea>
+        </div>
+      </section>
+    </section>
+  </div>
+</div>
+
+<script type="module" src="compsci-page.js"></script>
+
+</body>
+</html>

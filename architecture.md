@@ -25,8 +25,12 @@ Layer boundaries, top to bottom:
 | Runs | `runner.js` | The main thread's half of the frame protocol: the worker, the run state machine, run ids, frame ack, Stop; shared by both pages |
 | Editor | `lua-editor.js` | The CodeMirror editor both pages write Lua in |
 | Library page | `library.html`, `library.css`, `library-page.js`, `library.js`, `library/` | `/library`: example programs by concept, with preview videos, run on a canvas with their code beneath (see [The library](#the-library-library)) |
+| Compsci page | `compsci.html`, `compsci.css`, `compsci-page.js`, `compsci.js`, `compsci/` | `/compsci`: the mathematics of a computer science degree, course by course, each concept with its equations and the library examples that show it (see [Computer science](#computer-science-compsci)) |
+| Creative page | `creative.html`, `creative.css`, `creative-page.js`, `creative.js`, `creative/` | `/creative`: creative coding credited to its artists, each work with the math in its picture and its code, its license, the concepts it draws on, and our turtle versions (see [Creative coding](#creative-coding-creative)) |
+| Browsing | `browse.css`, `example-stage.js`, `example-cards.js` | What `/library`, `/compsci` and `/creative` share: their layout, the stage that runs an example with its code beneath, and the example cards with their previews |
 | UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player (its timing and fit in `recording.js`, pure); a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
 | Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
+| Transcribe | `transcribe.js`, `samples.js`, `transcribe-panel.js` | Typing a sample program in by hand, checked as it is typed: the check, token by token and character by character, as pure functions; the samples (every Lessons and Library program) and searching them; the panel over the canvas column that shows the sample line by line and marks the editor (see [Transcribe](#transcribe)) |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
@@ -362,8 +366,11 @@ The pieces, each with one job:
 - **`library/previews/` holds each example's preview,** `<id>.mp4` (a few seconds of H.264, 480×360) and `<id>.webp` (the finished drawing, shown until the video plays), and `manifest.json`, which records the hash each was made from.
   They are made by `tools/library-previews.mjs` (below), never by hand.
 - **`library.js` decides.** Pure functions of the catalog: the gallery's sections for a search and a concept, the concepts' counts, the example a link names, and where an example's files are.
-- **`library-page.js` is the shell.** It renders what `library.js` returns, shows each card's poster as it nears the view and plays its video, loaded then, only while the mouse is over the card or it has keyboard focus (one at a time, and none under `prefers-reduced-motion`), so a page of cards decodes no video until one is pointed at, runs the chosen program through `runner.js`, and keeps the link and the editor's dock (`dock.js`).
-  Cards are kept across renders, so a search never reloads a video.
+- **`library-page.js` is the shell.** It renders what `library.js` returns, keeps the search and the link, and hands the rest to two modules it shares with `/compsci`.
+- **`example-cards.js` makes the cards.** It shows each card's poster as it nears the view and plays its video, loaded then, only while the mouse is over the card or it has keyboard focus (one at a time, and none under `prefers-reduced-motion`), so a page of cards decodes no video until one is pointed at.
+  Cards are kept across renders by a key the page gives them, so a search never reloads a video.
+- **`example-stage.js` runs them.** The canvas, the program in its collapsible editor (its dock, `dock.js`), the header's Run, Stop and Open in editor controls and status, and running through `runner.js`; the page hears of each example shown through `onShow`.
+- **`browse.css` lays both pages out:** sidebar, main column, and the stage; `library.css` adds the concept list and the gallery's sections.
 
 The previews are made faithfully, the way the command reference's demos are played.
 `tools/library-previews.mjs` starts the dev server and loads its dev-only recorder page, `dev/library-recorder/`, in headless Chromium through Playwright.
@@ -375,9 +382,44 @@ A program that posts more frames than a recording keeps (`MAX_RECORDED_FRAMES`) 
 It needs `npm install` (Playwright and its Chromium) and `ffmpeg` on the `PATH`.
 
 `test/library_test.lua` runs every program on the host at two canvas sizes, checking that it draws inside the canvas, like the Lessons' test (both use `test/program_check.lua`).
+An example that lists no concept is in the catalog for `/compsci` but left out of the gallery.
+
 `test/library_test.mjs` covers `library.js`, checks that the catalog's concepts and examples are consistent and that its examples and the program files match both ways, and fails while any preview is missing or stale.
 
 To add an example: write `library/programs/<id>.lua`, add it to the catalog with its concepts, and run `npm run previews`.
+
+### Computer science (`/compsci`)
+
+`/compsci` is a third page: the mathematics of a computer science degree, laid out along the math and computer science courses of Scott H. Young's MIT Challenge, in its order.
+It covers concepts, not lectures: each concept has a plain summary, its key equations (each with what it says), everyday metaphors for it and where it is used, the earlier concepts it builds on, the library examples that show it, and the open sources it was checked against.
+Nothing is copied from any course or book; [spec-compsci.md](spec-compsci.md) has the courses, the sources and their licenses, and the plan.
+The page's link names a course (`/compsci#18-06`) or a concept (`/compsci#eigenvalues`).
+
+The sidebar lists the courses, with the selected course's units under it; the main column shows that course, unit by unit, or a search's results across every course.
+An example runs on the same stage as the library's, and a course that is not written yet says so.
+
+- **`compsci/courses.json` lists the courses** in order, `{id, number, name, about, syllabus: {label, url}, sources}`, and **`compsci/courses/<id>.json` holds each course's units and concepts** (`{"units": []}` until it is written).
+  **`compsci/sources.json`** lists the references with their licenses.
+- **`compsci.js` decides.** Pure functions of those and the library's catalog: what a link names, a course's view, what a search finds and how it ranks, and each course's coverage.
+- **`compsci-page.js` is the shell.** It loads the data, renders what `compsci.js` returns, renders each equation with KaTeX, and uses `example-stage.js` and `example-cards.js` as the library does.
+
+`test/compsci_test.mjs` covers `compsci.js`, keeps the courses in their order, checks that every id is unique and every reference names something that exists (a concept builds only on concepts in earlier courses), and renders every equation with the page's KaTeX.
+`npm run coverage` lists each course's concepts that have no example, metaphor or application yet.
+
+To add a course's concepts: fill `compsci/courses/<id>.json`; an example a concept needs is written for the library first, and may list no library concept.
+
+### Creative coding (`/creative`)
+
+`/creative` is a fourth page: beautiful creative coding, such as flow fields, Truchet tiles, Substrate and Fourier epicycles, each credited to its artist with its context, the math in its picture and in its code, its license, and the library and curriculum concepts it draws on.
+It is kept apart from `/library` and `/compsci`, and ordered by kind of art; [spec-creative.md](spec-creative.md) has the data, the plan for turtle versions, and the cross-page index planned after them.
+The page's link names a group (`/creative#patterns`) or a work (`/creative#substrate`).
+
+- **`creative/works.json` holds the works** in groups, in order.
+- **`creative.js` decides.** Pure functions of the works, the library's catalog and the curriculum: what a link names, each work as shown, whether its license lets us port its code, what a search finds, and coverage.
+- **`creative-page.js` is the shell.** It loads the data, renders what `creative.js` returns, and uses `example-stage.js` and `example-cards.js` as the other pages do.
+
+`test/creative_test.mjs` covers `creative.js` and checks that every work is credited and whole, every license is one the page knows, and every example and concept it names exists.
+`npm run coverage` also lists the works with no turtle version yet.
 
 ### Lessons sidebar
 
@@ -385,17 +427,18 @@ The Lessons button (⌘⇧L, Ctrl+Shift+L elsewhere) pops a sidebar up over the 
 Each page is one example: what it is about, its program step by step (each step a chunk of the program with its line numbers, and what that chunk does), and then the whole program, which the learner can run on the canvas, open in the editor, or copy.
 The sidebar is docked over the editor column, or detached into a window that floats over the page, so a learner can read it beside the editor while typing a program in by hand.
 The floating window is dragged by its header and resized from any of its edges or corners, so it can be widened leftward to show long lines of code even when it sits against the right of the window.
+A lesson's first page opens with what the lesson is about, everyday things its idea is like ("Think of it as"), and what it is used for ("Used for"), as /compsci does for a concept.
 Every lesson shows its idea both ways: on a Cartesian graph ("On the plane") and as turtle geometry, with headings, walks and vectors ("With the turtle"), and word problems are worked both ways too.
 The pieces, each with one job:
 
-- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples, each example with its text and a whole program.
+- **`turtle/lessons.lua` holds the lessons.** Pure data: chapters, lessons, and examples; each lesson with its metaphors and applications, `{name, says}` lists, and each example with its text and a whole program.
   Plane examples start with the turtle library's own `graph()` and `axes()`, then draw in the graph's coordinates with `plot`, `mark`, `teleport` and `setpos`, so every program runs on its own and is the code a learner could write.
   A program is written as its own tutorial: `--:` lines at the left edge explain the chunk below them, and `tutorial()` splits each program at those lines into `steps` when the file loads, taking the lines out of the program.
   The explanation sits right above the code it explains, so the two are edited together.
   A step marked `--::` shows folded; no lesson uses that now.
-  `test/lessons_test.lua` checks the shape, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
+  `test/lessons_test.lua` checks the shape, that every lesson has at least two metaphors and two applications, each named and saying something, that a plane example's first step starts with `graph(`, that each step's chunk is found at its line and that the steps cover the whole program, and runs every program on the host at two canvas sizes, checking that it draws inside the canvas.
 - **`worker.js` carries them.** `turtle_web.lua`'s `_bridge_get_lessons` loads the data, and the `ready` message sends it once, as it does the demos; the host itself never loads it.
-- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what the contents list, and which parts of a paragraph are `code`.
+- **`lessons.js` decides.** Pure functions turn the chapters into a flat list of pages and say which page a move or key leads to, where a page sits in its lesson, what a lesson's first page opens with, what the contents list, and which parts of a paragraph are `code`.
   `test/lessons_test.mjs` covers it.
 - **`floating.js` decides where the detached window sits.** Pure functions of the window's size give its first box, and the box after a drag, a resize by any edge or corner, or the window shrinking; every box they return fits the window.
   A resize moves only the edges held, and stops each at the window's margin or where the box would get smaller than its minimum.
@@ -408,6 +451,34 @@ The pieces, each with one job:
 Docked, the sidebar covers only the editor column, so the drawing is always in view while the learner reads about it.
 Detached, it is `position: fixed` and stays where it was left, above the canvas's own overlays.
 Its resize handles sit mostly outside its border, so they never take a grab meant for its scrollbar.
+
+### Transcribe
+
+The Transcribe button opens a panel over the canvas column, beside the editor, for typing a sample program in by hand: the feel of typing in the editor, without the mistakes of copying by eye.
+It is on in staging and the dev server only (see [Feature flags](#feature-flags)).
+The panel lists every sample there is, the Lessons' programs chapter by chapter and then every Library program, with a search bar.
+Choosing one empties the editor (its undo brings the learner's program back) and shows the sample with its line numbers.
+As the learner types, the panel ticks the lines typed, tints the line to type now, and says how many lines are done; the first mistake turns its line red and is named, as in "Expected `a` in `forward`, but found `r`."
+In the editor, the numbers of the lines typed right turn green, the mistake's code is marked, and its line number turns red.
+Once the program matches, a Run button runs it; any run closes the panel, so the drawing is in view, and reopening it picks up where the typing is.
+
+What counts as the same program:
+
+- **Tokens, not text.** Both programs are split into Lua tokens, and compared token by token, and within a token character by character.
+  Spacing, line breaks and indentation therefore count only where Lua reads them: inside a string, and between two words (`localx` is not `local x`).
+- **Comments are optional.** They are left out on both sides, so a learner can type them, skip them, or add their own.
+- **A prefix while typing.** The last token, if nothing follows it, may be half typed (`forw` of `forward`, `"hel` of `"hello"`), and a lone `-` just typed waits to see whether it starts a comment.
+- **The first mistake only.** What follows it is not checked until it is fixed, as in a typing tutor.
+
+The pieces, each with one job:
+
+- **`transcribe.js` decides.** A tokenizer that never fails (an unclosed string or comment stops where Lua would stop reading it), `checkTranscription(sample, typed)`, which returns the state, the tokens matched, the next character to type and the mistake as offsets and a message, and the sample's lines and the editor's right lines from that result.
+- **`samples.js` lists the samples.** Pure functions of the Lessons' pages (`lessons.js`) and the library's catalog: the groups, a search, and a sample by id.
+  A lesson's program comes with the lessons from the worker; a library program is fetched when it is chosen.
+- **`transcribe-panel.js` is the shell.** It renders the picker and the sample, re-checks on every edit while it is open, applies the check's marks to the editor and clears them when it closes, and remembers the sample chosen in `localStorage`.
+- **`app.js` owns the editor and runs.** It empties the editor for a new sample, runs the program, and closes the panel for any run.
+
+`test/transcribe_test.mjs` covers the tokenizer, the check and the samples, and checks that every Lessons and Library program, retyped without comments and with its spacing changed, checks as done against itself.
 
 ### Panels
 
@@ -470,17 +541,19 @@ Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 ### Feature flags
 
 A feature can be switched off with one flag, without touching its code.
-`public/flags.json` names each flag and says whether it is on; today they are `share`, `export` and `lessons`.
+`public/flags.json` names each flag and says whether it is on: `true`, `false`, or `"staging"`, which is on everywhere but the production site, so in staging and the dev server.
+Today they are `share`, `export`, `lessons` and `transcribe`, which is `"staging"`.
+Production and staging serve the same `public/`, so the page tells them apart by its hostname: `flags.js`'s `PRODUCTION_HOSTS`, which `test/flags_test.mjs` keeps equal to the production routes in `wrangler.jsonc`.
 
 - **`flags.js` decides.** Pure functions read the file, apply a tab's `?flags=` overrides, and make the edits the CLI asks for.
   A flag is on unless something turns it off, so a missing or unreadable file leaves every feature on.
   `test/flags_test.mjs` covers it.
 - **`app.js` is the shell.** It fetches the file before anything else, and its `feature(name, ...elements)` removes a feature's elements when it is off and tells the caller to skip wiring it.
   Removed elements leave no gap in the header's flex row, and a feature that is off also loses its shortcut (the Lessons' ⌘⇧L).
-- **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>` or `off <name>` rewrites the file; it refuses a name the file does not have.
+- **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>`, `off <name>` or `staging <name>` rewrites the file; it refuses a name the file does not have.
 
 The site is static, so a change goes live on the next deploy, and in the dev server on the next page load.
-`?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have.
+`?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have, and never turns a `"staging"` flag on in production.
 Adding a flag means adding it to `flags.json` and guarding the feature's wiring in `app.js` with `feature()`.
 
 ### Zoom about a point (`zoomAt`)
@@ -563,14 +636,18 @@ it and so cannot be served by accident.
 Pointing `assets.directory` back at the repo root would publish all of them — it previously did.
 The Worker serves `luaturtle.com` and `www.luaturtle.com` as custom domains declared in `wrangler.jsonc`, so deploying creates their DNS records.
 A zone Redirect Rule in the Cloudflare dashboard (not in the repo) sends `www` to the apex with a 301.
+`npx wrangler deploy` publishes production, from the local CLI; Wrangler is a pinned dev dependency.
+A `staging` environment in `wrangler.jsonc` is a separate Worker, `luaturtleweb-staging`, serving the same `public/` at `staging.luaturtle.com`, for trying a branch before it reaches production.
+`npm run deploy:staging` runs the tests and deploys the checked-out tree there; routes are not inherited between environments, so it never touches the production hostnames.
+Staging sits behind Cloudflare Access, set up in the Zero Trust dashboard (not in the repo): a self-hosted application for the whole hostname, whose one policy lets in the owner's email with a one-time PIN.
 `public/_headers` sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy:
 require-corp` so the page is cross-origin isolated — a hard requirement for
 `SharedArrayBuffer`, and therefore for the whole animation model. No build step: plain ES
 modules, CodeMirror from static include, `wasmoon.js` and its `glue.wasm` binary vendored.
 Both come from wasmoon 1.16.0 and must be replaced together; `worker.js` passes the local
 `glue.wasm` URL to `LuaFactory` because the default is a runtime fetch from unpkg.com.
-CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license).
+CodeMirror 5.65.16 is vendored too, in `public/vendor/codemirror/` (the cdnjs builds, with its MIT license), and KaTeX 0.19.0, which `/compsci` renders equations with, in `public/vendor/katex/` (its UMD build, stylesheet and woff2 fonts, with its MIT license).
 Google Fonts is the only third-party origin the pages load from, and losing it only changes the typeface; `test/index_assets_test.mjs` keeps it that way and checks every local script and stylesheet each page names exists.
-Cloudflare serves `library.html` at `/library`, without its extension.
+Cloudflare serves `library.html` at `/library` and `compsci.html` at `/compsci`, without their extensions.
 The library's previews are committed media files, made ahead of time by a dev tool (see [The library](#the-library-library)), so deploying still needs no build step.
-`package.json` lists only dev tools (Playwright, for that tool) and is never part of the site.
+`package.json` lists only dev tools (Playwright, for that tool, and Wrangler) and is never part of the site.

@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 import {
-    normalize, tokens, matchScore, libraryView, conceptCounts, exampleFromHash,
+    normalize, tokens, matchScore, libraryView, conceptCounts, galleryExamples, exampleFromHash,
     programPath, videoPath, posterPath,
 } from '../public/library.js';
 import { previewHash, toMake } from '../tools/library-previews.mjs';
@@ -33,6 +33,7 @@ const small = {
         { id: 'sine', name: 'Sine waves', about: 'Waves up and down.', concepts: ['trig'] },
         { id: 'koch', name: 'Koch snowflake', about: 'A snowflake with sine-free bumps.', concepts: ['fractal'] },
         { id: 'tree', name: 'Fractal tree', about: 'Branches at an angle.', concepts: ['fractal', 'trig'] },
+        { id: 'grid', name: 'Sheared grid', about: 'Made for another page.', concepts: [] },
     ],
 };
 const ids = (examples) => examples.map((e) => e.id);
@@ -80,6 +81,13 @@ test('a search shows one section of results, best first, within the selected con
     assert.deepEqual(libraryView(small, { query: 'nothing like it' }), { sections: [], count: 0 });
 });
 
+test('an example that lists no concept is left out of the gallery and its search', () => {
+    assert.deepEqual(ids(galleryExamples(small)), ['sine', 'koch', 'tree']);
+    assert.equal(libraryView(small).count, 3);
+    assert.deepEqual(libraryView(small, { query: 'sheared' }), { sections: [], count: 0 });
+    assert.equal(exampleFromHash(small, '#grid').id, 'grid');   // it still runs from a link
+});
+
 test('concept counts and links', () => {
     assert.deepEqual(conceptCounts(small), { trig: 2, fractal: 2, unused: 0 });
     assert.equal(exampleFromHash(small, '#koch').id, 'koch');
@@ -110,7 +118,7 @@ test('every concept and example has an id, a name and an about, and ids are uniq
 test('every example lists known concepts, and every concept has examples', () => {
     const known = new Set(catalog.concepts.map((c) => c.id));
     for (const example of catalog.examples) {
-        assert.ok(example.concepts.length > 0, `${example.id} lists no concepts`);
+        assert.ok(Array.isArray(example.concepts), `${example.id} has no concepts list`);
         assert.deepEqual(example.concepts, [...new Set(example.concepts)], `${example.id} repeats a concept`);
         for (const id of example.concepts) assert.ok(known.has(id), `${example.id} lists unknown concept ${id}`);
     }

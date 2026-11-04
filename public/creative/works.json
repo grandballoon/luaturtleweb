@@ -1,0 +1,786 @@
+{
+  "groups": [
+    {
+      "id": "generative-art",
+      "name": "Generative art",
+      "about": "Artists' systems: rules, randomness and growth that make a picture no one drew by hand.",
+      "works": [
+        {
+          "id": "flow-fields",
+          "name": "Flow Fields",
+          "artist": "Tyler Hobbs",
+          "year": "2020",
+          "context": "A technique essay on his blog; Fidenza, his 2021 Art Blocks series, is built on it.",
+          "url": "https://www.tylerxhobbs.com/words/flow-fields",
+          "code": null,
+          "license": "not-public",
+          "picture": "Thick curves flowing side by side without touching.",
+          "math": "A grid of angles from Perlin noise; each step moves by (cos a, sin a) times its length. Angles snapped to multiples of π/4 give a fractured look, and collision checks keep the curves apart.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "trigonometry",
+              "parametric"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "differential-line",
+          "name": "differential-line",
+          "artist": "Anders Hoff (Inconvergent)",
+          "year": "2019",
+          "context": "A personal research repository, archived in 2019.",
+          "url": "https://github.com/inconvergent/differential-line",
+          "code": {
+            "label": "Python and Cython",
+            "url": "https://github.com/inconvergent/differential-line"
+          },
+          "license": "mit",
+          "picture": "A closed line that folds like coral or brain tissue.",
+          "math": "Nodes repel their neighbors and are pulled toward the two they are linked to; a node is inserted where the curve bends most, and the line never crosses itself.",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "matrix-exponential"
+            ]
+          }
+        },
+        {
+          "id": "hyphae",
+          "name": "hyphae",
+          "artist": "Anders Hoff (Inconvergent)",
+          "year": "2014",
+          "context": "A personal research repository.",
+          "url": "https://github.com/inconvergent/hyphae",
+          "code": {
+            "label": "Python",
+            "url": "https://github.com/inconvergent/hyphae"
+          },
+          "license": "mit",
+          "picture": "Root- or fungus-like branching networks.",
+          "math": "Branches grow step by step and stop where they would overlap: a branching tree under a no-collision rule.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "recursion",
+              "fractals"
+            ],
+            "compsci": [
+              "incidence-matrices"
+            ]
+          }
+        },
+        {
+          "id": "sand-spline",
+          "name": "sand-spline",
+          "artist": "Anders Hoff (Inconvergent)",
+          "year": "2019",
+          "context": "A personal research repository, archived in 2019.",
+          "url": "https://github.com/inconvergent/sand-spline",
+          "code": {
+            "label": "Python",
+            "url": "https://github.com/inconvergent/sand-spline"
+          },
+          "license": "mit",
+          "picture": "Grainy, sand-textured ribbons.",
+          "math": "Splines whose control points drift by noise, drawn as thousands of translucent dots.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "parametric"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "substrate",
+          "name": "Substrate",
+          "artist": "Jared Tarbell",
+          "year": "2003",
+          "context": "The Machines gallery on complexification.net, his personal Processing experiments.",
+          "url": "http://complexification.net/gallery/machines/substrate/",
+          "code": {
+            "label": "Processing",
+            "url": "http://www.complexification.net/gallery/machines/substrate/appletm/substrate_m.pde"
+          },
+          "license": "none-stated",
+          "picture": "A crystalline network of lines, like a city seen from above.",
+          "math": "Cracks grow straight until they hit another crack, then new ones branch off at right angles; a grid records where cracks are.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons"
+            ],
+            "compsci": [
+              "incidence-matrices",
+              "orthogonal-vectors"
+            ]
+          }
+        },
+        {
+          "id": "schotter",
+          "name": "Schotter (Gravel)",
+          "artist": "Georg Nees",
+          "year": "1968",
+          "context": "Drawn on a Zuse Graphomat Z64 plotter; Zellyn reconstructed the original ALGOL program in 2024.",
+          "url": "https://zellyn.com/2024/06/schotter-1/",
+          "code": {
+            "label": "tja/schotter, a Go recreation",
+            "url": "https://github.com/tja/schotter"
+          },
+          "license": "mit",
+          "picture": "A 22 by 12 grid of squares that falls into disorder.",
+          "math": "Square i of 264 is shifted by up to ±5·i/264 and rotated by a jitter that grows with i/264: randomness rising in a straight line.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons",
+              "symmetry"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "des-ordres",
+          "name": "(Des)Ordres",
+          "artist": "Vera Molnár",
+          "year": "1974",
+          "context": "Early plotter drawings, ink on paper; the title puns on disorder and orders.",
+          "url": "https://dam.org/museum/artists_ui/artists/molnar-vera/des-ordres/",
+          "code": null,
+          "license": "not-public",
+          "picture": "Concentric squares in a grid, some missing, some shaken.",
+          "math": "Nested squares in each cell, with random omission and random offsets of their corners.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons",
+              "symmetry"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "physarum",
+          "name": "Physarum",
+          "artist": "Sage Jenson",
+          "year": "2019",
+          "context": "A GPU simulation of millions of agents, after Jeff Jones's 2010 model of slime mold.",
+          "url": "https://cargocollective.com/sagejenson/physarum",
+          "code": null,
+          "license": "not-public",
+          "picture": "Glowing networks of veins, like slime mold.",
+          "math": "Agents sense the trail ahead, turn toward it and deposit more; the trail map diffuses and decays.",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "markov-matrices"
+            ]
+          }
+        },
+        {
+          "id": "looping-gifs",
+          "name": "Looping animations",
+          "artist": "Etienne Jacob",
+          "year": "2017–2024",
+          "context": "Tutorials on his site and 21 commented animations.",
+          "url": "https://bleuje.com/tutorials/",
+          "code": {
+            "label": "Processing",
+            "url": "https://github.com/Bleuje/processing-animations-code"
+          },
+          "license": "all-rights-reserved",
+          "picture": "Seamless loops of Hilbert curves, spirals and spheres.",
+          "math": "Periodic functions of time, a phase offset per object, easing, and noise sampled around a circle so it loops.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "trigonometry",
+              "fractals"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "space-colonization",
+          "name": "Differential growth and space colonization",
+          "artist": "Jason Webb",
+          "year": "2019–2020",
+          "context": "Experiments, with a curated list of morphogenesis resources.",
+          "url": "https://github.com/jasonwebb/morphogenesis-resources",
+          "code": {
+            "label": "JavaScript",
+            "url": "https://github.com/jasonwebb/2d-space-colonization-experiments"
+          },
+          "license": "cc-by-nc-sa-4.0",
+          "picture": "Leaf venation and lines that grow and fold.",
+          "math": "Space colonization after Runions et al. (2007): veins grow toward the nearest of many attractor points.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "recursion",
+              "fractals"
+            ],
+            "compsci": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "patterns",
+      "name": "Patterns, tilings and rules",
+      "about": "Tiles, attractors and written instructions: simple local rules with global structure.",
+      "works": [
+        {
+          "id": "10-print",
+          "name": "10 PRINT CHR$(205.5+RND(1)); : GOTO 10",
+          "artist": "Nick Montfort, Patsy Baudoin, John Bell, Ian Bogost, Jeremy Douglass, Mark C. Marino, Michael Mateas, Casey Reas, Mark Sample and Noah Vawter",
+          "year": "2012",
+          "context": "A book from MIT Press about one line of Commodore 64 BASIC; free as a PDF.",
+          "url": "https://10print.org",
+          "code": null,
+          "license": "cc-by-nc-sa-3.0",
+          "picture": "An endless random maze of diagonals.",
+          "math": "A coin flip per cell picks / or ; a maze emerges from independent local choices.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "modular"
+            ],
+            "compsci": [
+              "markov-matrices"
+            ]
+          }
+        },
+        {
+          "id": "truchet",
+          "name": "Multi-Scale Truchet Patterns",
+          "artist": "Christopher Carlson, after Sébastien Truchet (1704)",
+          "year": "2018",
+          "context": "A paper at Bridges 2018.",
+          "url": "https://archive.bridgesmathart.org/2018/bridges2018-39.html",
+          "code": null,
+          "license": "not-public",
+          "picture": "Interlocking arcs and lobes at several sizes.",
+          "math": "Quarter-circle arcs between edge midpoints; a tile splits into four at half the size, with winged tiles so the sizes join.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "symmetry",
+              "recursion",
+              "fractions"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "tactile",
+          "name": "Tactile",
+          "artist": "Craig S. Kaplan",
+          "year": "2018",
+          "context": "A library for Escher-like tilings, ported from his C++ version.",
+          "url": "https://github.com/isohedral/tactile-js",
+          "code": {
+            "label": "JavaScript",
+            "url": "https://github.com/isohedral/tactile-js"
+          },
+          "license": "bsd-3-clause",
+          "picture": "Interlocking tiles of any shape you draw.",
+          "math": "81 of the 93 isohedral tiling types, each with 0 to 6 parameters; tiles are placed by affine matrices.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "symmetry",
+              "linear-algebra"
+            ],
+            "compsci": [
+              "linear-transformations"
+            ]
+          }
+        },
+        {
+          "id": "penrose",
+          "name": "Penrose Tiling Explained",
+          "artist": "Jeff Preshing",
+          "year": "2011",
+          "context": "A blog post explaining his Python generator.",
+          "url": "https://preshing.com/20110831/penrose-tiling-explained/",
+          "code": {
+            "label": "penrose.py",
+            "url": "https://preshing.com/files/penrose.py"
+          },
+          "license": "none-stated",
+          "picture": "A pattern that never repeats, with fivefold symmetry.",
+          "math": "Two golden triangles, with 36° and 108° apexes, subdivided at golden-ratio points, recursively.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "golden-ratio",
+              "recursion",
+              "symmetry"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "clifford-attractors",
+          "name": "Clifford attractors",
+          "artist": "Clifford Pickover; page by Paul Bourke",
+          "year": "2004",
+          "context": "Paul Bourke's pages on fractals.",
+          "url": "https://paulbourke.net/fractals/clifford/",
+          "code": null,
+          "license": "none-stated",
+          "picture": "Silky clouds of millions of points.",
+          "math": "Iterate x' = sin(a·y) + c·cos(a·x), y' = sin(b·x) + d·cos(b·y) and plot every point it lands on.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "trigonometry",
+              "fractals"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "reaction-diffusion",
+          "name": "Reaction-Diffusion Tutorial",
+          "artist": "Karl Sims",
+          "year": "2013–2016",
+          "context": "A tutorial on his site.",
+          "url": "https://www.karlsims.com/rd.html",
+          "code": null,
+          "license": "all-rights-reserved",
+          "picture": "Spots, stripes and labyrinths like animal coats.",
+          "math": "The Gray-Scott model: two chemicals diffuse at different rates and react, with feed f = 0.055 and kill k = 0.062, over a 3 by 3 Laplacian.",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "matrix-exponential"
+            ]
+          }
+        },
+        {
+          "id": "stipplegen",
+          "name": "StippleGen 2",
+          "artist": "Windell Oskay (Evil Mad Scientist)",
+          "year": "2012",
+          "context": "Made for drawing machines like the Eggbot.",
+          "url": "https://github.com/evil-mad/stipplegen",
+          "code": {
+            "label": "Processing",
+            "url": "https://github.com/evil-mad/stipplegen"
+          },
+          "license": "lgpl-2.1",
+          "picture": "A photo redrawn as dots, or as one unbroken line.",
+          "math": "Weighted Voronoi stippling: Lloyd's relaxation moves each dot to the centroid of its cell; the single line is a travelling-salesman tour.",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "least-squares",
+              "projections"
+            ]
+          }
+        },
+        {
+          "id": "recode",
+          "name": "The ReCode Project",
+          "artist": "Community",
+          "year": "1976–1978",
+          "context": "Recreations of works from the journal Computer Graphics and Art.",
+          "url": "https://recodeproject.com",
+          "code": {
+            "label": "p5.js",
+            "url": "https://recodeproject.com"
+          },
+          "license": "mit",
+          "picture": "Early plotter art by Molnár and others.",
+          "math": "Varies by piece: grids, jitter and superposition.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons",
+              "symmetry"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "solving-sol",
+          "name": "Solving Sol",
+          "artist": "Contributors, after Sol LeWitt",
+          "year": "",
+          "context": "Sol LeWitt's wall drawings were written instructions for others to carry out; this project turns them into programs.",
+          "url": "https://github.com/wu-wu-wu/solving-sol",
+          "code": {
+            "label": "JavaScript",
+            "url": "https://github.com/wu-wu-wu/solving-sol"
+          },
+          "license": "unlicense",
+          "picture": "Lines and shapes from written rules.",
+          "math": "Each English instruction becomes parameters and a program: an algorithm as a score.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons"
+            ],
+            "compsci": []
+          }
+        }
+      ]
+    },
+    {
+      "id": "algorithms",
+      "name": "Algorithms and math made visible",
+      "about": "Explanations beautiful enough to be art: sorts, samples, transforms and matrices, drawn.",
+      "works": [
+        {
+          "id": "visualizing-algorithms",
+          "name": "Visualizing Algorithms",
+          "artist": "Mike Bostock",
+          "year": "2014",
+          "context": "An article from his talk at Eyeo 2014.",
+          "url": "https://bost.ocks.org/mike/algorithms/",
+          "code": null,
+          "license": "none-stated",
+          "picture": "Even-but-random dots, shuffles, sorts and mazes growing.",
+          "math": "Bridson's Poisson-disc sampling, Fisher–Yates against a biased shuffle, quicksort and mergesort, and mazes as random spanning trees (depth-first, Prim's, Wilson's).",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "incidence-matrices",
+              "transposes-and-permutations"
+            ]
+          }
+        },
+        {
+          "id": "sortvis",
+          "name": "Visualising sorting algorithms",
+          "artist": "Aldo Cortesi",
+          "year": "2007",
+          "context": "A blog post arguing for static diagrams over animations.",
+          "url": "https://corte.si/posts/code/visualisingsorting/index.html",
+          "code": {
+            "label": "sortvis",
+            "url": "https://github.com/cortesi/sortvis"
+          },
+          "license": "mit",
+          "picture": "Braided lines, one per element, shaded by value.",
+          "math": "Every swap drawn over time, so a sort's whole history is one picture.",
+          "examples": [],
+          "relates": {
+            "library": [],
+            "compsci": [
+              "transposes-and-permutations"
+            ]
+          }
+        },
+        {
+          "id": "hilbert-portrait",
+          "name": "Portrait of the Hilbert Curve",
+          "artist": "Aldo Cortesi",
+          "year": "2010",
+          "context": "A blog post.",
+          "url": "https://corte.si/posts/code/hilbert/portrait/index.html",
+          "code": {
+            "label": "spacecurve",
+            "url": "https://github.com/cortesi/spacecurve"
+          },
+          "license": "mit",
+          "picture": "A Hilbert curve colored by position, and the color cube walked along it.",
+          "math": "Compact Hilbert indices in any number of dimensions; nearby indices land near each other.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "fractals",
+              "recursion"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "manim",
+          "name": "manim and Essence of Linear Algebra",
+          "artist": "Grant Sanderson (3Blue1Brown)",
+          "year": "",
+          "context": "His own animation tool for his math videos.",
+          "url": "https://github.com/3b1b/manim",
+          "code": {
+            "label": "manim",
+            "url": "https://github.com/3b1b/manim"
+          },
+          "license": "mit",
+          "picture": "The whole plane's grid bending under a matrix, the basis vectors riding along.",
+          "math": "Interpolating from the identity to a matrix and applying it to every grid line.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "linear-algebra"
+            ],
+            "compsci": [
+              "linear-transformations",
+              "matrix-multiplication",
+              "determinant-properties"
+            ]
+          }
+        },
+        {
+          "id": "explained-visually",
+          "name": "Eigenvectors and Eigenvalues; Markov Chains",
+          "artist": "Victor Powell and Lewis Lehe",
+          "year": "2015",
+          "context": "Interactives from Explained Visually.",
+          "url": "https://setosa.io/ev/eigenvectors-and-eigenvalues/",
+          "code": {
+            "label": "explained-visually",
+            "url": "https://github.com/vicapow/explained-visually"
+          },
+          "license": "mit",
+          "picture": "Points pushed along eigen-directions, spiraling for complex eigenvalues; a weather chain hopping between states.",
+          "math": "Repeated matrix–vector products, and powers of a transition matrix settling to a steady state.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "linear-algebra"
+            ],
+            "compsci": [
+              "eigenvalues",
+              "diagonalization",
+              "markov-matrices"
+            ]
+          }
+        },
+        {
+          "id": "fourier-intro",
+          "name": "An Interactive Introduction to Fourier Transforms",
+          "artist": "Jez Swanson",
+          "year": "2018",
+          "context": "A personal explainer.",
+          "url": "https://www.jezzamon.com/fourier/",
+          "code": {
+            "label": "fourier",
+            "url": "https://github.com/Jezzamonn/fourier"
+          },
+          "license": "mit",
+          "picture": "A drawing rebuilt by circles spinning on circles, and JPEG's 8 by 8 cosine images.",
+          "math": "The discrete Fourier transform: each coefficient is one circle's radius, speed and starting angle.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "series",
+              "trigonometry",
+              "complex"
+            ],
+            "compsci": [
+              "fourier-series",
+              "complex-matrices-and-fft",
+              "change-of-basis"
+            ]
+          }
+        },
+        {
+          "id": "fourier-epicycles",
+          "name": "Drawing with Fourier Transform and Epicycles",
+          "artist": "Daniel Shiffman (The Coding Train)",
+          "year": "",
+          "context": "Coding Challenge #130, live-coded on video.",
+          "url": "https://thecodingtrain.com/challenges/130-drawing-with-fourier-transform-and-epicycles",
+          "code": {
+            "label": "Coding-Challenges",
+            "url": "https://github.com/CodingTrain/Coding-Challenges"
+          },
+          "license": "mit",
+          "picture": "Epicycles tracing a path point by point.",
+          "math": "The DFT of the path's points, with the circles chained in order of size.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "series",
+              "trigonometry",
+              "complex"
+            ],
+            "compsci": [
+              "fourier-series"
+            ]
+          }
+        },
+        {
+          "id": "svd-compression",
+          "name": "SVD image compression",
+          "artist": "Tim Baumann",
+          "year": "2014",
+          "context": "An interactive demo.",
+          "url": "https://timbaumann.info/svd-image-compression-demo/",
+          "code": {
+            "label": "svd-image-compression-demo",
+            "url": "https://github.com/timjb/svd-image-compression-demo"
+          },
+          "license": "mit",
+          "picture": "A photo sharpening as the rank rises.",
+          "math": "Keeping the k largest singular values: a sum of k rank one layers.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "linear-algebra"
+            ],
+            "compsci": [
+              "singular-value-decomposition",
+              "rank-one-matrices"
+            ]
+          }
+        },
+        {
+          "id": "hexagonal-grids",
+          "name": "Hexagonal Grids",
+          "artist": "Amit Patel (Red Blob Games)",
+          "year": "2013",
+          "context": "An interactive guide for game developers.",
+          "url": "https://www.redblobgames.com/grids/hexagons/",
+          "code": null,
+          "license": "none-stated",
+          "picture": "Hex grids with rings, lines and rotations.",
+          "math": "Cube coordinates on the plane x + y + z = 0; rotation by permuting coordinates; rounding back to the nearest hex.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "symmetry",
+              "polygons"
+            ],
+            "compsci": [
+              "projections",
+              "transposes-and-permutations"
+            ]
+          }
+        },
+        {
+          "id": "book-of-shaders",
+          "name": "The Book of Shaders",
+          "artist": "Patricio Gonzalez Vivo and Jen Lowe",
+          "year": "2015",
+          "context": "An online book about fragment shaders.",
+          "url": "https://thebookofshaders.com/",
+          "code": {
+            "label": "thebookofshaders",
+            "url": "https://github.com/patriciogonzalezvivo/thebookofshaders"
+          },
+          "license": "all-rights-reserved",
+          "picture": "Fields of color from shaping functions, matrices and noise.",
+          "math": "One function of (x, y) for every pixel, run on the GPU.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "graphs"
+            ],
+            "compsci": [
+              "linear-transformations"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "turtles-and-tiny-code",
+      "name": "Turtles and tiny code",
+      "about": "Communities that make art from very little: a turtle, a formula, 140 characters.",
+      "works": [
+        {
+          "id": "turtletoy",
+          "name": "Turtletoy",
+          "artist": "Reinder Nijhoff, and its community",
+          "year": "",
+          "context": "A JavaScript turtle-graphics site for plotter art, with SVG and G-code export.",
+          "url": "https://turtletoy.net",
+          "code": {
+            "label": "Every turtle's source, on the site",
+            "url": "https://turtletoy.net"
+          },
+          "license": "cc-by-nc-sa-4.0",
+          "picture": "Line art: differential growth, Fibonacci circles, hexagonal trees, grid waves.",
+          "math": "Forward and turn, with hidden-line tricks for 3D. Each author picks a license; the default is CC BY-NC-SA 4.0.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "polygons",
+              "spirals",
+              "fractals"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "tixy",
+          "name": "tixy.land",
+          "artist": "Martin Kleppe",
+          "year": "2020",
+          "context": "Creative code golf: 32 characters at most.",
+          "url": "https://tixy.land",
+          "code": {
+            "label": "aemkei/tixy",
+            "url": "https://github.com/aemkei/tixy"
+          },
+          "license": "none-stated",
+          "picture": "A grid of dots pulsing in waves, rings and checkerboards.",
+          "math": "One pure function of time, index, x and y gives each dot its size and sign.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "graphs",
+              "trigonometry",
+              "modular"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "dwitter",
+          "name": "Dwitter",
+          "artist": "lionleaf, inspired by sigveseb",
+          "year": "2016",
+          "context": "Launched at the Solskogen demoparty.",
+          "url": "https://www.dwitter.net",
+          "code": null,
+          "license": "none-stated",
+          "picture": "Whole animations in 140 characters of JavaScript.",
+          "math": "Trigonometry and modular arithmetic folded into one expression per frame.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "trigonometry",
+              "modular"
+            ],
+            "compsci": []
+          }
+        },
+        {
+          "id": "generative-design",
+          "name": "Generative Design code package",
+          "artist": "Benedikt Groß, Hartmut Bohnacker, Julia Laub and Claudius Lazzeroni",
+          "year": "",
+          "context": "Every sketch from the book Generative Design, p5.js edition.",
+          "url": "https://github.com/generative-design/Code-Package-p5.js",
+          "code": {
+            "label": "p5.js",
+            "url": "https://github.com/generative-design/Code-Package-p5.js"
+          },
+          "license": "apache-2.0",
+          "picture": "Studies in color, shape, type and image.",
+          "math": "Grids, randomness, noise, agents and recursion, one small sketch each.",
+          "examples": [],
+          "relates": {
+            "library": [
+              "recursion",
+              "symmetry"
+            ],
+            "compsci": []
+          }
+        }
+      ]
+    }
+  ]
+}

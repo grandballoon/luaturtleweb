@@ -1,0 +1,197 @@
+/* creative.css
+   The /creative page, on top of browse.css: the group list in the sidebar,
+   and the main column's works: each with its byline, context, facts
+   (picture, code, sources and license, concepts) and example cards. */
+
+/* ---- Groups ---- */
+
+#creative-group-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.creative-group-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  color: var(--text);
+}
+
+.creative-group-link:hover { background: var(--hover-wash); color: var(--text); }
+.creative-group-link:active { transform: none; }
+
+.creative-group-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Groups and works ---- */
+
+#browse-main > * { max-width: 920px; }
+
+#browse-main a { color: var(--accent); text-decoration: none; }
+#browse-main a:hover { text-decoration: underline; }
+#browse-main a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+
+.creative-group,
+.creative-results { scroll-margin-top: 12px; }
+
+.creative-group + .creative-group { margin-top: 28px; }
+
+.creative-group-name,
+.creative-results-title {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.creative-group-about {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.creative-work {
+  padding: 18px 0 20px;
+  scroll-margin-top: 4px;
+}
+
+.creative-work + .creative-work { border-top: 1px solid var(--hairline); }
+
+.creative-work-where {
+  margin-bottom: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.creative-work-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+#browse-main .creative-work-name a { color: var(--text); }
+#browse-main .creative-work-name a:hover { color: var(--accent); text-decoration: none; }
+
+.creative-work-by {
+  margin-top: 2px;
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+.creative-work-context {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* The facts: a label column and its text, one row each. */
+.creative-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+}
+
+.creative-fact {
+  display: grid;
+  grid-template-columns: 7.5em minmax(0, 1fr);
+  align-items: baseline;
+  gap: 2px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.creative-fact-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.creative-license {
+  margin-left: 4px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.creative-license.port { background: var(--accent-wash); color: var(--accent); }
+.creative-license.inspiration { border: 1px solid var(--border); color: var(--text-muted); }
+
+.creative-concept {
+  display: inline-block;
+  margin: 0 6px 4px 0;
+  padding: 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 11.5px;
+  color: var(--text);
+}
+
+#browse-main a.creative-concept:hover { border-color: var(--accent-dim); text-decoration: none; }
+
+.creative-no-example {
+  margin-top: 12px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+/* ---- Search results ---- */
+
+.creative-results-title { margin-top: 4px; }
+
+/* ---- Narrower ---- */
+
+/* With the sidebar over the main column, the groups scroll sideways as
+   chips beside the search. */
+@media (max-width: 1180px) {
+  #creative-group-list {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .creative-group-link {
+    display: inline-flex;
+    gap: 6px;
+    width: auto;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .creative-fact { grid-template-columns: minmax(0, 1fr); }
+}

@@ -1,0 +1,20 @@
+[
+  { "id": "lehman-mcs", "title": "Mathematics for Computer Science (2017)", "authors": "Eric Lehman, F. Thomson Leighton and Albert R. Meyer", "license": "CC BY-SA 3.0", "url": "https://ocw.mit.edu/courses/6-1200j-mathematics-for-computer-science-spring-2024/pages/readings/" },
+  { "id": "erickson-algorithms", "title": "Algorithms", "authors": "Jeff Erickson", "license": "CC BY 4.0", "url": "https://jeffe.cs.illinois.edu/teaching/algorithms/" },
+  { "id": "hefferon-la", "title": "Linear Algebra", "authors": "Jim Hefferon", "license": "CC BY-SA or GFDL", "url": "https://hefferon.net/linearalgebra/" },
+  { "id": "hefferon-toc", "title": "Theory of Computation", "authors": "Jim Hefferon", "license": "CC BY-SA or GFDL", "url": "https://hefferon.net/computation/" },
+  { "id": "lebl-diffyqs", "title": "Notes on Diffy Qs", "authors": "Jiří Lebl", "license": "CC BY-SA 4.0 or CC BY-NC-SA 4.0", "url": "https://www.jirka.org/diffyqs/" },
+  { "id": "grinstead-snell", "title": "Introduction to Probability", "authors": "Charles M. Grinstead and J. Laurie Snell", "license": "GFDL 1.3", "url": "https://open.umn.edu/opentextbooks/textbooks/21" },
+  { "id": "johnson-fee", "title": "Fundamentals of Electrical Engineering I", "authors": "Don H. Johnson", "license": "CC BY", "url": "https://open.umn.edu/opentextbooks/textbooks/fundamentals-of-electrical-engineering-1" },
+  { "id": "baraniuk-signals", "title": "Signals and Systems", "authors": "Richard Baraniuk et al.", "license": "CC BY 3.0", "url": "https://eng.libretexts.org/Bookshelves/Electrical_Engineering/Signal_Processing_and_Modeling/Signals_and_Systems_(Baraniuk_et_al.)" },
+  { "id": "bonaventure-networking", "title": "Computer Networking: Principles, Protocols and Practice", "authors": "Olivier Bonaventure", "license": "CC BY 3.0", "url": "https://www.computer-networking.info/" },
+  { "id": "forallx-calgary", "title": "forall x: Calgary", "authors": "P. D. Magnus, Tim Button, Aaron Thomas-Bolduc and Richard Zach", "license": "CC BY 4.0", "url": "https://forallx.openlogicproject.org/" },
+  { "id": "zach-slc", "title": "Sets, Logic, Computation", "authors": "Richard Zach", "license": "CC BY 4.0", "url": "https://slc.openlogicproject.org/" },
+  { "id": "zach-ic", "title": "Incompleteness and Computability", "authors": "Richard Zach", "license": "CC BY 4.0", "url": "https://ic.openlogicproject.org/" },
+  { "id": "kennesaw-graphics", "title": "Computer Graphics and Multimedia", "authors": "Kennesaw State University", "license": "CC BY 4.0", "url": "https://digitalcommons.kennesaw.edu/oertextbooks/6" },
+  { "id": "openstax-calculus", "title": "Calculus, volumes 1–3", "authors": "Gilbert Strang, Edwin Herman et al. (OpenStax)", "license": "CC BY-NC-SA 4.0", "url": "https://openstax.org/details/books/calculus-volume-1" },
+  { "id": "poole-mackworth", "title": "Artificial Intelligence: Foundations of Computational Agents, 3rd edition", "authors": "David L. Poole and Alan K. Mackworth", "license": "CC BY-NC-SA 4.0", "url": "https://artint.info/" },
+  { "id": "carpinelli-logic", "title": "An Animated Introduction to Digital Logic Design", "authors": "John D. Carpinelli", "license": "CC BY-NC-SA 4.0", "url": "https://digitalcommons.njit.edu/oat/1" },
+  { "id": "torralba-vision", "title": "Foundations of Computer Vision", "authors": "Antonio Torralba, Phillip Isola and William T. Freeman", "license": "CC BY-NC-ND", "url": "https://visionbook.mit.edu/" },
+  { "id": "wikipedia", "title": "Wikipedia", "authors": "Wikipedia contributors", "license": "CC BY-SA 4.0", "url": "https://en.wikipedia.org/" }
+]

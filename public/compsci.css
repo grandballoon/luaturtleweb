@@ -1,0 +1,283 @@
+/* compsci.css
+   The /compsci page, on top of browse.css: the course list in the
+   sidebar, and the main column's course: its header, units, and each
+   concept with its equations (KaTeX, vendor/katex/), its metaphors and
+   applications, and example cards. */
+
+/* ---- Courses ---- */
+
+#compsci-course-list,
+.compsci-unit-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.compsci-course {
+  display: grid;
+  grid-template-columns: 4.6em minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 5px;
+  background: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  color: var(--text);
+}
+
+.compsci-course:hover { background: var(--hover-wash); color: var(--text); }
+.compsci-course:active { transform: none; }
+
+.compsci-course[aria-current="true"] {
+  background: var(--accent-wash);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.compsci-course.unwritten:not([aria-current="true"]) { color: var(--text-muted); }
+
+.compsci-course .compsci-course-number,
+.compsci-course-count {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.compsci-course[aria-current="true"] .compsci-course-number { color: var(--accent); }
+
+.compsci-course-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compsci-unit-list { margin: 2px 0 6px calc(4.6em + 14px); }
+
+.compsci-unit-link {
+  display: block;
+  width: 100%;
+  padding: 3px 8px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: left;
+  color: var(--text-muted);
+}
+
+.compsci-unit-link:hover { background: var(--hover-wash); color: var(--text); }
+.compsci-unit-link:active { transform: none; }
+
+/* ---- The course ---- */
+
+#browse-main > * { max-width: 920px; }
+
+.compsci-course-head { padding: 4px 0 6px; }
+
+.compsci-course-head .compsci-course-number {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.compsci-course-name {
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+}
+
+.compsci-course-about {
+  margin-top: 6px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.compsci-course-meta,
+.compsci-checked,
+.compsci-builds-on {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.compsci-course-meta { margin-top: 8px; }
+
+#browse-main a { color: var(--accent); text-decoration: none; }
+#browse-main a:hover { text-decoration: underline; }
+#browse-main a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+
+.compsci-unwritten {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- Units and concepts ---- */
+
+.compsci-unit { margin-top: 28px; }
+
+.compsci-unit-name,
+.compsci-results-title {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  scroll-margin-top: 12px;
+}
+
+.compsci-unit { scroll-margin-top: 12px; }
+
+.compsci-concept {
+  padding: 18px 0 20px;
+  scroll-margin-top: 4px;
+}
+
+.compsci-concept + .compsci-concept { border-top: 1px solid var(--hairline); }
+
+.compsci-concept-where {
+  margin-bottom: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.compsci-concept-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+#browse-main .compsci-concept-name a { color: var(--text); }
+#browse-main .compsci-concept-name a:hover { color: var(--accent); text-decoration: none; }
+
+.compsci-concept-summary {
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.compsci-equations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.compsci-equation {
+  margin: 0;
+  padding: 4px 14px 10px;
+  border-radius: 6px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+}
+
+/* A long equation scrolls on its own rather than widening the page. */
+.compsci-tex {
+  overflow-x: auto;
+  overflow-y: hidden;
+  color: var(--text);
+}
+
+.compsci-tex .katex-display { margin: 0.6em 0; }
+.compsci-tex .katex { font-size: 1.12em; }
+
+.compsci-equation figcaption {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* What the idea is like and what it is used for, side by side. */
+.compsci-context {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px 24px;
+  margin-top: 14px;
+}
+
+.compsci-context-heading {
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.compsci-context-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.compsci-context-list li {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.compsci-context-name { font-weight: 600; }
+.compsci-context-name::after { content: '.'; }
+
+.compsci-builds-on { margin-top: 10px; }
+
+.compsci-no-example {
+  margin-top: 12px;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.compsci-checked { margin-top: 10px; }
+
+/* ---- Search results ---- */
+
+.compsci-results-title { margin-top: 4px; }
+
+/* ---- Narrower ---- */
+
+/* With the sidebar over the main column, the courses scroll sideways as
+   chips beside the search, and the units are reached by scrolling. */
+@media (max-width: 1180px) {
+  #compsci-course-list {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .compsci-course {
+    display: inline-flex;
+    gap: 6px;
+    width: auto;
+    white-space: nowrap;
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+  .compsci-course[aria-current="true"] { border-color: var(--accent-dim); }
+  .compsci-course-title,
+  .compsci-course-count,
+  .compsci-unit-list { display: none; }
+}

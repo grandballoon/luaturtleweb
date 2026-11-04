@@ -31,6 +31,8 @@ test('a page is served without its extension, as Cloudflare serves it', () => {
     assert.deepEqual(resolvePath('/library'), { root: 'public', path: 'library.html' });
     assert.deepEqual(resolvePath('/library?x=1'), { root: 'public', path: 'library.html' });
     assert.deepEqual(resolvePath('/library/catalog.json'), { root: 'public', path: 'library/catalog.json' });
+    assert.deepEqual(resolvePath('/compsci'), { root: 'public', path: 'compsci.html' });
+    assert.deepEqual(resolvePath('/creative'), { root: 'public', path: 'creative.html' });
 });
 
 test('a Range header gets just the bytes it asks for', () => {
@@ -74,6 +76,7 @@ test('files are served with their types and the isolation the app needs', () => 
     assert.equal(contentType('glue.wasm'), 'application/wasm');
     assert.equal(contentType('library/previews/rose-curve.mp4'), 'video/mp4');
     assert.equal(contentType('library/previews/rose-curve.webp'), 'image/webp');
+    assert.equal(contentType('vendor/katex/fonts/KaTeX_Main-Regular.woff2'), 'font/woff2');
     assert.equal(contentType('turtle/core.lua'), 'text/plain; charset=utf-8');
     assert.equal(contentType('README'), 'application/octet-stream');
     assert.deepEqual(ISOLATION_HEADERS, {

@@ -7,20 +7,22 @@
 //   node tools/flags.mjs list
 //   node tools/flags.mjs on <name>
 //   node tools/flags.mjs off <name>
+//   node tools/flags.mjs staging <name>    (on everywhere but production)
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { formatFlags, readFlags, setFlag } from '../public/flags.js';
+import { formatFlags, readFlags, setFlag, STAGING } from '../public/flags.js';
 
 const FILE = new URL('../public/flags.json', import.meta.url);
-const USAGE = 'Usage: node tools/flags.mjs list | on <name> | off <name>';
+const USAGE = 'Usage: node tools/flags.mjs list | on <name> | off <name> | staging <name>';
+const VALUES = { on: true, off: false, [STAGING]: STAGING };
 
 const [command, name] = process.argv.slice(2);
 const file = JSON.parse(readFileSync(FILE, 'utf8'));
 
 if (command === 'list' && !name) {
     console.log(formatFlags(readFlags(file)));
-} else if ((command === 'on' || command === 'off') && name) {
-    const { flags, error } = setFlag(file, name, command === 'on');
+} else if (Object.hasOwn(VALUES, command) && name) {
+    const { flags, error } = setFlag(file, name, VALUES[command]);
     if (error) {
         console.error(error);
         process.exit(1);

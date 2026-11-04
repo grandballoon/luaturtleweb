@@ -14,6 +14,7 @@
     { "id": "fractals", "name": "Fractals", "about": "Detail at every scale." },
     { "id": "lsystems", "name": "L-systems", "about": "A word rewritten by rules, then read as turtle moves." },
     { "id": "complex", "name": "Complex numbers", "about": "Points of the plane that multiply: z² + c, again and again." },
+    { "id": "linear-algebra", "name": "Linear algebra", "about": "Vectors and matrices: combining arrows, and stretching and turning the plane." },
     { "id": "series", "name": "Series", "about": "Adding up infinitely many terms." }
   ],
   "examples": [
@@ -190,6 +191,36 @@
       "name": "Rosette",
       "about": "One circle drawn 36 times, 10° apart.",
       "concepts": ["symmetry", "polygons"]
+    },
+    {
+      "id": "linear-combinations",
+      "name": "Linear combinations",
+      "about": "Two steps of one column and three of another reach b: the column picture of a system.",
+      "concepts": ["linear-algebra"]
+    },
+    {
+      "id": "linear-map-grid",
+      "name": "A linear map on a grid",
+      "about": "A matrix turns the square grid into a slanted one; the unit square's area becomes the determinant.",
+      "concepts": ["linear-algebra"]
+    },
+    {
+      "id": "eigenvector-arrows",
+      "name": "Eigenvectors",
+      "about": "Most vectors turn when a matrix moves them; eigenvectors only stretch.",
+      "concepts": ["linear-algebra"]
+    },
+    {
+      "id": "least-squares-line",
+      "name": "Least squares",
+      "about": "The line through scattered points whose squared misses add up to the least.",
+      "concepts": ["linear-algebra", "graphs"]
+    },
+    {
+      "id": "svd-circle",
+      "name": "Singular value decomposition",
+      "about": "Any matrix turns the unit circle into an ellipse, along perpendicular axes.",
+      "concepts": ["linear-algebra"]
     }
   ]
 }
