@@ -30,6 +30,7 @@ Layer boundaries, top to bottom:
 | Browsing | `browse.css`, `example-stage.js`, `example-cards.js` | What `/library`, `/compsci` and `/creative` share: their layout, the stage that runs an example with its code beneath, and the example cards with their previews |
 | UI panels | `dock.js`, `terminal.js`, `splitter.js`, `canvas-view.js`, `command-reference.js`, `command-preview.js`, `usage-popup.js`, `command-lookup.js`, `lessons-panel.js` | A collapsible, resizable panel docked under a column; the output panel under the canvas; editor/canvas divider; canvas toolbar + pan/zoom gestures; searchable command reference, docked under the editor; the reference's miniature demo player (its timing and fit in `recording.js`, pure); a command's example calls in a popup; Cmd/Ctrl+click on a command to show them; the Lessons sidebar over the editor |
 | Lessons | `lessons.js`, `floating.js`, `turtle/lessons.lua` | The Lessons sidebar's pages, steps, contents and key moves, and where its floating window sits, as pure functions; the lessons themselves as data, with a runnable, step-by-step program per example |
+| Transcribe | `transcribe.js`, `samples.js`, `transcribe-panel.js` | Typing a sample program in by hand, checked as it is typed: the check, token by token and character by character, as pure functions; the samples (every Lessons and Library program) and searching them; the panel over the canvas column that shows the sample line by line and marks the editor (see [Transcribe](#transcribe)) |
 | Controller | `gamepad-controller.js`, `gamepad-input.js`, `gamepad-layout.js`, `gamepad-bindings.js`, `gamepad-menu.js`, `gamepad-mapping.js`, `command-catalog.js`, `recent-commands.js`, `favorites.js` | Working the app with a game controller: the functions a button can do; reading presses; the controller's buttons and drawing; which function each button is mapped to; the menu of commands; the view that shows and changes the mapping; the reference's commands as data; the recently used list; favorites in categories |
 | Highlighting | `lua-highlight.js` | The turtle-command pattern the editor highlights, and editor-identical highlighting for code shown outside it |
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
@@ -451,6 +452,34 @@ Docked, the sidebar covers only the editor column, so the drawing is always in v
 Detached, it is `position: fixed` and stays where it was left, above the canvas's own overlays.
 Its resize handles sit mostly outside its border, so they never take a grab meant for its scrollbar.
 
+### Transcribe
+
+The Transcribe button opens a panel over the canvas column, beside the editor, for typing a sample program in by hand: the feel of typing in the editor, without the mistakes of copying by eye.
+It is on in staging and the dev server only (see [Feature flags](#feature-flags)).
+The panel lists every sample there is, the Lessons' programs chapter by chapter and then every Library program, with a search bar.
+Choosing one empties the editor (its undo brings the learner's program back) and shows the sample with its line numbers.
+As the learner types, the panel ticks the lines typed, tints the line to type now, and says how many lines are done; the first mistake turns its line red and is named, as in "Expected `a` in `forward`, but found `r`."
+In the editor, the numbers of the lines typed right turn green, the mistake's code is marked, and its line number turns red.
+Once the program matches, a Run button runs it; any run closes the panel, so the drawing is in view, and reopening it picks up where the typing is.
+
+What counts as the same program:
+
+- **Tokens, not text.** Both programs are split into Lua tokens, and compared token by token, and within a token character by character.
+  Spacing, line breaks and indentation therefore count only where Lua reads them: inside a string, and between two words (`localx` is not `local x`).
+- **Comments are optional.** They are left out on both sides, so a learner can type them, skip them, or add their own.
+- **A prefix while typing.** The last token, if nothing follows it, may be half typed (`forw` of `forward`, `"hel` of `"hello"`), and a lone `-` just typed waits to see whether it starts a comment.
+- **The first mistake only.** What follows it is not checked until it is fixed, as in a typing tutor.
+
+The pieces, each with one job:
+
+- **`transcribe.js` decides.** A tokenizer that never fails (an unclosed string or comment stops where Lua would stop reading it), `checkTranscription(sample, typed)`, which returns the state, the tokens matched, the next character to type and the mistake as offsets and a message, and the sample's lines and the editor's right lines from that result.
+- **`samples.js` lists the samples.** Pure functions of the Lessons' pages (`lessons.js`) and the library's catalog: the groups, a search, and a sample by id.
+  A lesson's program comes with the lessons from the worker; a library program is fetched when it is chosen.
+- **`transcribe-panel.js` is the shell.** It renders the picker and the sample, re-checks on every edit while it is open, applies the check's marks to the editor and clears them when it closes, and remembers the sample chosen in `localStorage`.
+- **`app.js` owns the editor and runs.** It empties the editor for a new sample, runs the program, and closes the panel for any run.
+
+`test/transcribe_test.mjs` covers the tokenizer, the check and the samples, and checks that every Lessons and Library program, retyped without comments and with its spacing changed, checks as done against itself.
+
 ### Panels
 
 Each column has a panel docked along its bottom: the command reference under the editor, and the terminal under the canvas.
@@ -512,17 +541,19 @@ Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 ### Feature flags
 
 A feature can be switched off with one flag, without touching its code.
-`public/flags.json` names each flag and says whether it is on; today they are `share`, `export` and `lessons`.
+`public/flags.json` names each flag and says whether it is on: `true`, `false`, or `"staging"`, which is on everywhere but the production site, so in staging and the dev server.
+Today they are `share`, `export`, `lessons` and `transcribe`, which is `"staging"`.
+Production and staging serve the same `public/`, so the page tells them apart by its hostname: `flags.js`'s `PRODUCTION_HOSTS`, which `test/flags_test.mjs` keeps equal to the production routes in `wrangler.jsonc`.
 
 - **`flags.js` decides.** Pure functions read the file, apply a tab's `?flags=` overrides, and make the edits the CLI asks for.
   A flag is on unless something turns it off, so a missing or unreadable file leaves every feature on.
   `test/flags_test.mjs` covers it.
 - **`app.js` is the shell.** It fetches the file before anything else, and its `feature(name, ...elements)` removes a feature's elements when it is off and tells the caller to skip wiring it.
   Removed elements leave no gap in the header's flex row, and a feature that is off also loses its shortcut (the Lessons' ⌘⇧L).
-- **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>` or `off <name>` rewrites the file; it refuses a name the file does not have.
+- **`tools/flags.mjs` flips them.** `node tools/flags.mjs list`, `on <name>`, `off <name>` or `staging <name>` rewrites the file; it refuses a name the file does not have.
 
 The site is static, so a change goes live on the next deploy, and in the dev server on the next page load.
-`?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have.
+`?flags=-share,lessons` turns flags off (or, without the `-`, on) in one tab only, for trying a change before committing it; it ignores names the file does not have, and never turns a `"staging"` flag on in production.
 Adding a flag means adding it to `flags.json` and guarding the feature's wiring in `app.js` with `feature()`.
 
 ### Zoom about a point (`zoomAt`)

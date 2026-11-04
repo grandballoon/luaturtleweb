@@ -51,6 +51,10 @@
         <span class="btn-label">Lessons</span>
         <kbd id="lessons-shortcut" class="kbd" aria-hidden="true"></kbd>
       </button>
+      <button id="btn-transcribe" class="btn-secondary" aria-label="Transcribe" aria-expanded="false" aria-controls="transcribe-panel" title="Type a sample program in by hand, checked as you go">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9h.01"/><path d="M10 9h.01"/><path d="M14 9h.01"/><path d="M18 9h.01"/><path d="M6 13h.01"/><path d="M18 13h.01"/><path d="M9 15h6"/></svg>
+        <span class="btn-label">Transcribe</span>
+      </button>
       <button id="btn-api" class="btn-secondary" aria-label="Commands" aria-expanded="false" aria-controls="api-overlay">
         <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg>
         <span class="btn-label">Commands</span>
@@ -278,6 +282,45 @@
       <div id="splitter-grip"><span></span><span></span><span></span></div>
     </div>
     <div id="stage">
+      <aside id="transcribe-panel" aria-label="Transcribe a sample" hidden>
+        <div id="transcribe-header">
+          <button id="transcribe-back" class="icon-button quiet" aria-label="All samples" title="All samples" aria-controls="transcribe-picker">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>
+          </button>
+          <p id="transcribe-crumb"><span id="transcribe-group">Transcribe</span><span id="transcribe-title">Pick a sample to type in</span></p>
+          <button id="transcribe-close" class="icon-button" aria-label="Close transcribe" title="Close (Esc)">&times;</button>
+        </div>
+        <div id="transcribe-picker">
+          <label id="transcribe-search-field">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="transcribe-search" type="search" placeholder="Search the Lessons and the Library" aria-label="Search samples" aria-controls="transcribe-list" autocomplete="off" spellcheck="false">
+          </label>
+          <nav id="transcribe-list" aria-label="Samples" tabindex="-1"></nav>
+        </div>
+        <div id="transcribe-sample" hidden>
+          <div id="transcribe-status" data-state="empty">
+            <p id="transcribe-message" role="status" aria-live="polite"></p>
+            <div id="transcribe-meter" aria-hidden="true"><span id="transcribe-meter-fill"></span></div>
+            <div id="transcribe-actions">
+              <button id="transcribe-run" class="primary" hidden title="Run your program on the canvas">
+                <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.8v14.4a1 1 0 0 0 1.5.86l12-7.2a1 1 0 0 0 0-1.72l-12-7.2A1 1 0 0 0 7 4.8z" fill="currentColor" stroke="none"/></svg>
+                Run
+              </button>
+              <button id="transcribe-restart" title="Empty the editor and type this sample from the start">Start over</button>
+            </div>
+          </div>
+          <p id="transcribe-note">Spacing and line breaks only count inside strings and between words. Comments are optional.</p>
+          <div id="transcribe-code-scroll" tabindex="-1">
+            <div id="transcribe-code" class="lessons-code">
+              <div id="transcribe-gutter" class="lessons-gutter" aria-hidden="true"></div>
+              <div id="transcribe-text">
+                <div id="transcribe-rows" aria-hidden="true"></div>
+                <pre id="transcribe-program" class="cm-s-turtle" aria-label="The sample's program"></pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
       <div id="canvas-panel">
         <div id="canvas-controls">
           <div id="canvas-toolbar">
