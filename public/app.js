@@ -73,13 +73,18 @@ const flags = resolveFlags(
     location.hostname,
 );
 
-// Whether a feature is on. When it is off, its elements leave the page, so
-// it leaves no gap, and the caller skips wiring it and its shortcuts.
-function feature(name, ...els) {
-    if (isOn(flags, name)) return true;
-    for (const el of els) el.remove();
-    return false;
+// The page marks each feature's elements with data-feature, and styles.css
+// keeps them all hidden until the flags are decided, so a feature that is
+// off never shows, not even while flags.json loads. Those of a feature that
+// is off leave the page, so they leave no gap; then the rest are shown.
+for (const el of document.querySelectorAll('[data-feature]')) {
+    if (!isOn(flags, el.dataset.feature)) el.remove();
 }
+document.documentElement.dataset.flags = 'ready';
+
+// Whether a feature is on; when it is off, the caller skips wiring it and
+// its shortcuts.
+const feature = (name) => isOn(flags, name);
 
 const app          = $('app');
 const headerStatus = $('header-status');
@@ -350,8 +355,8 @@ async function share() {
     }, 1800);
 }
 
-if (feature('share', btnShare)) btnShare.addEventListener('click', share);
-if (feature('export', $('btn-export'))) $('btn-export').addEventListener('click', () => renderer.exportPNG());
+if (feature('share')) btnShare.addEventListener('click', share);
+if (feature('export')) $('btn-export').addEventListener('click', () => renderer.exportPNG());
 
 // ---- Command reference ----
 
@@ -433,7 +438,7 @@ function openInEditor(code) {
     setStatus(`Opened the lesson's program · ${MOD_LABEL}Z brings yours back`);
 }
 
-const lessons = feature('lessons', $('btn-lessons'), $('lessons-panel')) ? createLessonsPanel({
+const lessons = feature('lessons') ? createLessonsPanel({
     els: {
         panel:          $('lessons-panel'),
         button:         $('btn-lessons'),
@@ -485,7 +490,7 @@ function startTranscribing(sample) {
     setStatus(`Type “${sample.title}” in · ${MOD_LABEL}Z brings your program back`);
 }
 
-const transcribe = feature('transcribe', $('btn-transcribe'), $('transcribe-panel')) ? createTranscribePanel({
+const transcribe = feature('transcribe') ? createTranscribePanel({
     els: {
         panel:     $('transcribe-panel'),
         button:    $('btn-transcribe'),

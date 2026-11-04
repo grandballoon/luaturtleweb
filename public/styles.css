@@ -68,6 +68,12 @@
 
 ::selection { background: var(--selection); }
 
+/* A flagged feature's elements stay hidden until app.js has decided the
+   flags (feature flags, in architecture.md): it removes those of features
+   that are off, then marks the page ready. Without this, a feature that is
+   off would show while flags.json loads, then vanish. */
+:root:not([data-flags]) [data-feature] { display: none !important; }
+
 /* Thin, unobtrusive scrollbars that only draw attention on hover. */
 * { scrollbar-width: thin; scrollbar-color: var(--scrollbar) transparent; }
 
