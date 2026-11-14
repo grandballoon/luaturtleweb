@@ -217,6 +217,12 @@
       "concepts": ["linear-algebra", "graphs"]
     },
     {
+      "id": "solving-with-sliders",
+      "name": "Solving with sliders",
+      "about": "Drag the slope of mx + 5 and watch its crossing with 11 + x, the solution, slide along the line.",
+      "concepts": ["graphs"]
+    },
+    {
       "id": "svd-circle",
       "name": "Singular value decomposition",
       "about": "Any matrix turns the unit circle into an ellipse, along perpendicular axes.",
