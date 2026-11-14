@@ -257,6 +257,7 @@ end)
 ----------------------------------------------------------------
 
 local examples = require("turtle.examples")
+local Host = require("turtle.host")
 
 local function usage_of(code)
     local ok, err = run(code)
@@ -299,6 +300,16 @@ test("every command and alias has 1 to 3 examples, and every entry is a command"
             assert(n >= 1 and n <= 3, name .. ": expected 1 to 3 examples, found " .. n)
             covered[usage.command] = true
         end
+    end
+    -- A graph's methods: their rejected calls show usage too.
+    local g = _turtle_make_env().graph(-5, -5, 5, 5)
+    for _, name in ipairs(Host.GRAPH_METHODS) do
+        local _, err = pcall(g[name], g, {}, {}, {}, {}, {}, {})
+        local usage = _bridge_command_usage(err)
+        assert(usage, "g:" .. name .. ": no usage for " .. tostring(err))
+        local n = usage.examples and #usage.examples or 0
+        assert(n >= 1 and n <= 3, "g:" .. name .. ": expected 1 to 3 examples, found " .. n)
+        covered[usage.command] = true
     end
     for command in pairs(examples) do
         assert(covered[command], "examples.lua has an entry for unknown command " .. command)
