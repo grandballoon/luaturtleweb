@@ -80,7 +80,8 @@
 /* A sideways two-finger swipe that nothing on the page scrolls would
    otherwise go back or forward in the browser's history, taking the
    learner off their program mid-pan. The root's value covers every
-   scroller, since a scroll that reaches its edge chains to the root. */
+   scroller, since a scroll that reaches its edge chains to the root.
+   Safari can still navigate; swipe-guard.js covers it. */
 html { overscroll-behavior-x: none; }
 
 body {
