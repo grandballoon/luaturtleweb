@@ -542,7 +542,7 @@ Both run with the Node version in `.nvmrc`: `node --test test/*.mjs`.
 
 A feature can be switched off with one flag, without touching its code.
 `public/flags.json` names each flag and says whether it is on: `true`, `false`, or `"staging"`, which is on everywhere but the production site, so in staging and the dev server.
-Today they are `share`, `export`, `lessons` and `transcribe`, which is `"staging"`.
+Today they are `share`, `export`, `lessons` and `transcribe`; the last two are `"staging"`.
 Production and staging serve the same `public/`, so the page tells them apart by its hostname: `flags.js`'s `PRODUCTION_HOSTS`, which `test/flags_test.mjs` keeps equal to the production routes in `wrangler.jsonc`.
 
 - **`flags.js` decides.** Pure functions read the file, apply a tab's `?flags=` overrides, and make the edits the CLI asks for.
