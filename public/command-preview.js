@@ -122,7 +122,7 @@ export function createCommandPreview({ canvas, output, canvasSize }) {
     function drawFrame(index) {
         shown = index;
         const frame = playing.frames[index];
-        renderer.applyFrame(frame.segments, frame.turtles, frame.bgcolor);
+        renderer.applyFrame(frame.segments, frame.turtles, frame.bgcolor, frame.ui ?? null);
         const printed = playing.printedBy[index];
         output.querySelectorAll('.preview-line').forEach((line, i) => {
             line.classList.toggle('pending', i >= printed);

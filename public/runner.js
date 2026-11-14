@@ -4,12 +4,15 @@
 //
 // Owns: the worker and its SharedArrayBuffer, the run state machine
 // (loading → idle ⇄ running, or failed), run ids, rendering and acking
-// each frame, Stop, and a run asked for before the VM is ready, which
-// starts as soon as it is.
+// each frame, the program's controls and the input queue it reads them
+// through (input-queue.js), Stop, and a run asked for before the VM is
+// ready, which starts as soon as it is.
 //
 // The page owns everything a learner sees about a run (status line, output,
 // error marks) and hears about it through the callbacks. Used by app.js
 // (the editor page) and library-page.js (/library).
+
+import { inputQueue, pushEvent, wake } from './input-queue.js';
 
 export function createRunner({
     renderer,
@@ -21,6 +24,8 @@ export function createRunner({
     onPrint   = () => {},     // (lines, meta) the run printed
     onDone    = () => {},     // ({stopped, elapsed}, meta) the run finished or was stopped
     onError   = () => {},     // ({message, line, usage}, meta) the run threw
+    onUI      = () => {},     // (ui) the program's controls and wants changed; null when no run listens
+    onListen  = () => {},     // (meta) the program's code ran and it now waits for input
 }) {
     let state = 'loading';    // 'loading' | 'idle' | 'running' | 'failed'
     let runId = 0;
@@ -28,7 +33,7 @@ export function createRunner({
     let pending = null;       // {code, meta} asked for while loading
     let stopRequested = false;
     let startedAt = 0;
-    let sab, sabI32, worker;
+    let sab, sabI32, worker, input;
 
     function setState(next) {
         state = next;
@@ -38,6 +43,13 @@ export function createRunner({
     function signalStop() {
         Atomics.store(sabI32, 1, 1);
         Atomics.notify(sabI32, 0);   // wake the worker if it's waiting on a frame ack
+        wake(input);                 // or on input, in the event loop
+    }
+
+    // The run no longer listens: its controls stay up, faded.
+    function endListening() {
+        renderer.deactivateUI();
+        onUI(null);
     }
 
     function fail(detail) {
@@ -62,9 +74,12 @@ export function createRunner({
         stopRequested = false;
         startedAt = performance.now();
         setState('running');
+        renderer.applyUI(null);
+        onUI(null);
         onStart(meta);
         const { width, height } = canvasSize();
-        worker.postMessage({ type: 'run', runId, code, sab, canvasWidth: width, canvasHeight: height });
+        worker.postMessage({ type: 'run', runId, code, sab, inputSab: input.sab,
+                             canvasWidth: width, canvasHeight: height });
         return true;
     }
 
@@ -72,6 +87,11 @@ export function createRunner({
         if (state !== 'running') return;
         stopRequested = true;
         signalStop();
+    }
+
+    // Gives the running program a pointer or key event (see turtle/ui.lua).
+    function sendInput(event) {
+        if (state === 'running') pushEvent(input, event);
     }
 
     function onMessage(e) {
@@ -107,11 +127,18 @@ export function createRunner({
 
         if (msg.type === 'print') {
             onPrint(msg.lines, current);
+        } else if (msg.type === 'ui') {
+            renderer.applyUI(msg.ui);
+            onUI(msg.ui);
+        } else if (msg.type === 'listening') {
+            onListen(current);
         } else if (msg.type === 'done') {
             setState('idle');
+            endListening();
             onDone({ stopped: stopRequested, elapsed: performance.now() - startedAt }, current);
         } else if (msg.type === 'error') {
             setState('idle');
+            endListening();
             onError({ message: msg.message, line: msg.line, usage: msg.usage }, current);
         }
     }
@@ -122,6 +149,7 @@ export function createRunner({
         if (typeof SharedArrayBuffer === 'undefined') return false;
         sab    = new SharedArrayBuffer(8);   // [FRAME_ACK, STOP_FLAG]
         sabI32 = new Int32Array(sab);
+        input  = inputQueue();
         worker = new Worker(new URL('./worker.js', import.meta.url));
         worker.onmessage = onMessage;
         worker.onerror   = (e) => fail(e.message || 'the worker script failed');
@@ -133,6 +161,7 @@ export function createRunner({
         start,
         run,
         stop,
+        input: sendInput,
         fail,
         state: () => state,
     };

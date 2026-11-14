@@ -801,6 +801,14 @@ button.primary:hover .kbd { background: var(--kbd-hover-bg); }
 
 #turtle-canvas.panning { cursor: grabbing; }
 
+/* A running program that reads keys gets them while the canvas has the
+   keyboard (program-input.js); the ring says where typing goes. */
+#turtle-canvas:focus { outline: none; }
+#turtle-canvas.program-keys:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
 /* Key hints add ~70px to the header, so they go before the status line does. */
 @media (max-width: 960px), (hover: none) {
   .kbd { display: none; }

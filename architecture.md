@@ -22,7 +22,8 @@ Layer boundaries, top to bottom:
 |---|---|---|
 | Markup | `index.html`, `styles.css` | Static page structure and styling; no inline script |
 | UI shell | `app.js` | The editor page: draft autosave + share links, what a run shows (status, terminal, error marks), shortcuts |
-| Runs | `runner.js` | The main thread's half of the frame protocol: the worker, the run state machine, run ids, frame ack, Stop; shared by both pages |
+| Runs | `runner.js` | The main thread's half of the frame protocol: the worker, the run state machine, run ids, frame ack, Stop, the program's controls and its input queue; shared by both pages |
+| Program input | `input-queue.js`, `input-events.js`, `program-input.js`, `ui-renderer.js` | A running program's clicks, drags, keys and on-canvas controls: the shared-memory queue that carries input to a blocked worker; which presses and keys are the program's, as pure functions; the canvas listeners that send them; drawing the controls (see [Input and controls](#input-and-controls-uilua)) |
 | Editor | `lua-editor.js` | The CodeMirror editor both pages write Lua in |
 | Library page | `library.html`, `library.css`, `library-page.js`, `library.js`, `library/` | `/library`: example programs by concept, with preview videos, run on a canvas with their code beneath (see [The library](#the-library-library)) |
 | Compsci page | `compsci.html`, `compsci.css`, `compsci-page.js`, `compsci.js`, `compsci/` | `/compsci`: the mathematics of a computer science degree, course by course, each concept with its equations and the library examples that show it (see [Computer science](#computer-science-compsci)) |
@@ -36,7 +37,7 @@ Layer boundaries, top to bottom:
 | Renderer | `renderer.js` | Canvas2D drawing, viewport math (zoom/pan), grid, PNG export |
 | Preferences | `storage.js` | `localStorage` wrappers that never throw |
 | Worker bridge | `worker.js` | Wasmoon boot (mounting a fixed list of Lua files, which `test/worker_files_test.mjs` checks covers everything `turtle_web.lua` requires), frame protocol, sandbox run, error mapping |
-| Execution host | `turtle/host.lua`, `turtle/random.lua`, `turtle/plane.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random`; the coordinate plane the canvas shows, and graph paper and curves drawn on it |
+| Execution host | `turtle/host.lua`, `turtle/random.lua`, `turtle/plane.lua`, `turtle/ui.lua` | Animation pacing, undo orchestration, tracer, API/globals, sandbox env, handlers and the event loop; one instance per program, shared with the LÖVE desktop app; each program's own seeded `math.random`; the coordinate plane the canvas shows, and graph paper and curves drawn on it; the program's controls and what each input event does, as pure functions |
 | Web adapter | `turtle/turtle_web.lua` | Holds the worker's current host instance and exposes it as the `_bridge_*` globals `worker.js` calls |
 | Argument checks | `turtle/args.lua` | Validates every public command's arguments; learner-readable errors |
 | Usage examples | `turtle/examples.lua` | Hardcoded example calls per command, shown when a call is rejected or a command is Cmd/Ctrl+clicked |
@@ -270,13 +271,55 @@ finishes, `worker.js` posts a final frame **unless** `tracer(0)` is active — u
 ### Runaway-code protection
 
 Before running user code, the worker installs a `debug.sethook` count hook (every 1000 VM
-instructions) that errors out past 50M instructions — turning infinite loops into a
-catchable error instead of a dead worker. Stop works even mid-`Atomics.wait` because the main
+instructions) that errors out past 50M instructions without a frame — turning infinite loops into a
+catchable error instead of a dead worker.
+The count restarts at every frame and every input the event loop receives, so a program that keeps drawing or answering clicks runs as long as the learner lets it, while a loop that never draws is still stopped. Stop works even mid-`Atomics.wait` because the main
 thread both sets the stop flag and notifies the futex, waking the worker into its flag check.
 The same hook also polls the stop flag every 10,000 instructions, so Stop interrupts code that never posts a frame.
 
 User code runs under `xpcall` with a handler that records the innermost `user_code` line on the stack.
 Errors raised inside the turtle library (a bad argument, say) therefore still point at the learner's line, which the UI highlights and links from the terminal.
+
+### Input and controls (`ui.lua`)
+
+A program can answer the pointer and the keyboard, as in Python turtle, and put controls on the canvas:
+
+```lua
+local size = slider({label = "size", min = 10, max = 100, value = 50})
+button({label = "Clear", onclick = clear})
+onclick(function(x, y) setpos(x, y) end)        -- also ondrag, onrelease
+onkeypress(function() forward(10) end, "up")     -- also onkeyrelease (alias onkey)
+```
+
+The controls are `slider`, `button`, `toggle`, `radio` and `textfield`, each made from a table of options and returning a handle: `s.value` reads the control's current value and sets it (without calling `onchange`), `s.label` likewise, and `s:remove()` takes it away.
+Placed with `x` and `y`, a control's top-left corner sits at that point of the program's world; without them, controls stack down the canvas's top-left corner.
+Handlers get points in world units, like every other command.
+
+**Where it runs.** The decisions are pure functions in `ui.lua`: checking a control's options, laying the controls out in pixels, and turning one input event into a new UI state and a list of effects (`click`, `drag`, `release`, `keypress`, `keyrelease`, a control's `change`, a button's `press`, a text field's `submit`), all plain data.
+The host keeps the state, feeds it events, and runs the effects, which are the learner's handlers.
+`test/ui_test.lua` checks the pure functions by equality and the commands on a host with a scripted event loop.
+
+**When handlers run.** The worker reads input after every frame and hands each event to `host.input()`, which only updates the UI state (so `s.value` is live inside an animation loop) and queues the effects.
+The queue runs at safe points: before each command, and in the event loop.
+A handler never runs in the middle of another command's animation, its own commands don't start the queue again, and a burst of drags or slider changes waiting together collapses to the latest.
+
+**The event loop.** When the program's code has run, the worker enters `host.listen()` inside the same `xpcall`, so a handler's error points at its line.
+While the program has handlers or controls, it waits for input (`Atomics.wait` on the input queue), runs what each event does, and waits again, until Stop; the status line says it is waiting.
+`done()` (and `mainloop()`) enters the same loop, so code after it runs only once listening ends, as in Python; with nothing to listen to, it returns at once.
+A recording can't be clicked, so there the loop returns at once and the program ends.
+
+**Input across threads.** A worker blocked in `Atomics.wait` never sees a `postMessage`, so input travels through a second SharedArrayBuffer (`input-queue.js`): JSON lines appended under a spinlock by the main thread and drained whole by the worker, with a sequence number the event loop sleeps on.
+Stop bumps that number too, waking the loop into its stop check.
+The other way, the worker sends a `ui` message (the layout, and whether the program takes pointer presses anywhere and keys) whenever `host.ui_version()` changes, without waiting for an ack, and the renderer redraws once per display frame.
+
+**On the main thread.** `program-input.js` sends every press that starts on the canvas, with its moves and release, in turtle pixels (`renderer.turtlePoint`).
+A press is the program's when it has a click, drag or release handler, or the press lands on a control (`input-events.js`'s `claimsPress`); `canvas-view.js` asks before panning, so elsewhere the canvas still pans.
+Once the program wants keys the canvas takes the keyboard, shown by a focus ring, and gives it back to the editor when the run ends; Escape and shortcuts with ⌘ or Ctrl stay the page's, and Tab still moves focus.
+`ui-renderer.js` draws the controls over the drawing in the app's colors, in turtle space so they pan and zoom with it; when the run ends they stay, faded.
+`ui.lua` and `ui-renderer.js` share the controls' sizes, which `ui.lua` uses to hit-test and the renderer to draw, so a change to one belongs in both.
+`test/input_test.mjs` covers the queue and the routing.
+
+The desktop app has its own polling commands (`keydown`, `mouse`, `mousedown`); with no `wait_input` given to its host, handlers and controls exist there but never receive input.
 
 ### Argument checking (`args.lua`)
 
@@ -584,8 +627,8 @@ raster resampling, just a full vector replay.
   each independently testable.
 - **Command wrapper (decorator).** `with_undo` uniformly wraps every mutating command with
   the snapshot/commit protocol, so individual command implementations stay oblivious to undo.
-- **Bridge functions as the FFI seam.** Exactly one JS→Lua entry point
-  (`_bridge_post_frame`) and a handful of Lua→JS pull accessors
+- **Bridge functions as the FFI seam.** Two JS→Lua entry points for waiting
+  (`_bridge_post_frame`, `_bridge_wait_input`), one for input (`_bridge_input`), and a handful of Lua→JS pull accessors
   (`_bridge_get_visible_segments`, `_bridge_get_turtle_states`, `_bridge_get_bgcolor`,
   `_bridge_get_tracer_n`, `_bridge_hard_reset`). Everything else crosses the boundary as
   plain data.

@@ -48,6 +48,11 @@ export function drawingBounds(frames) {
         for (const t of items(frame.turtles)) {
             if (t.visible) add(t.x, t.y, TURTLE_RADIUS);
         }
+        // The program's controls: boxes from their top-left corner, y up.
+        for (const w of items(frame.ui?.widgets)) {
+            add(w.x, w.y);
+            add(w.x + w.w, w.y - w.h);
+        }
     }
     return Number.isFinite(b.minX) ? b : { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 }

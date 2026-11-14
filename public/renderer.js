@@ -5,10 +5,14 @@
 //
 // Used by app.js: construct once with the canvas element, then call
 // renderer.applyFrame(segments, turtles, bgcolor) on each worker "frame"
-// message. canvas-view.js drives the viewport (zoom/pan/grid).
+// message, and renderer.applyUI(ui) on each "ui" message (the program's
+// controls, drawn over everything by ui-renderer.js). canvas-view.js drives
+// the viewport (zoom/pan/grid).
 //
 // Lua sequences arrive from Wasmoon as 0-based JS arrays, except that an
 // empty Lua table arrives as {} — hence the items() helper below.
+
+import { drawUI } from './ui-renderer.js';
 
 // Accept either a JS array or a key-ordered object (Wasmoon's empty table).
 function items(seq) {
@@ -39,6 +43,8 @@ export class Renderer {
         this._lastBgColor  = [1, 1, 1, 1];
         this._lastTurtles  = [];
         this._lastSegments = [];
+        this._lastUI       = null;    // the program's controls (turtle/ui.lua's layout)
+        this._uiActive     = false;   // whether the program still listens to them
 
         this._initCommitCanvas();
     }
@@ -53,6 +59,18 @@ export class Renderer {
     screenY(ty) {
         const cssH = this.canvas.height / (window.devicePixelRatio || 1);
         return cssH / 2 - (ty - this.viewCenterY) * this.viewScale;
+    }
+
+    // The turtle point under canvas point (sx, sy) in CSS pixels: the
+    // inverse of screenX/screenY.
+    turtlePoint(sx, sy) {
+        const dpr  = window.devicePixelRatio || 1;
+        const cssW = this.canvas.width  / dpr;
+        const cssH = this.canvas.height / dpr;
+        return {
+            x:  (sx - cssW / 2) / this.viewScale + this.viewCenterX,
+            y: -(sy - cssH / 2) / this.viewScale + this.viewCenterY,
+        };
     }
 
     // ---- Color ----
@@ -100,12 +118,33 @@ export class Renderer {
     // Redraws the full commit canvas from the visible segment list,
     // then composites with turtle heads.
 
-    applyFrame(segments, turtles, bgcolor) {
+    // A recorded frame also carries the controls as they were then (ui);
+    // a live one leaves them to applyUI().
+    applyFrame(segments, turtles, bgcolor, ui) {
         this._lastBgColor  = bgcolor  || this._lastBgColor;
         this._lastTurtles  = turtles  || [];
         this._lastSegments = segments || [];
+        if (ui !== undefined) {
+            this._lastUI   = ui;
+            this._uiActive = true;
+        }
 
         this.redraw();
+    }
+
+    // The running program's controls (null for none). Changes come as fast
+    // as the pointer moves, so they redraw once per display frame.
+    applyUI(ui) {
+        this._lastUI   = ui;
+        this._uiActive = true;
+        this.requestRedraw();
+    }
+
+    // The run stopped listening: its controls stay, faded.
+    deactivateUI() {
+        if (!this._uiActive) return;
+        this._uiActive = false;
+        this.requestRedraw();
     }
 
     redraw() {
@@ -216,6 +255,13 @@ export class Renderer {
         for (const t of items(this._lastTurtles)) {
             if (t && t.visible) this._drawTurtleHead(ctx, t.x, t.y, t.angle);
         }
+
+        drawUI(ctx, this._lastUI, {
+            sx: tx => this.screenX(tx),
+            sy: ty => this.screenY(ty),
+            scale: this.viewScale,
+            light: this._bgIsLight(),
+        }, this._uiActive);
     }
 
     // Traces the turtle arrowhead at a turtle-space position. Size is fixed
@@ -292,8 +338,7 @@ export class Renderer {
         const dpr  = window.devicePixelRatio || 1;
         const cssW = this.canvas.width  / dpr;
         const cssH = this.canvas.height / dpr;
-        const txB  = (sx - cssW / 2) / this.viewScale + this.viewCenterX;
-        const tyB  = -(sy - cssH / 2) / this.viewScale + this.viewCenterY;
+        const { x: txB, y: tyB } = this.turtlePoint(sx, sy);
         this.viewScale = Math.max(this.ZOOM_MIN, Math.min(this.ZOOM_MAX, this.viewScale * factor));
         this.viewCenterX = txB - (sx - cssW / 2) / this.viewScale;
         this.viewCenterY = tyB + (sy - cssH / 2) / this.viewScale;

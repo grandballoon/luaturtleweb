@@ -22,6 +22,11 @@
 //                                            sidebar's chapters (turtle/lessons.lua)
 //   {type: "init-error", message}          — the VM failed to load
 //   {type: "frame", segments, turtles, bgcolor}
+//   {type: "ui", runId, ui}                — the program's controls and the input it
+//                                            wants (turtle/ui.lua via host.ui()), sent
+//                                            whenever they change; not acked
+//   {type: "listening", runId}             — the program's code has run and it waits
+//                                            for input, until Stop
 //   {type: "print", runId, lines}          — buffered print() output
 //   {type: "done", runId}                  — user code finished or was stopped
 //   {type: "error", runId, message, line, usage}
@@ -33,7 +38,7 @@
 //   {type: "recording", id, frames, error, truncated}
 //                                          — reply to "record": every frame the
 //                                            program posted, in order, each as
-//                                            {segments, turtles, bgcolor, prints,
+//                                            {segments, turtles, bgcolor, ui, prints,
 //                                            work, delay}; error is the message if
 //                                            the program threw, else null;
 //                                            truncated is true if it was cut off
@@ -42,8 +47,13 @@
 // runId echoes the id of the run message, so the main thread can ignore
 // stragglers from a run it has already replaced (Run pressed while running).
 //
+// Input (pointer and keys) arrives through a second SharedArrayBuffer,
+// inputSab (see input-queue.js), since a blocked worker sees no messages.
+// It is read after every frame and while the event loop waits, and fed to
+// the program one event at a time through _bridge_input.
+//
 // Messages received FROM main thread:
-//   {type: "run", runId, code, sab, canvasWidth, canvasHeight}
+//   {type: "run", runId, code, sab, inputSab, canvasWidth, canvasHeight}
 //   {type: "record", id, code, canvasWidth, canvasHeight}
 //                                         — run code without pacing or blocking,
 //                                           collecting its frames instead of
@@ -58,6 +68,10 @@ let sabI32     = null;   // Int32Array view of the SharedArrayBuffer
 let runId      = 0;      // id of the run in progress, echoed in replies
 let recording  = null;   // frames collected by a "record" request, or null in a live run
 let recordedAt = 0;      // when the last recorded frame was taken (performance.now())
+let input      = null;   // the run's input queue (input-queue.js)
+let queue      = null;   // input-queue.js, once loaded
+let uiVersion  = -1;     // the program's UI as last sent (host.ui_version())
+let listening  = false;  // this run has said it waits for input
 
 // A demo that is still drawing after this many frames is cut off there.
 const MAX_RECORDED_FRAMES = 5000;
@@ -65,6 +79,8 @@ const MAX_RECORDED_FRAMES = 5000;
 // ---- Wasmoon init ----
 
 async function initLua() {
+    queue = await import('./input-queue.js');
+
     // glue.wasm is vendored alongside wasmoon.js (both wasmoon 1.16.0). Passing the
     // local URL explicitly is what keeps it local: with no argument, LuaFactory falls
     // back to fetching the WASM from unpkg.com at runtime.
@@ -83,6 +99,7 @@ async function initLua() {
         'turtle/lessons.lua',
         'turtle/random.lua',
         'turtle/plane.lua',
+        'turtle/ui.lua',
         'turtle/host.lua',
         'turtle/turtle_web.lua',
     ];
@@ -112,6 +129,9 @@ async function initLua() {
     lua.global.set('_bridge_post_frame', (delayMs) => {
         postFrameAndWait(delayMs);
     });
+
+    // The event loop's wait (host.lua's listen()).
+    lua.global.set('_bridge_wait_input', () => waitForInput());
 
     // Polled by the instruction hook so Stop also interrupts code that never
     // posts a frame (e.g. a tight loop with no drawing).
@@ -188,12 +208,24 @@ function snapshot() {
     };
 }
 
+// The instruction guard counts from the last frame, or the last input in
+// the event loop: a program that keeps drawing or answering input isn't
+// stuck, however long it runs.
+function programWaited() {
+    lua.global.set('_instructions_since_frame', 0);
+}
+
+function stopIfAsked() {
+    if (Atomics.load(sabI32, 1) === 1) throw new Error('__STOPPED__');
+}
+
 function postFrameAndWait(delayMs) {
     if (recording) return recordFrame(delayMs);
     if (!sabI32) return;
 
     const frame = snapshot();
     flushPrints();
+    flushUI();
     postMessage({ type: 'frame', ...frame });
 
     Atomics.wait(sabI32, 0, 0);
@@ -202,9 +234,51 @@ function postFrameAndWait(delayMs) {
     // Delay AFTER the ack so the frame is already visible
     sleepMs(delayMs || 0);
 
-    if (Atomics.load(sabI32, 1) === 1) {
-        throw new Error('__STOPPED__');
+    stopIfAsked();
+    programWaited();
+    feedInput();
+}
+
+// ---- Input and controls ----
+
+// Hands every waiting input event to the program; returns how many.
+function feedInput() {
+    const events = queue.drainEvents(input);
+    if (events.length === 0) return 0;
+    const give = lua.global.get('_bridge_input');
+    // Missing fields go as undefined (Lua's nil): Wasmoon rejects a null
+    // argument, which it probes for a promise.
+    for (const e of events) give(e.type, e.x, e.y, e.key, e.text ?? undefined);
+    return events.length;
+}
+
+// Sends the program's controls if they changed since they were last sent.
+function flushUI() {
+    const version = lua.global.get('_bridge_ui_version')();
+    if (version === uiVersion) return;
+    uiVersion = version;
+    postMessage({ type: 'ui', runId, ui: lua.global.get('_bridge_get_ui')() });
+}
+
+// The event loop's wait: shows what the last input did, then sleeps until
+// more arrives and feeds it to the program. Returns false (stop listening)
+// in a recording, which no one can click; Stop ends it by throwing.
+function waitForInput() {
+    if (recording || !sabI32) return false;
+    flushPrints();
+    flushUI();
+    if (!listening) {
+        listening = true;
+        postMessage({ type: 'listening', runId });
     }
+    for (;;) {
+        stopIfAsked();
+        const seen = queue.sequence(input);
+        if (feedInput() > 0) break;
+        queue.waitForEvents(input, seen);
+    }
+    programWaited();
+    return true;
 }
 
 // A recorded frame keeps what a live one would post, plus the print() output
@@ -213,7 +287,8 @@ function postFrameAndWait(delayMs) {
 // snapshot), and delay, the pause after it.
 function recordFrame(delayMs) {
     if (recording.length >= MAX_RECORDED_FRAMES) throw new Error('__STOPPED__');
-    const frame = { ...snapshot(), prints: takePrints(), delay: delayMs || 0 };
+    programWaited();
+    const frame = { ...snapshot(), ui: lua.global.get('_bridge_get_ui')(), prints: takePrints(), delay: delayMs || 0 };
     const now = performance.now();
     frame.work = now - recordedAt;
     recordedAt = now;
@@ -226,6 +301,8 @@ function recordFrame(delayMs) {
 function resetVM() {
     lua.global.get('_bridge_hard_reset')();
     lua.global.set('_print_buffer', []);
+    uiVersion = -1;
+    listening = false;
 }
 
 // Runs the global user_code in a fresh sandbox, then posts the final frame.
@@ -242,17 +319,21 @@ async function execute() {
             error("Syntax error: " .. tostring(err), 0)
         end
 
-        local instruction_count = 0
+        -- Counted since the last frame (worker.js resets it), so only code
+        -- that runs this long without drawing, or waiting for input, stops.
+        _instructions_since_frame = 0
+        local hook_calls = 0
         local LIMIT = 50000000
         debug.sethook(function()
-            instruction_count = instruction_count + 1000
-            if instruction_count % 10000 == 0 and _bridge_stop_requested() then
+            hook_calls = hook_calls + 1
+            _instructions_since_frame = _instructions_since_frame + 1000
+            if hook_calls % 10 == 0 and _bridge_stop_requested() then
                 debug.sethook()
                 error("__STOPPED__", 0)
             end
-            if instruction_count >= LIMIT then
+            if _instructions_since_frame >= LIMIT then
                 debug.sethook()
-                error("Possible infinite loop (exceeded " .. LIMIT .. " instructions)", 2)
+                error("Possible infinite loop (ran " .. LIMIT .. " instructions without drawing)", 2)
             end
         end, "", 1000)
 
@@ -273,7 +354,13 @@ async function execute() {
             return e
         end
 
-        local ok, run_err = xpcall(chunk, locate)
+        -- The program's own code, then the event loop while it has
+        -- handlers or controls, so it keeps answering them after its last
+        -- line; a handler's error is located like any other.
+        local ok, run_err = xpcall(function()
+            chunk()
+            _bridge_listen()
+        end, locate)
         debug.sethook()
 
         if not ok then
@@ -351,9 +438,11 @@ self.onmessage = async (e) => {
 
     } else if (msg.type === 'run') {
         sabI32 = new Int32Array(msg.sab);
+        input  = queue.inputQueue(msg.inputSab);
         runId  = msg.runId;
         Atomics.store(sabI32, 0, 0);
         Atomics.store(sabI32, 1, 0);
+        queue.drainEvents(input);   // meant for the run this one replaces
         loadCode(msg);
         await runCode();
 

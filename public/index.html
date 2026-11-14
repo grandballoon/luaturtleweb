@@ -237,6 +237,21 @@
                 </ul>
               </section>
               <section class="api-section">
+                <h2>Interaction</h2>
+                <ul class="api-rows">
+                  <li><code>onclick(f)</code><span class="api-about">Call f(x, y) when the canvas is clicked</span></li>
+                  <li><code>ondrag(f)</code><span class="api-about">Call f(x, y) as the pointer drags across the canvas</span></li>
+                  <li><code>onrelease(f)</code><span class="api-about">Call f(x, y) when the pointer lets go of the canvas</span></li>
+                  <li><code>onkeypress(f, key)</code><span class="api-about">Call f when key is pressed; leave out key for any key</span></li>
+                  <li><code>onkeyrelease(f, key)</code><span class="api-about">Call f when key is let go. Alias: onkey</span></li>
+                  <li><code>slider(options)</code><span class="api-about">A slider: {label, min, max, value, step, x, y, width, onchange}; read s.value</span></li>
+                  <li><code>button(options)</code><span class="api-about">A button: {label, x, y, width, onclick}</span></li>
+                  <li><code>toggle(options)</code><span class="api-about">An on/off switch: {label, value, x, y, onchange}; read t.value</span></li>
+                  <li><code>radio(options)</code><span class="api-about">Radio buttons: {label, options, value, x, y, onchange}; read r.value</span></li>
+                  <li><code>textfield(options)</code><span class="api-about">A text box: {label, value, x, y, width, onchange, onsubmit}; read f.value</span></li>
+                </ul>
+              </section>
+              <section class="api-section">
                 <h2>Turtle</h2>
                 <ul class="api-rows">
                   <li><code>hideturtle()</code><span class="api-about">Hide the turtle. Alias: ht</span></li>

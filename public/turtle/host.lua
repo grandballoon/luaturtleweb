@@ -43,6 +43,7 @@ local examples = require("turtle.examples")
 local demos    = require("turtle.demos")
 local Random   = require("turtle.random")
 local Plane    = require("turtle.plane")
+local UI       = require("turtle.ui")
 local colors   = require("turtle.colors")
 
 local Host = {}
@@ -81,6 +82,20 @@ local ALIGN = args.one_of("left", "center", "right")
 local UNITS = args.one_of("equal", "stretch")
 
 local function distance(a) a:req("distance", NUMBER) end
+local function handler(a)  a:opt("f", args.FUNCTION) end
+local function options(a)
+    a:req("options", function(v)
+        if type(v) == "table" then return nil end
+        return 'a table like {label = "size"}'
+    end)
+end
+local function key_handler(a)
+    a:opt("f", args.FUNCTION)
+    a:opt("key", function(v)
+        if UI.key_name(v) then return nil end
+        return 'a key name like "left", "space" or "a"'
+    end)
+end
 local function angle(a)    a:req("angle", NUMBER) end
 local function point(a)    a:point() end
 local function color(a)    a:opt_color() end
@@ -93,6 +108,7 @@ local ALIASES = {
     pu = "penup", up = "penup", pd = "pendown", down = "pendown", width = "pensize",
     pos = "position", st = "showturtle", ht = "hideturtle",
     mainloop = "done",
+    onkey = "onkeyrelease", onscreenclick = "onclick",
 }
 
 -- Calls fn(name, command) for every command in `commands`, and for every
@@ -126,6 +142,11 @@ end
 --                  command as typed and the log indices it appended
 --                  (first > last when it appended none). The hook point
 --                  for an execution trace; nothing is done without it.
+--   wait_input     function() → boolean, called by the event loop (see
+--                  listen()): blocks until the shell has fed at least one
+--                  input event through instance.input(), then returns
+--                  true; false ends the loop. Without it, a program's
+--                  handlers never run and its controls never move.
 ----------------------------------------------------------------
 
 -- Default ink (pen + fill) and paper (background), as color names.
@@ -178,6 +199,165 @@ function Host.new(opts)
 
     self.seed = opts.seed or os.time()
     local random, randomseed = Random.new(self.seed)
+
+    ----------------------------------------------------------------
+    -- Input and on-canvas controls.
+    --
+    -- ui.lua decides what each input event does; this runs what it
+    -- returns. The shell feeds events through self.input() whenever the
+    -- program waits (after each frame, and in the event loop), which only
+    -- changes the UI state and queues the effects. The effects (the
+    -- learner's handlers) run at safe points, between commands and in the
+    -- event loop, never inside a command's animation, so a handler that
+    -- draws can't tangle with the drawing it interrupted.
+    ----------------------------------------------------------------
+
+    local ui          = UI.new()
+    local ui_layout   = nil   -- UI.layout(ui), until ui or the plane changes
+    local ui_version  = 0     -- counts changes, so the shell sends only new layouts
+    local handlers    = { keypress = {}, keyrelease = {} }   -- click, drag, release; keys by name, "*" for any
+    local widget_fns  = {}    -- widget id → { onchange, onclick, onsubmit }
+    local pending     = {}    -- effects waiting for a safe point
+    local dispatching = false -- running pending effects; a handler's commands mustn't start again
+
+    -- Effects kept waiting at most; the oldest go first.
+    local MAX_PENDING = 1000
+
+    local function ui_changed()
+        ui_layout  = nil
+        ui_version = ui_version + 1
+    end
+
+    local function set_ui(next_ui)
+        if next_ui ~= ui then
+            ui = next_ui
+            ui_changed()
+        end
+    end
+
+    local function layout()
+        if not ui_layout then
+            ui_layout = UI.layout(ui, function(x, y) return Plane.point(plane, x, y, W, H) end, W, H)
+        end
+        return ui_layout
+    end
+
+    local function wants_pointer()
+        return handlers.click ~= nil or handlers.drag ~= nil or handlers.release ~= nil
+    end
+
+    local function wants_keys()
+        return next(handlers.keypress) ~= nil or next(handlers.keyrelease) ~= nil
+            or UI.has_textfield(ui)
+    end
+
+    local function interactive()
+        return next(ui.widgets) ~= nil or wants_pointer() or wants_keys()
+    end
+
+    -- A pointer drag and a widget's change say where things are now, so a
+    -- newer one replaces the one still waiting before it.
+    local function queue(effect)
+        local last = pending[#pending]
+        if last and last.kind == effect.kind
+            and (effect.kind == "drag" or (effect.kind == "change" and last.id == effect.id)) then
+            pending[#pending] = effect
+            return
+        end
+        if #pending >= MAX_PENDING then table.remove(pending, 1) end
+        pending[#pending + 1] = effect
+    end
+
+    -- A pixel point as the world point a handler is given.
+    local function world(x, y)
+        local wx, wy = Plane.unproject(plane, x, y, W, H)
+        return UI.tidy(wx), UI.tidy(wy)
+    end
+
+    local function run_effect(e)
+        local kind = e.kind
+        if kind == "click" or kind == "drag" or kind == "release" then
+            local f = handlers[kind]
+            if f then f(world(e.x, e.y)) end
+        elseif kind == "keypress" or kind == "keyrelease" then
+            local by_key = handlers[kind]
+            if by_key[e.key] then by_key[e.key](e.key) end
+            if by_key["*"] then by_key["*"](e.key) end
+        else
+            local fns = widget_fns[e.id]   -- nil once the widget is removed
+            if not fns then return end
+            if kind == "change" and fns.onchange then fns.onchange(e.value)
+            elseif kind == "press" and fns.onclick then fns.onclick()
+            elseif kind == "submit" and fns.onsubmit then fns.onsubmit(e.value) end
+        end
+    end
+
+    -- Runs the waiting effects, in order. A handler's own commands come
+    -- back through here and find it busy, so effects never nest.
+    local function dispatch()
+        if dispatching or #pending == 0 then return end
+        dispatching = true
+        while #pending > 0 do run_effect(table.remove(pending, 1)) end
+        dispatching = false
+    end
+
+    -- The event loop: while the program has handlers or controls, wait
+    -- for input and run what it does, until the shell ends it (Stop).
+    -- done() enters it, and the web shell enters it when a program ends.
+    local function listen()
+        if not opts.wait_input or not interactive() then return end
+        while true do
+            -- A handler error that a pcall in the program caught can leave
+            -- the flag set; nothing is dispatching here, at the top.
+            dispatching = false
+            dispatch()
+            if not opts.wait_input() then return end
+        end
+    end
+
+    -- What s = slider{...} returns: s.value and s.label read the widget's
+    -- current state and set it; s:remove() takes it off the canvas.
+    local function widget_handle(kind, id)
+        local handle = {}
+        local function remove(this)
+            if this ~= handle then
+                args.fail("remove", "call it with a colon, like " .. kind .. ":remove()")
+            end
+            set_ui(UI.remove(ui, id))
+            widget_fns[id] = nil
+        end
+        local function fail(detail) error(kind .. ": " .. detail, 0) end
+        return setmetatable(handle, {
+            __index = function(_, k)
+                if k == "remove" then return remove end
+                local w = ui.widgets[id]
+                if w and (k == "value" or k == "label") then return w[k] end
+                return nil
+            end,
+            __newindex = function(_, k, v)
+                if not ui.widgets[id] then fail("this " .. kind .. " was removed") end
+                if k == "value" and kind ~= "button" then
+                    local s, why = UI.set_value(ui, id, v)
+                    if not s then fail("value must be " .. why .. ", got " .. args.describe(v)) end
+                    set_ui(s)
+                elseif k == "label" then
+                    set_ui(UI.set_label(ui, id, v))
+                else
+                    fail("can't set " .. tostring(k) .. (kind == "button" and "; set its label"
+                        or "; set its value or label"))
+                end
+            end,
+        })
+    end
+
+    local function add_widget(kind, spec)
+        local why = UI.check(kind, spec)
+        if why then args.fail(kind, why) end
+        local s, id = UI.add(ui, kind, spec)
+        set_ui(s)
+        widget_fns[id] = { onchange = spec.onchange, onclick = spec.onclick, onsubmit = spec.onsubmit }
+        return widget_handle(kind, id)
+    end
 
     ----------------------------------------------------------------
     -- Frames
@@ -542,6 +722,7 @@ function Host.new(opts)
             check = function(a) a:rect() end,
             run = function(l, b, r, t)
                 plane = Plane.world({ l, b, r, t })
+                ui_changed()
                 maybe_post_frame()
             end,
         },
@@ -554,13 +735,41 @@ function Host.new(opts)
             end,
             run = function(l, b, r, t, units)
                 plane = Plane.graph({ l, b, r, t }, units, W, H)
+                ui_changed()
                 maybe_post_frame()
             end,
         },
 
-        -- done() is a no-op: the program ends and the canvas stays up.
-        done = { run = function() end },
+        -- done() keeps the program listening for clicks, keys and its
+        -- controls (see listen()); with none, it does nothing and the
+        -- canvas stays up. Code after it runs only once listening ends.
+        done = { run = function() listen() end },
         bye  = { run = function() end },
+
+        -- Handlers, as in Python turtle: f(x, y) in world units for the
+        -- pointer, f(key) for keys. Leaving f out (or nil) removes one.
+        onclick   = { check = handler, run = function(f) handlers.click = f; ui_changed() end },
+        ondrag    = { check = handler, run = function(f) handlers.drag = f; ui_changed() end },
+        onrelease = { check = handler, run = function(f) handlers.release = f; ui_changed() end },
+        onkeypress = {
+            check = key_handler,
+            run = function(f, key) handlers.keypress[UI.key_name(key) or "*"] = f; ui_changed() end,
+        },
+        onkeyrelease = {
+            check = key_handler,
+            run = function(f, key) handlers.keyrelease[UI.key_name(key) or "*"] = f; ui_changed() end,
+        },
+        -- Python needs listen() before keys reach the program; here the
+        -- canvas listens already, so a ported program's call does nothing.
+        listen = { run = function() end },
+
+        -- On-canvas controls, each made from a table of options (ui.lua's
+        -- UI.FIELDS lists them).
+        slider    = { check = options, run = function(spec) return add_widget("slider", spec) end },
+        button    = { check = options, run = function(spec) return add_widget("button", spec) end },
+        toggle    = { check = options, run = function(spec) return add_widget("toggle", spec) end },
+        radio     = { check = options, run = function(spec) return add_widget("radio", spec) end },
+        textfield = { check = options, run = function(spec) return add_widget("textfield", spec) end },
 
         -- Create an additional turtle on the same screen.
         Turtle = { run = function() return make_turtle_methods(new_core()) end },
@@ -605,6 +814,7 @@ function Host.new(opts)
 
     local function call(name, command, c, ...)
         args.check(name, command.check, ...)
+        dispatch()   -- input that came in since the last command
         if not on_command then
             if c then return command.run(c, ...) end
             return command.run(...)
@@ -704,6 +914,32 @@ function Host.new(opts)
     end
 
     function self.tracer_n() return tracer_n end
+
+    -- One input event from the shell (see ui.lua for their shape): updates
+    -- the controls at once and queues the handlers it calls.
+    function self.input(e)
+        local next_ui, effects = UI.handle(ui, layout(), e)
+        set_ui(next_ui)
+        for _, effect in ipairs(effects) do queue(effect) end
+    end
+
+    -- What the shell draws and routes: the controls' layout in pixels
+    -- (UI.layout), whether the program takes pointer presses anywhere on
+    -- the canvas and keys, and whether it listens at all.
+    function self.ui()
+        return {
+            widgets = layout(),
+            pointer = wants_pointer(),
+            keys    = wants_keys(),
+            active  = interactive(),
+        }
+    end
+
+    -- Changes whenever self.ui() would.
+    function self.ui_version() return ui_version end
+
+    -- The event loop, for a shell to enter when the program ends.
+    self.listen = listen
 
     -- Background color as {r, g, b, a}.
     function self.bgcolor()

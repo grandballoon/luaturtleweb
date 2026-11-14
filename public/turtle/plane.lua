@@ -127,6 +127,19 @@ function Plane.project(plane, segments, w, h)
     return out
 end
 
+-- One world point in pixels.
+function Plane.point(plane, x, y, w, h)
+    local cx, cy, sx, sy = Plane.scale(plane, w, h)
+    return (x - cx) * sx, (y - cy) * sy
+end
+
+-- The world point at pixel (px, py): point()'s inverse, for where the
+-- pointer is.
+function Plane.unproject(plane, px, py, w, h)
+    local cx, cy, sx, sy = Plane.scale(plane, w, h)
+    return px / sx + cx, py / sy + cy
+end
+
 -- Turtle states ({ x, y, angle, ... }), in pixels, likewise.
 function Plane.project_turtles(plane, states, w, h)
     if not plane.view then return states end
