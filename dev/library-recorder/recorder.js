@@ -69,7 +69,7 @@ window.recordPreview = async function recordPreview(code, { runWidth, runHeight,
         if (index === shown) return null;
         shown = index;
         const frame = frames[index];
-        renderer.applyFrame(frame.segments, frame.turtles, frame.bgcolor);
+        renderer.applyFrame(frame.segments, frame.turtles, frame.bgcolor, frame.ui ?? null);
         return image('image/png');
     });
     // The last frame drawn is the finished drawing, held to the end.

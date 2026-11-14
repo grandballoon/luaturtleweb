@@ -31,6 +31,7 @@ import { initGamepad }          from './gamepad-controller.js';
 import { createLessonsPanel }   from './lessons-panel.js';
 import { createTranscribePanel } from './transcribe-panel.js';
 import { createRunner }         from './runner.js';
+import { createProgramInput }   from './program-input.js';
 import { createLuaEditor }      from './lua-editor.js';
 import * as storage             from './storage.js';
 import { isOn, resolveFlags }   from './flags.js';
@@ -236,6 +237,15 @@ initCanvasView(renderer, {
     zoomReset: $('btn-zoom-reset'),
     zoomLabel: $('zoom-label'),
     gridBtn:   $('btn-grid'),
+    claimPointer: (e) => programInput.claims(e),
+});
+
+// A running program's clicks, drags and keys, and its controls.
+const programInput = createProgramInput({
+    canvas: $('turtle-canvas'),
+    renderer,
+    send: (event) => runner.input(event),
+    returnFocus: () => editor.focus(),
 });
 
 initSplitter($('main'), $('splitter'), { onResize: () => editor.refresh() });
@@ -290,6 +300,10 @@ const runner = createRunner({
         setStatus(fromEditor ? 'Running' : "Running the lesson's program", 'running');
     },
     onPrint: (lines) => terminal.print(lines),
+    onUI: (ui) => programInput.setUI(ui),
+    onListen() {
+        setStatus('Waiting for clicks and keys · Esc stops', 'running');
+    },
     onDone({ stopped, elapsed }) {
         setStatus(stopped ? 'Stopped' : `Done in ${formatElapsed(elapsed)}`);
     },
