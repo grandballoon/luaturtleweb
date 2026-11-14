@@ -171,8 +171,19 @@ The segment log, the turtles and undo snapshots all stay in world units.
 The standard plane returns them untouched.
 Animation pacing measures a step in the pixels it covers, so a world unit of any size animates as smoothly as a pixel.
 
-`axes()`, `plot(f)` and `mark(x, y)` draw graph paper, the curve y = f(x), and a labeled dot.
-`plane.lua` computes them as segment records (grid lines at multiples of each step, axes through 0 or along the nearest edge, numbers nudged a few pixels off their axis, curves sampled at 201 points and clipped to the paper), and the host logs those records straight from the turtle's core inside one `with_undo`.
+**Graphs in a box.**
+Changing the plane changes the whole canvas, so a program that wants a graph and plain turtle drawing side by side gives `graph()` a box in place of units: `graph(left, bottom, right, top, {x, y, width, height, units})`.
+The box is a rectangle of the world, its top-left corner at (x, y) (centered on (0, 0) without them, 300 units square without a size), and the paper spreads across 80% of it as it would across the canvas, equal or stretched.
+The plane stays as it was, so the turtle, the controls and every other command keep their coordinates.
+
+Graph paper is drawn on a graph, `{ paper, cx, cy, ox, oy, kx, ky, ux, uy }`: its paper in graph units and the map to world units, world = o + (graph − c) · k, with graph units per pixel for nudging text.
+`Plane.on_canvas` makes the plane's own graph (the identity map), and `Plane.in_box` a boxed one; equal units are equal in pixels, so a box in a stretched world still looks true.
+The host keeps the current graph, the latest `graph()` or `setworldcoordinates()`; a box's options are checked by `Plane.check_box`.
+`graph()` returns a handle for its graph: `g:axes()`, `g:plot()` and `g:mark()` draw on it even after a newer one (checked by the same rules as the globals, on the default turtle), and `g:tocanvas(x, y)` and `g:tograph(x, y)` move points between it and the world, for turtle drawing and click handlers.
+A box's ink is world ink like any other, so a later change of plane moves it with everything else.
+
+`axes()`, `plot(f)` and `mark(x, y)` draw graph paper, the curve y = f(x), and a labeled dot, on the current graph.
+`plane.lua` computes them as segment records (grid lines at multiples of each step, axes through 0 or along the nearest edge, numbers nudged a few pixels off their axis, curves sampled at 201 points and clipped to the paper) in graph units, placed in the world through the graph's map, and the host logs those records straight from the turtle's core inside one `with_undo`.
 So each is one undo step, carries its turtle's id, and leaves the turtle and its pen where they were.
 `plot` posts a frame every few pieces, like `circle`.
 A rule only running can check (too many grid lines, a function that returns a string) is rejected through `args.fail`, so the learner still sees how the command is called.

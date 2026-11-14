@@ -133,8 +133,8 @@ end
 local GAINSBORO, GRAY = { 220 / 255, 220 / 255, 220 / 255, 1 }, { 128 / 255, 128 / 255, 128 / 255, 1 }
 
 test("paper has grid lines at the steps' multiples, axes through 0, numbers and names", function()
-    local p = Plane.graph({ -2, -1, 2, 4 }, nil, 800, 600)
-    local records = Plane.paper(p, 800, 600, 1, 2, "time", nil)
+    local g = Plane.on_canvas(Plane.graph({ -2, -1, 2, 4 }, nil, 800, 600), 800, 600)
+    local records = Plane.paper(g, 1, 2, "time", nil)
     eq(of(records, "line", GAINSBORO), {
         { { -2, -1 }, { -2, 4 } }, { { -1, -1 }, { -1, 4 } }, { { 0, -1 }, { 0, 4 } },
         { { 1, -1 }, { 1, 4 } }, { { 2, -1 }, { 2, 4 } },
@@ -147,15 +147,16 @@ test("paper has grid lines at the steps' multiples, axes through 0, numbers and 
 end)
 
 test("axes run along the paper's edge when 0 is off it", function()
-    local records = Plane.paper(Plane.graph({ 2, 5, 4, 7 }, nil, 800, 600), 800, 600, 1, 1)
+    local records = Plane.paper(Plane.on_canvas(Plane.graph({ 2, 5, 4, 7 }, nil, 800, 600), 800, 600), 1, 1)
     eq(of(records, "line", GRAY), { { { 2, 5 }, { 4, 5 } }, { { 2, 5 }, { 2, 7 } } }, "axes")
 end)
 
 test("paper with too many grid lines says why", function()
-    local records, why = Plane.paper(Plane.standard(800, 600), 800, 600, 1)
+    local g = Plane.on_canvas(Plane.standard(800, 600), 800, 600)
+    local records, why = Plane.paper(g, 1)
     eq(records, nil, "records")
     eq(why, "xstep 1 would draw more than 500 grid lines; use a bigger step", "why")
-    eq(#Plane.paper(Plane.standard(800, 600), 800, 600) > 0, true, "chosen steps are fine")
+    eq(#Plane.paper(g) > 0, true, "chosen steps are fine")
 end)
 
 -- Curves and marks -----------------------------------------------------------
@@ -181,15 +182,78 @@ test("a curve whose function returns something else says so", function()
 end)
 
 test("a mark is a dot, and its label nudged up and right in pixels", function()
-    local p = Plane.graph({ -5, -5, 5, 5 }, nil, 800, 600)
+    local g = Plane.on_canvas(Plane.graph({ -5, -5, 5, 5 }, nil, 800, 600), 800, 600)
     local red, black = { 1, 0, 0, 1 }, { 0, 0, 0, 1 }
-    local records = Plane.mark(p, 800, 600, 1, 2, red, "P", black)
+    local records = Plane.mark(g, 1, 2, red, "P", black)
     eq(records, {
         { type = "dot", pos = { 1, 2 }, size = 12, color = red },
         { type = "text", pos = { 1 + 9 / 48, 2 + 4 / 48 }, content = "P", align = "left",
           font = { "Arial", 12 }, color = black },
     }, "records")
-    eq(#Plane.mark(p, 800, 600, 1, 2, red, nil, black), 1, "no label")
+    eq(#Plane.mark(g, 1, 2, red, nil, black), 1, "no label")
+end)
+
+-- Graphs in a box --------------------------------------------------------------
+
+test("a graph in a box spreads its paper across 80% of the box, equal units by default", function()
+    local g = Plane.in_box(Plane.standard(800, 600), 800, 600, { 0, 0, 10, 20 },
+        { x = -300, y = 200, width = 200, height = 100 })
+    eq({ Plane.to_world(g, 5, 10) }, { -200, 150 }, "the paper's center is the box's")
+    eq({ Plane.to_world(g, 10, 20) }, { -200 + 5 * 4, 150 + 10 * 4 }, "4 pixels a unit, the tighter way")
+    eq({ g.ux, g.uy }, { 1 / 4, 1 / 4 }, "units per pixel")
+    local s = Plane.in_box(Plane.standard(800, 600), 800, 600, { 0, 0, 10, 20 },
+        { x = -300, y = 200, width = 200, height = 100, units = "stretch" })
+    eq({ Plane.to_world(s, 10, 20) }, { -200 + 5 * 16, 150 + 10 * 4 }, "stretched: 16 across, 4 up")
+end)
+
+test("a box without x and y is centered, and 300 wide and high without a size", function()
+    local g = Plane.in_box(Plane.standard(800, 600), 800, 600, { -1, -1, 1, 1 }, {})
+    eq({ Plane.to_world(g, 0, 0) }, { 0, 0 }, "centered")
+    eq({ Plane.to_world(g, 1, 1) }, { 120, 120 }, "80% of 300 across 2 units")
+end)
+
+test("a box in a stretched world keeps equal units equal on screen", function()
+    local world = Plane.world({ 0, 0, 100, 50 })   -- 8 pixels a unit across, 12 up
+    local g = Plane.in_box(world, 800, 600, { 0, 0, 1, 1 }, { x = 0, y = 50, width = 50, height = 25 })
+    local function pixels(x, y)
+        local wx, wy = Plane.to_world(g, x, y)
+        return Plane.point(world, wx, wy, 800, 600)
+    end
+    local x0, y0 = pixels(0, 0)
+    local x1, y1 = pixels(1, 1)
+    eq({ x1 - x0, y1 - y0 }, { 240, 240 }, "a unit is 240 pixels both ways")
+end)
+
+test("graph points go to the world and back", function()
+    local g = Plane.in_box(Plane.standard(800, 600), 800, 600, { -4, -4, 6, 18 },
+        { x = -380, y = 280, width = 300, height = 500, units = "stretch" })
+    eq({ Plane.to_graph(g, Plane.to_world(g, 3, 14)) }, { 3, 14 }, "round trip")
+end)
+
+test("paper, curves and marks in a box are placed in the world", function()
+    local g = Plane.in_box(Plane.standard(800, 600), 800, 600, { 0, 0, 2, 2 },
+        { x = 0, y = 100, width = 100, height = 100 })   -- 40 pixels a unit, (1, 1) at (50, 50)
+    eq(Plane.plot(g, function(x) return x end, 2), {
+        { { 10, 10 }, { 50, 50 } }, { { 50, 50 }, { 90, 90 } },
+    }, "the curve")
+    local red, black = { 1, 0, 0, 1 }, { 0, 0, 0, 1 }
+    eq(Plane.mark(g, 1, 1, red, "P", black), {
+        { type = "dot", pos = { 50, 50 }, size = 12, color = red },
+        { type = "text", pos = { 59, 54 }, content = "P", align = "left", font = { "Arial", 12 }, color = black },
+    }, "the mark, its label nudged in pixels")
+    eq(of(Plane.paper(g, 1, 1), "line", GRAY), { { { 10, 10 }, { 90, 10 } }, { { 10, 10 }, { 10, 90 } } }, "the axes")
+end)
+
+test("a box's options are checked", function()
+    local cases = {
+        { { size = 3 }, 'a box has no option "size"; it takes x, y, width, height, units' },
+        { { x = 1 }, "give the box both x and y, or neither" },
+        { { x = "left", y = 0 }, 'the box\'s x must be a number, got "left"' },
+        { { width = 0 }, "the box's width must be a number more than 0, got 0" },
+        { { units = "wide" }, 'the box\'s units must be "equal" or "stretch", got "wide"' },
+    }
+    for _, case in ipairs(cases) do eq(Plane.check_box(case[1]), case[2], show(case[1])) end
+    eq(Plane.check_box({ x = 0, y = 0, width = 10, height = 10, units = "stretch" }), nil, "a good box")
 end)
 
 -- The host's commands --------------------------------------------------------
@@ -266,10 +330,63 @@ test("plot grows a few pieces a frame, or shows at once at speed 0", function()
     eq(instant.n, 2, "graph's frame and the curve's")
 end)
 
+test("a graph in a box leaves the turtle, the canvas and the controls in pixels", function()
+    local h = host()
+    run(h, [[
+speed(0)
+graph(-5, -5, 5, 5, {x = -400, y = 300, width = 200, height = 200})
+axes()
+forward(100)
+button({label = "go", x = 0, y = 100})
+x, y = position()
+]])
+    local segments = h.visible_segments()
+    eq({ segments[#segments].from, segments[#segments].to }, { { 0, 0 }, { 100, 0 } }, "forward(100) is 100 pixels")
+    eq({ h.ui().widgets[1].x, h.ui().widgets[1].y }, { 0, 100 }, "the button where it was put")
+    local xs = {}
+    for i = 1, #segments - 1 do
+        local seg = segments[i]
+        for _, p in ipairs({ seg.from, seg.to, seg.pos }) do xs[#xs + 1] = p[1] end
+    end
+    table.sort(xs)
+    assert(xs[1] >= -400 and xs[#xs] <= -200, "the paper stays in the box: " .. xs[1] .. " to " .. xs[#xs])
+end)
+
+test("axes, plot and mark draw on the latest graph; a graph's methods on its own", function()
+    local h = host()
+    run(h, [[
+speed(0)
+first = graph(0, 0, 1, 1, {x = -300, y = 100, width = 100, height = 100})
+second = graph(0, 0, 1, 1, {x = 200, y = 100, width = 100, height = 100})
+mark(0.5, 0.5)
+first:mark(0.5, 0.5)
+setworldcoordinates(-400, -300, 400, 300)
+mark(0, 0)
+]])
+    local dots = {}
+    for _, seg in ipairs(h.visible_segments()) do dots[#dots + 1] = seg.pos end
+    eq(dots, { { 250, 50 }, { -250, 50 }, { 0, 0 } }, "the second box, the first, then the canvas's own paper")
+end)
+
+test("tocanvas and tograph turn a graph's points into the canvas's and back", function()
+    local env = host().env()
+    assert(load([[
+g = graph(0, 0, 10, 10, {x = 0, y = 100, width = 100, height = 100})
+cx, cy = g:tocanvas(5, 5)
+px, py = g:tocanvas({10, 10})
+gx, gy = g:tograph(90, 90)
+]], "user_code", "t", env))()
+    eq({ env.cx, env.cy, env.px, env.py, env.gx, env.gy }, { 50, 50, 90, 90, 10, 10 }, "points")
+end)
+
 test("graphing calls are checked like any other", function()
     local cases = {
         { "graph(5, 0, 1, 1)", "graph: right must be more than left, got 5 and 1" },
-        { "graph(0, 0, 1, 1, \"wide\")", 'graph: units must be "equal" or "stretch", got "wide"' },
+        { "graph(0, 0, 1, 1, \"wide\")", 'graph: units must be "equal" or "stretch", or a box like {x = -350, y = 250, width = 300, height = 300}, got "wide"' },
+        { "graph(0, 0, 1, 1, {width = -1})", "graph: the box's width must be a number more than 0, got -1" },
+        { "graph(0, 0, 1, 1):plot(5)", "plot: f must be a function, got 5" },
+        { "graph(0, 0, 1, 1).axes()", "axes: call a graph's commands with a colon, like g:axes(...)" },
+        { "graph(0, 0, 1, 1):tocanvas(1)", "tocanvas: y is missing" },
         { "setworldcoordinates(0, 1, 5, 1)", "setworldcoordinates: bottom and top must differ, got 1 and 1" },
         { "axes(-1)", "axes: xstep must be a number more than 0, got -1" },
         { "axes(1)", "axes: xstep 1 would draw more than 500 grid lines; use a bigger step" },

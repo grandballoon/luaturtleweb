@@ -61,11 +61,18 @@ return {
 
     -- Graphing
     setworldcoordinates = { "setworldcoordinates(-10, -10, 10, 10)", "setworldcoordinates(0, 0, 100, 50)" },
-    graph      = { "graph(-5, -5, 5, 5)", 'graph(0, 0, 10, 100, "stretch")' },
+    graph      = { "graph(-5, -5, 5, 5)", 'graph(0, 0, 10, 100, "stretch")',
+                   "local g = graph(-5, -5, 5, 5, {x = -350, y = 250, width = 300, height = 300})" },
     axes       = { "axes()", "axes(1, 10)", 'axes(1, 10, "time", "height")' },
     plot       = { "plot(function(x) return x * x end)", 'plot(function(x) return 2 * x + 1 end, "royalblue")',
                    'plot(math.sin, "crimson", 4)' },
     mark       = { "mark(2, 3)", 'mark(2, 3, "crimson")', 'mark(2, 3, "crimson", "(2, 3)")' },
+    -- A graph's own methods (host.lua's Host.GRAPH_METHODS); g:axes(),
+    -- g:plot() and g:mark() share the commands' examples above.
+    tocanvas   = { "local g = graph(-5, -5, 5, 5, {width = 300, height = 300})\nsetpos(g:tocanvas(2, 3))",
+                   "local g = graph(-5, -5, 5, 5, {width = 300, height = 300})\nlocal x, y = g:tocanvas({2, 3})" },
+    tograph    = { "local g = graph(-5, -5, 5, 5, {width = 300, height = 300})\nprint(g:tograph(position()))",
+                   "local g = graph(-5, -5, 5, 5, {width = 300, height = 300})\nonclick(function(x, y) print(g:tograph(x, y)) end)" },
     done          = { "done()" },
     bye           = { "bye()" },
 

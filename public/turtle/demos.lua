@@ -65,11 +65,15 @@ return {
     -- Graphing
     ["graph(left, bottom, right, top)"] = "graph(-5, -5, 5, 5)\naxes()\nsetpos(3, 4)",
     ['graph(left, bottom, right, top, "stretch")'] = 'graph(0, 0, 10, 100, "stretch")\naxes(1, 10)\nsetpos(10, 100)',
+    ["graph(left, bottom, right, top, box)"] = 'local g = graph(-3, -1, 3, 9, {x = -220, y = 120, width = 200, height = 200})\naxes()\nplot(function(x) return x * x end, "royalblue")\npenup()\nsetpos(80, -40)\npendown()\ncircle(40)',
     ["setworldcoordinates(left, bottom, right, top)"] = "setworldcoordinates(-10, -10, 10, 10)\nfor i = 1, 4 do\n    forward(8)\n    left(90)\nend",
     ["axes()"]             = "graph(-5, -5, 5, 5)\naxes()\nhideturtle()",
     ["axes(xstep, ystep, xname, yname)"] = 'graph(0, 0, 8, 40, "stretch")\naxes(1, 5, "seconds", "meters")\nhideturtle()',
     ["plot(f, color)"]     = 'graph(-3, -1, 3, 9)\naxes()\nhideturtle()\nplot(function(x) return x * x end, "royalblue")',
     ["mark(x, y, color, label)"] = 'graph(-1, -1, 5, 5)\naxes()\nhideturtle()\nmark(2, 3, "crimson", "(2, 3)")',
+    ["g:plot(f, color)"] = 'local left = graph(-4, -2, 4, 2, {x = -220, y = 100, width = 200, height = 200})\nlocal right = graph(-4, -2, 4, 2, {x = 20, y = 100, width = 200, height = 200})\nleft:axes()\nright:axes()\nleft:plot(math.sin, "royalblue")\nright:plot(math.cos, "crimson")\nhideturtle()',
+    ["g:tocanvas(x, y)"] = 'local g = graph(-5, -5, 5, 5, {x = -220, y = 100, width = 200, height = 200})\naxes()\nmark(3, 4, "crimson")\nsetpos(g:tocanvas(3, 4))',
+    ["g:tograph(x, y)"] = "local g = graph(-5, -5, 5, 5, {x = -220, y = 100, width = 200, height = 200})\naxes()\nsetpos(-150, 50)\nprint(g:tograph(position()))",
 
     -- Interaction (a recording can't be clicked, so these show the setup)
     ["onclick(f)"]         = 'onclick(function(x, y) setpos(x, y) end)\npenup()\nsety(-40)\nwrite("Click the canvas: the turtle goes there", false, "center")\nhome()\npendown()',
@@ -77,11 +81,14 @@ return {
     ["onrelease(f)"]       = 'onrelease(function(x, y) dot(10) end)\npenup()\nsety(-40)\nwrite("Click and let go to leave a dot", false, "center")\nhome()\npendown()',
     ["onkeypress(f, key)"] = 'onkeypress(function() forward(10) end, "up")\nonkeypress(function() left(15) end, "left")\npenup()\nsety(-40)\nwrite("Steer with the up and left keys", false, "center")\nhome()\npendown()',
     ["onkeyrelease(f, key)"] = 'onkeyrelease(function() stamp() end, "space")\npenup()\nsety(-40)\nwrite("Let go of space to stamp", false, "center")\nhome()\npendown()',
+    ["done()"] = "onclick(function(x, y) setpos(x, y) end)\nforward(60)\ndone()",
     ["slider(options)"]    = 'local s = slider({label = "size", min = 10, max = 100, value = 50, x = -100, y = 160})\ncircle(s.value)',
     ["button(options)"]    = 'button({label = "Draw a circle", x = -55, y = 140, onclick = function() circle(40) end})\ncircle(40)',
     ["toggle(options)"]    = 'local fill = toggle({label = "fill", value = true, x = -40, y = 150})\nif fill.value then begin_fill() end\ncircle(50)\nif fill.value then end_fill() end',
     ["radio(options)"]     = 'local r = radio({label = "color", options = {"red", "green", "blue"}, value = "green", x = -170, y = 100})\npencolor(r.value)\npensize(4)\ncircle(50)',
     ["textfield(options)"] = 'local f = textfield({label = "name", value = "Ada", x = -100, y = 110})\nhideturtle()\nwrite("Hello, " .. f.value, false, "center", {"Arial", 20})',
+    ["control.value"] = 'local s = slider({label = "size", min = 10, max = 100, value = 50, x = -100, y = 160})\ns.value = 80\ncircle(s.value)',
+    ["control:remove()"] = 'local b = button({label = "Gone soon", x = -45, y = 140})\ncircle(40)\nb:remove()',
 
     -- Turtle
     ["hideturtle()"]       = "circle(40)\nhideturtle()",

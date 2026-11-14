@@ -229,11 +229,15 @@
                 <ul class="api-rows">
                   <li><code>graph(left, bottom, right, top)</code><span class="api-about">Use graph coordinates: this rectangle, one unit the same length both ways</span></li>
                   <li><code>graph(left, bottom, right, top, "stretch")</code><span class="api-about">Graph coordinates stretched to fill the canvas</span></li>
+                  <li><code>graph(left, bottom, right, top, box)</code><span class="api-about">A graph in a box: {x, y, width, height, units}; the rest of the canvas keeps its coordinates</span></li>
                   <li><code>setworldcoordinates(left, bottom, right, top)</code><span class="api-about">Make the canvas edges these coordinates, as in Python</span></li>
                   <li><code>axes()</code><span class="api-about">Draw graph paper: grid, axes and numbers</span></li>
                   <li><code>axes(xstep, ystep, xname, yname)</code><span class="api-about">Grid lines every xstep and ystep; name the axes</span></li>
                   <li><code>plot(f, color)</code><span class="api-about">Draw the curve y = f(x) across the graph</span></li>
                   <li><code>mark(x, y, color, label)</code><span class="api-about">Draw a dot at (x, y), with a label</span></li>
+                  <li><code>g:plot(f, color)</code><span class="api-about">Draw on graph g even after a newer graph(); g:axes() and g:mark(x, y) too</span></li>
+                  <li><code>g:tocanvas(x, y)</code><span class="api-about">The canvas point at (x, y) on graph g, for the turtle: setpos(g:tocanvas(2, 3))</span></li>
+                  <li><code>g:tograph(x, y)</code><span class="api-about">The point on graph g at canvas point (x, y), such as a click</span></li>
                 </ul>
               </section>
               <section class="api-section">
@@ -244,11 +248,14 @@
                   <li><code>onrelease(f)</code><span class="api-about">Call f(x, y) when the pointer lets go of the canvas</span></li>
                   <li><code>onkeypress(f, key)</code><span class="api-about">Call f when key is pressed; leave out key for any key</span></li>
                   <li><code>onkeyrelease(f, key)</code><span class="api-about">Call f when key is let go. Alias: onkey</span></li>
+                  <li><code>done()</code><span class="api-about">Keep answering clicks, keys and controls until Stop; code after it waits. Alias: mainloop</span></li>
                   <li><code>slider(options)</code><span class="api-about">A slider: {label, min, max, value, step, x, y, width, onchange}; read s.value</span></li>
                   <li><code>button(options)</code><span class="api-about">A button: {label, x, y, width, onclick}</span></li>
                   <li><code>toggle(options)</code><span class="api-about">An on/off switch: {label, value, x, y, onchange}; read t.value</span></li>
                   <li><code>radio(options)</code><span class="api-about">Radio buttons: {label, options, value, x, y, onchange}; read r.value</span></li>
                   <li><code>textfield(options)</code><span class="api-about">A text box: {label, value, x, y, width, onchange, onsubmit}; read f.value</span></li>
+                  <li><code>control.value</code><span class="api-about">Read or set a control's value as the program runs; control.label likewise</span></li>
+                  <li><code>control:remove()</code><span class="api-about">Take a control off the canvas</span></li>
                 </ul>
               </section>
               <section class="api-section">

@@ -66,7 +66,7 @@ end
 local KINDS = { number = true, color = true, string = true, boolean = true, any = true }
 for _, section in ipairs(catalog) do
     for _, c in ipairs(section.commands) do
-        local inside = c.call:match("^[%w_]+%((.-)%)") or ""
+        local inside = c.call:match("^[%w_.:]+%((.-)%)") or ""
         local spelled = {}
         for arg in inside:gmatch("[^,]+") do spelled[#spelled + 1] = arg:match("^%s*(.-)%s*$") end
         local params = c.params

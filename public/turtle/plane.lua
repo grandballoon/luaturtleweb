@@ -15,9 +15,20 @@
 --
 -- A rectangle is { left, bottom, right, top }. A plane is
 --   { view  = the rectangle the canvas shows; nil for the standard plane,
---     paper = the rectangle axes() rules and plot() draws across }.
+--     paper = the rectangle graph() spreads across the canvas }.
 -- Functions that turn world units into pixels also take the canvas's size
 -- in pixels, w and h.
+--
+-- axes(), plot() and mark() draw on a graph: paper in graph units, and
+-- where it sits in the world. A graph on the canvas (Plane.on_canvas) is
+-- the plane's own paper, its graph units the world's. A graph in a box
+-- (Plane.in_box) has paper of its own, scaled into a rectangle of the
+-- world, so the rest of the canvas keeps its coordinates. A graph is
+--   { paper  = its rectangle, in graph units,
+--     cx, cy = the paper's center, ox, oy = where that sits in the world,
+--     kx, ky = world units per graph unit across and up,
+--     ux, uy = graph units per pixel across and up, for nudging text },
+-- and world = o + (graph - c) · k.
 --
 -- Pure Lua with no platform code; runs on Lua 5.4 and LuaJIT alike.
 
@@ -140,6 +151,13 @@ function Plane.unproject(plane, px, py, w, h)
     return px / sx + cx, py / sy + cy
 end
 
+-- World units per pixel across and up, for nudging text a few pixels;
+-- 0 with no canvas.
+local function per_pixel(plane, w, h)
+    local _, _, sx, sy = Plane.scale(plane, w, h)
+    return sx ~= 0 and 1 / sx or 0, sy ~= 0 and 1 / sy or 0
+end
+
 -- Turtle states ({ x, y, angle, ... }), in pixels, likewise.
 function Plane.project_turtles(plane, states, w, h)
     if not plane.view then return states end
@@ -149,6 +167,114 @@ function Plane.project_turtles(plane, states, w, h)
         local s = copy(t)
         s.x, s.y = (t.x - cx) * sx, (t.y - cy) * sy
         s.angle = seen_heading(t.angle, sx, sy)
+        out[i] = s
+    end
+    return out
+end
+
+----------------------------------------------------------------
+-- Graphs
+----------------------------------------------------------------
+
+-- The graph on the whole canvas: the plane's paper, in world units.
+function Plane.on_canvas(plane, w, h)
+    local ux, uy = per_pixel(plane, w, h)
+    local p = plane.paper
+    return { paper = { p[1], p[2], p[3], p[4] },
+             cx = 0, cy = 0, ox = 0, oy = 0, kx = 1, ky = 1, ux = ux, uy = uy }
+end
+
+-- The options a box takes, in the order a message lists them, and the
+-- size of a box that leaves out width or height.
+Plane.BOX_FIELDS = { "x", "y", "width", "height", "units" }
+Plane.BOX_SIZE   = 300
+
+local function is_finite(v)
+    return type(v) == "number" and v == v and v ~= math.huge and v ~= -math.huge
+end
+
+local function describe(v)
+    if type(v) == "string" then return '"' .. v .. '"' end
+    if type(v) == "number" or type(v) == "boolean" or v == nil then return tostring(v) end
+    return "a " .. type(v)
+end
+
+-- nil if `box` describes a box for graph(), else what is wrong with it,
+-- read as the rest of "graph: ...".
+function Plane.check_box(box)
+    local allowed = {}
+    for _, f in ipairs(Plane.BOX_FIELDS) do allowed[f] = true end
+    for k in pairs(box) do
+        if not allowed[k] then
+            return "a box has no option " .. describe(k) .. "; it takes "
+                .. table.concat(Plane.BOX_FIELDS, ", ")
+        end
+    end
+    for _, f in ipairs({ "x", "y" }) do
+        if box[f] ~= nil and not is_finite(box[f]) then
+            return "the box's " .. f .. " must be a number, got " .. describe(box[f])
+        end
+    end
+    for _, f in ipairs({ "width", "height" }) do
+        local v = box[f]
+        if v ~= nil and not (is_finite(v) and v > 0) then
+            return "the box's " .. f .. " must be a number more than 0, got " .. describe(v)
+        end
+    end
+    if box.units ~= nil and box.units ~= "equal" and box.units ~= "stretch" then
+        return 'the box\'s units must be "equal" or "stretch", got ' .. describe(box.units)
+    end
+    if (box.x == nil) ~= (box.y == nil) then
+        return "give the box both x and y, or neither"
+    end
+    return nil
+end
+
+-- A graph of paper r (left < right, bottom < top) in a box: its top-left
+-- corner at the world point (x, y), or centered on (0, 0) without them,
+-- width by height world units. The paper spreads across 80% of the box,
+-- as graph() spreads it across the canvas, with units "equal" (or nil)
+-- or "stretch" alike: equal units look equal on screen even when the
+-- world itself is stretched.
+function Plane.in_box(plane, w, h, r, box)
+    local bw, bh = box.width or Plane.BOX_SIZE, box.height or Plane.BOX_SIZE
+    local left, top = box.x or -bw / 2, box.y or bh / 2
+    local _, _, sx, sy = Plane.scale(plane, w, h)
+    if sx == 0 or sy == 0 then sx, sy = 1, 1 end   -- no canvas: measure in world units
+    -- Pixels per graph unit, across and up.
+    local px = FILL * math.abs(bw * sx) / (r[3] - r[1])
+    local py = FILL * math.abs(bh * sy) / (r[4] - r[2])
+    if box.units ~= "stretch" then
+        px = math.min(px, py)
+        py = px
+    end
+    return {
+        paper = { r[1], r[2], r[3], r[4] },
+        cx = (r[1] + r[3]) / 2, cy = (r[2] + r[4]) / 2,
+        ox = left + bw / 2, oy = top - bh / 2,
+        kx = px / sx, ky = py / sy,   -- signed, so a flipped world shows the graph upright
+        ux = 1 / px, uy = 1 / py,
+    }
+end
+
+-- A graph point in world units, and back.
+function Plane.to_world(g, x, y)
+    return g.ox + (x - g.cx) * g.kx, g.oy + (y - g.cy) * g.ky
+end
+
+function Plane.to_graph(g, x, y)
+    return g.cx + (x - g.ox) / g.kx, g.cy + (y - g.oy) / g.ky
+end
+
+-- Records drawn in graph units, as copies placed in the world.
+local function placed(g, records)
+    local function at(p) return { Plane.to_world(g, p[1], p[2]) } end
+    local out = {}
+    for i, rec in ipairs(records) do
+        local s = copy(rec)
+        if rec.from then s.from = at(rec.from) end
+        if rec.to then s.to = at(rec.to) end
+        if rec.pos then s.pos = at(rec.pos) end
         out[i] = s
     end
     return out
@@ -183,22 +309,15 @@ local function clamp(v, lo, hi) return math.max(lo, math.min(hi, v)) end
 
 local function ink(name) return copy(colors[name]) end
 
--- World units per pixel across and up, for nudging text a few pixels;
--- 0 with no canvas.
-local function per_pixel(plane, w, h)
-    local _, _, sx, sy = Plane.scale(plane, w, h)
-    return sx ~= 0 and 1 / sx or 0, sy ~= 0 and 1 / sy or 0
-end
-
 local AXIS_FONT = { "Arial", 10 }
 
--- Graph paper on the plane's paper: a grid line every xstep across and
--- ystep up (nil picks a step, see nice_step), the axes through 0 (or
--- along the paper's nearest edge, when 0 is off it), each grid line's
--- number beside its axis, and the axes' names (default "x" and "y").
--- Returns the segment records to log, in world units, or nil and why not.
-function Plane.paper(plane, w, h, xstep, ystep, xname, yname)
-    local l, b, r, t = plane.paper[1], plane.paper[2], plane.paper[3], plane.paper[4]
+-- Graph paper on graph g: a grid line every xstep across and ystep up
+-- (nil picks a step, see nice_step), the axes through 0 (or along the
+-- paper's nearest edge, when 0 is off it), each grid line's number beside
+-- its axis, and the axes' names (default "x" and "y"). Returns the segment
+-- records to log, in world units, or nil and why not.
+function Plane.paper(g, xstep, ystep, xname, yname)
+    local l, b, r, t = g.paper[1], g.paper[2], g.paper[3], g.paper[4]
     xstep = xstep or Plane.nice_step(r - l)
     ystep = ystep or Plane.nice_step(t - b)
     local xs, ys = multiples(l, r, xstep), multiples(b, t, ystep)
@@ -208,7 +327,7 @@ function Plane.paper(plane, w, h, xstep, ystep, xname, yname)
     if not ys then
         return nil, string.format("ystep %g would draw more than %d grid lines; use a bigger step", ystep, MAX_LINES)
     end
-    local ux, uy = per_pixel(plane, w, h)
+    local ux, uy = g.ux, g.uy
     local x0, y0 = clamp(0, l, r), clamp(0, b, t)   -- where the axes run
 
     local out = {}
@@ -233,7 +352,7 @@ function Plane.paper(plane, w, h, xstep, ystep, xname, yname)
     end
     text(r, y0, 0, -30, xname or "x", "right")
     text(x0, t, 0, 10, yname or "y", "center")
-    return out
+    return placed(g, out)
 end
 
 ----------------------------------------------------------------
@@ -296,16 +415,28 @@ function Plane.curve(f, r, samples)
     return pieces
 end
 
--- A dot 12 pixels wide at (x, y) in `color`, and `label` beside it (if
--- any) in `label_color`: the segment records to log, in world units.
-function Plane.mark(plane, w, h, x, y, color, label, label_color)
-    local out = { { type = "dot", pos = { x, y }, size = 12, color = color } }
-    if label ~= nil then
-        local ux, uy = per_pixel(plane, w, h)
-        out[2] = { type = "text", pos = { x + 9 * ux, y + 4 * uy }, content = tostring(label),
-                   align = "left", font = { "Arial", 12 }, color = label_color }
+-- curve() on graph g's paper, its pieces placed in the world.
+function Plane.plot(g, f, samples)
+    local pieces, why = Plane.curve(f, g.paper, samples)
+    if not pieces then return nil, why end
+    local out = {}
+    for i, piece in ipairs(pieces) do
+        out[i] = { { Plane.to_world(g, piece[1][1], piece[1][2]) },
+                   { Plane.to_world(g, piece[2][1], piece[2][2]) } }
     end
     return out
+end
+
+-- A dot 12 pixels wide at graph point (x, y) in `color`, and `label`
+-- beside it (if any) in `label_color`: the segment records to log, in
+-- world units.
+function Plane.mark(g, x, y, color, label, label_color)
+    local out = { { type = "dot", pos = { x, y }, size = 12, color = color } }
+    if label ~= nil then
+        out[2] = { type = "text", pos = { x + 9 * g.ux, y + 4 * g.uy }, content = tostring(label),
+                   align = "left", font = { "Arial", 12 }, color = label_color }
+    end
+    return placed(g, out)
 end
 
 return Plane

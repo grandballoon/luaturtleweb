@@ -80,6 +80,10 @@ end
 local NUMBER, WHOLE, COUNT, POSITIVE = args.NUMBER, args.WHOLE, args.COUNT, args.POSITIVE
 local ALIGN = args.one_of("left", "center", "right")
 local UNITS = args.one_of("equal", "stretch")
+local function UNITS_OR_BOX(v)
+    if type(v) == "table" or not UNITS(v) then return nil end
+    return '"equal" or "stretch", or a box like {x = -350, y = 250, width = 300, height = 300}'
+end
 
 local function distance(a) a:req("distance", NUMBER) end
 local function handler(a)  a:opt("f", args.FUNCTION) end
@@ -97,8 +101,28 @@ local function key_handler(a)
     end)
 end
 local function angle(a)    a:req("angle", NUMBER) end
+
+local function check_axes(a)
+    a:opt("xstep", POSITIVE)
+    a:opt("ystep", POSITIVE)
+    a:opt("xname", args.VALUE)
+    a:opt("yname", args.VALUE)
+end
+local function check_plot(a)
+    a:req("f", args.FUNCTION)
+    a:opt("color", args.COLOR_VALUE)
+    a:opt("width", POSITIVE)
+end
+local function check_mark(a)
+    a:point()
+    a:opt("color", args.COLOR_VALUE)
+    a:opt("label", args.VALUE)
+end
 local function point(a)    a:point() end
 local function color(a)    a:opt_color() end
+
+-- The methods of what graph() returns, in the order the reference lists them.
+Host.GRAPH_METHODS = { "axes", "plot", "mark", "tocanvas", "tograph" }
 
 -- Other names for commands, as in Python turtle. Errors name whichever
 -- one the learner typed.
@@ -196,6 +220,9 @@ function Host.new(opts)
     -- projected to pixels.
     local W, H  = canvas_size(opts.width), canvas_size(opts.height)
     local plane = Plane.standard(W, H)
+    -- The graph axes(), plot() and mark() draw on: the plane's paper, or
+    -- the latest graph() in a box.
+    local current_graph = Plane.on_canvas(plane, W, H)
 
     self.seed = opts.seed or os.time()
     local random, randomseed = Random.new(self.seed)
@@ -506,14 +533,15 @@ function Host.new(opts)
         return c:pensize()
     end
 
-    -- Graph paper and curves: ink logged straight from plane.lua's records,
-    -- one undo step each, leaving the turtle and its pen as they were.
+    -- Graph paper and curves on graph g (see plane.lua): ink logged
+    -- straight from plane.lua's records, one undo step each, leaving the
+    -- turtle and its pen as they were.
     local function log_all(c, records)
         for _, record in ipairs(records) do c:_log(record) end
     end
 
-    local function _axes(c, xstep, ystep, xname, yname)
-        local records, why = Plane.paper(plane, W, H, xstep, ystep, xname, yname)
+    local function _axes(c, g, xstep, ystep, xname, yname)
+        local records, why = Plane.paper(g, xstep, ystep, xname, yname)
         if not records then args.fail("axes", why) end
         with_undo(c, function()
             log_all(c, records)
@@ -522,8 +550,8 @@ function Host.new(opts)
     end
 
     -- Animated like circle(): the curve grows a few pieces per frame.
-    local function _plot(c, f, color, width)
-        local pieces, why = Plane.curve(f, plane.paper, 200)
+    local function _plot(c, g, f, color, width)
+        local pieces, why = Plane.plot(g, f, 200)
         if not pieces then args.fail("plot", why) end
         color = color_of(color, c.pen_color)
         width = width or c.pen_size
@@ -539,10 +567,10 @@ function Host.new(opts)
         end)
     end
 
-    local function _mark(c, x, y, color, label)
+    local function _mark(c, g, x, y, color, label)
         if type(x) == "table" then x, y, color, label = x[1], x[2], y, color end
         with_undo(c, function()
-            log_all(c, Plane.mark(plane, W, H, x, y, color_of(color, c.pen_color), label,
+            log_all(c, Plane.mark(g, x, y, color_of(color, c.pen_color), label,
                 color_of(nil, c.pen_color)))
             maybe_post_frame()
         end)
@@ -566,8 +594,8 @@ function Host.new(opts)
     -- tables, so they always accept, reject, and do the same things.
     ----------------------------------------------------------------
 
-    -- Defined below; Turtle() needs it.
-    local make_turtle_methods
+    -- Defined below; Turtle() and graph() need them.
+    local make_turtle_methods, graph_handle
 
     -- Commands that act on one turtle: globals use the default turtle,
     -- methods use their own.
@@ -662,31 +690,9 @@ function Host.new(opts)
         screen_width  = { run = function() return W end },
         screen_height = { run = function() return H end },
 
-        axes = {
-            check = function(a)
-                a:opt("xstep", POSITIVE)
-                a:opt("ystep", POSITIVE)
-                a:opt("xname", args.VALUE)
-                a:opt("yname", args.VALUE)
-            end,
-            run = _axes,
-        },
-        plot = {
-            check = function(a)
-                a:req("f", args.FUNCTION)
-                a:opt("color", args.COLOR_VALUE)
-                a:opt("width", POSITIVE)
-            end,
-            run = _plot,
-        },
-        mark = {
-            check = function(a)
-                a:point()
-                a:opt("color", args.COLOR_VALUE)
-                a:opt("label", args.VALUE)
-            end,
-            run = _mark,
-        },
+        axes = { check = check_axes, run = function(c, ...) _axes(c, current_graph, ...) end },
+        plot = { check = check_plot, run = function(c, ...) _plot(c, current_graph, ...) end },
+        mark = { check = check_mark, run = function(c, ...) _mark(c, current_graph, ...) end },
     }
 
     -- Commands that act on the screen as a whole: globals only.
@@ -722,21 +728,33 @@ function Host.new(opts)
             check = function(a) a:rect() end,
             run = function(l, b, r, t)
                 plane = Plane.world({ l, b, r, t })
+                current_graph = Plane.on_canvas(plane, W, H)
                 ui_changed()
                 maybe_post_frame()
             end,
         },
         -- Graph paper's coordinates: the rectangle left..right by
         -- bottom..top across most of the canvas, for axes() and plot().
+        -- Given a box instead of units, the paper fills the box and the
+        -- rest of the canvas keeps its coordinates. Either way, returns
+        -- the graph, whose methods draw on it whichever graph is latest.
         graph = {
             check = function(a)
                 a:rect(true)
-                a:opt("units", UNITS)
+                a:opt("units", UNITS_OR_BOX)
             end,
             run = function(l, b, r, t, units)
-                plane = Plane.graph({ l, b, r, t }, units, W, H)
-                ui_changed()
-                maybe_post_frame()
+                if type(units) == "table" then
+                    local why = Plane.check_box(units)
+                    if why then args.fail("graph", why) end
+                    current_graph = Plane.in_box(plane, W, H, { l, b, r, t }, units)
+                else
+                    plane = Plane.graph({ l, b, r, t }, units, W, H)
+                    current_graph = Plane.on_canvas(plane, W, H)
+                    ui_changed()
+                    maybe_post_frame()
+                end
+                return graph_handle(current_graph)
             end,
         },
 
@@ -837,6 +855,34 @@ function Host.new(opts)
             end
         end)
         return m
+    end
+
+    -- What graph() returns, for graph g (see plane.lua): its methods draw
+    -- on g with the default turtle's pen even once another graph is the
+    -- latest, and turn g's points into the canvas's coordinates and back.
+    local function graph_point(x, y)
+        if type(x) == "table" then return x[1], x[2] end
+        return x, y
+    end
+    function graph_handle(g)
+        local commands = {
+            axes     = { check = check_axes, run = function(c, ...) _axes(c, g, ...) end },
+            plot     = { check = check_plot, run = function(c, ...) _plot(c, g, ...) end },
+            mark     = { check = check_mark, run = function(c, ...) _mark(c, g, ...) end },
+            tocanvas = { check = point, run = function(_, ...) return Plane.to_world(g, graph_point(...)) end },
+            tograph  = { check = point, run = function(_, ...) return Plane.to_graph(g, graph_point(...)) end },
+        }
+        local handle = {}
+        for _, name in ipairs(Host.GRAPH_METHODS) do
+            local command = commands[name]
+            handle[name] = function(this, ...)
+                if this ~= handle then
+                    args.fail(name, "call a graph's commands with a colon, like g:" .. name .. "(...)")
+                end
+                return call(name, command, core, ...)
+            end
+        end
+        return handle
     end
 
     -- The global API: plain functions, no self, on the default turtle.
