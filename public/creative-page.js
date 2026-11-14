@@ -15,6 +15,9 @@ import { createExampleStage } from './example-stage.js';
 import { createCards }        from './example-cards.js';
 import { coursePath, joinCourses } from './compsci.js';
 import { targetFromHash, pageView, searchView } from './creative.js';
+import { installSwipeGuard } from './swipe-guard.js';
+
+installSwipeGuard();
 
 const $ = (id) => document.getElementById(id);
 

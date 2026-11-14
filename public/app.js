@@ -35,6 +35,9 @@ import { createProgramInput }   from './program-input.js';
 import { createLuaEditor }      from './lua-editor.js';
 import * as storage             from './storage.js';
 import { isOn, resolveFlags }   from './flags.js';
+import { installSwipeGuard }    from './swipe-guard.js';
+
+installSwipeGuard();
 
 const IS_MAC       = /mac|iphone|ipad|ipod/i.test(navigator.userAgentData?.platform || navigator.platform || '');
 const RUN_SHORTCUT = IS_MAC ? '⌘↵' : 'Ctrl+Enter';

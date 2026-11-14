@@ -11,6 +11,9 @@
 import { createExampleStage } from './example-stage.js';
 import { createCards }        from './example-cards.js';
 import { libraryView, conceptCounts, galleryExamples, exampleFromHash } from './library.js';
+import { installSwipeGuard } from './swipe-guard.js';
+
+installSwipeGuard();
 
 const $ = (id) => document.getElementById(id);
 

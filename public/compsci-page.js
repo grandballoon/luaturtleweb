@@ -17,6 +17,9 @@ import { createCards }        from './example-cards.js';
 import {
     coursePath, joinCourses, conceptCount, defaultCourse, targetFromHash, courseView, searchView,
 } from './compsci.js';
+import { installSwipeGuard } from './swipe-guard.js';
+
+installSwipeGuard();
 
 const $ = (id) => document.getElementById(id);
 
