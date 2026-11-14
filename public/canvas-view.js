@@ -3,6 +3,8 @@
 // Owns: toolbar (zoom in/out, reset, grid toggle + its persisted preference),
 //       gestures (drag to pan, scroll to pan, pinch or Ctrl/⌘+scroll to zoom),
 //       and keeping the canvas backing store matched to panel size and DPR.
+// A running program can claim a press first (program-input.js): els.claimPointer(e)
+// returning true means the press is the program's, and the canvas doesn't pan.
 
 import * as storage from './storage.js';
 
@@ -13,6 +15,7 @@ const LINE_PX          = 16;     // deltaMode 1 (lines) → pixels
 
 export function initCanvasView(renderer, els) {
     const { panel, canvas, zoomIn, zoomOut, zoomReset, zoomLabel, gridBtn } = els;
+    const claimPointer = els.claimPointer || (() => false);
 
     function viewChanged() {
         zoomLabel.textContent = renderer.zoomLabel();
@@ -67,6 +70,7 @@ export function initCanvasView(renderer, els) {
 
     canvas.addEventListener('pointerdown', (e) => {
         if (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 1) return;
+        if (e.button === 0 && claimPointer(e)) return;
         e.preventDefault();
         canvas.setPointerCapture(e.pointerId);
         pointers.set(e.pointerId, localPoint(e));

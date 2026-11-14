@@ -69,6 +69,28 @@ return {
     done          = { "done()" },
     bye           = { "bye()" },
 
+    -- Interaction
+    onclick      = { "onclick(function(x, y) setpos(x, y) end)", "onclick(nil)" },
+    ondrag       = { "ondrag(function(x, y) setpos(x, y) end)", "ondrag(nil)" },
+    onrelease    = { "onrelease(function(x, y) dot(10) end)", "onrelease(nil)" },
+    onkeypress   = { 'onkeypress(function() forward(10) end, "up")',
+                     'onkeypress(function() left(15) end, "left")',
+                     "onkeypress(function(key) print(key) end)" },
+    onkeyrelease = { 'onkeyrelease(function() stamp() end, "space")',
+                     "onkeyrelease(function(key) print(key) end)" },
+    listen       = { "listen()" },
+    slider       = { 'local s = slider({label = "size", min = 10, max = 100})\ncircle(s.value)',
+                     'slider({label = "angle", min = 0, max = 360, value = 90, onchange = function(v) setheading(v) end})',
+                     'slider({label = "size", x = -200, y = 150, width = 300})' },
+    button       = { 'button({label = "Clear", onclick = clear})',
+                     'button({label = "Draw", x = -200, y = 150, onclick = function() circle(50) end})' },
+    toggle       = { 'local grid = toggle({label = "grid"})',
+                     'toggle({label = "pen", value = true, onchange = function(on) if on then pendown() else penup() end end})' },
+    radio        = { 'local shape = radio({options = {"circle", "square"}})',
+                     'radio({label = "color", options = {"red", "green", "blue"}, onchange = function(c) pencolor(c) end})' },
+    textfield    = { 'local name = textfield({label = "name"})',
+                     'textfield({label = "say", onsubmit = function(text) write(text) end})' },
+
     -- Turtle
     showturtle = { "showturtle()" },
     hideturtle = { "hideturtle()" },

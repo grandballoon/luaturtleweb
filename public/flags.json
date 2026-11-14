@@ -1,6 +1,6 @@
 {
   "share": false,
   "export": true,
-  "lessons": false,
+  "lessons": "staging",
   "transcribe": "staging"
 }

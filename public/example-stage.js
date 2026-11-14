@@ -18,6 +18,7 @@ import { Renderer }        from './renderer.js';
 import { initCanvasView }  from './canvas-view.js';
 import { createDock }      from './dock.js';
 import { createRunner }    from './runner.js';
+import { createProgramInput } from './program-input.js';
 import { createLuaEditor } from './lua-editor.js';
 import * as storage        from './storage.js';
 import { programPath }     from './library.js';
@@ -58,6 +59,15 @@ export function createExampleStage({ pageName, onShow = () => {} }) {
         zoomReset: $('btn-zoom-reset'),
         zoomLabel: $('zoom-label'),
         gridBtn:   $('btn-grid'),
+        claimPointer: (e) => programInput.claims(e),
+    });
+
+    // A running example's clicks, drags and keys, and its controls.
+    const programInput = createProgramInput({
+        canvas: $('turtle-canvas'),
+        renderer,
+        send: (event) => runner.input(event),
+        returnFocus: () => editor.focus(),
     });
 
     function canvasSize() {
@@ -201,6 +211,10 @@ export function createExampleStage({ pageName, onShow = () => {} }) {
         },
         onDone({ stopped, elapsed }) {
             setStatus(stopped ? 'Stopped' : `Done in ${formatElapsed(elapsed)}`);
+        },
+        onUI: (ui) => programInput.setUI(ui),
+        onListen() {
+            setStatus('Waiting for clicks and keys · Esc stops', 'running');
         },
         onError({ message, line }) {
             markError(line, message);
