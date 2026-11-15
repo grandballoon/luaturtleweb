@@ -140,6 +140,15 @@ test('a missing token is reported at what came instead', () => {
     assert.equal(check.error.message, 'Expected `(` after `forward`, but found `1`.');
 });
 
+test('a wrong one-character token is named on its own', () => {
+    const check = checkTranscription('local R = 1', 'local nn');
+    assert.equal(check.state, 'error');
+    assert.equal(check.error.message, 'Expected `R`, but found `n`.');
+    assert.deepEqual([check.error.from, check.error.to], [6, 8]);
+    assert.equal(checkTranscription('fd(1)', 'fd[').error.message, 'Expected `(`, but found `[`.');
+    assert.equal(checkTranscription('local R = 1', 'local Rn').error.message, 'Expected a space after `R`, but found `n`.');
+});
+
 test('spacing inside a string counts', () => {
     const check = checkTranscription('write("a b")', 'write("a  b")');
     assert.equal(check.state, 'error');
