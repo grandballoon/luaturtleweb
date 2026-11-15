@@ -204,10 +204,14 @@ function describeToken(text) {
     return text.length > 24 ? `\`${text.slice(0, 24)}…\`` : `\`${text}\``;
 }
 
-// " in `forward`": the word the expected character belongs to, when it is
-// one character of a longer token.
+// Where the expected character sits relative to the sample's token `text`,
+// when the typing went wrong at its `i`th character: " after `forward`" when
+// the whole token was typed and what follows it is missing; " in `forward`"
+// when it is one character of a longer token; nothing when it is the whole
+// of a one-character token, which is named already.
 function inToken(text, i) {
-    return i < text.length && text.length > 1 ? ` in ${describeToken(text)}` : ` after ${describeToken(text)}`;
+    if (i >= text.length) return ` after ${describeToken(text)}`;
+    return text.length > 1 ? ` in ${describeToken(text)}` : '';
 }
 
 // ---- Lines ----
